@@ -66,8 +66,8 @@ installed in production.
 
 | Target                          | Installation link                                                                                                            |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Sandbox                         | [Install PDF Builder 1.0.6 in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZCKrIAO)   |
-| Production or Developer Edition | [Install PDF Builder 1.0.6 in production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZCKrIAO) |
+| Sandbox                         | [Install PDF Builder 1.0.7 in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZCazIAG)   |
+| Production or Developer Edition | [Install PDF Builder 1.0.7 in production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZCazIAG) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
@@ -77,7 +77,7 @@ The same version can also be installed with Salesforce CLI:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZCKrIAO \
+  --package 04tQy000000ZCazIAG \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
