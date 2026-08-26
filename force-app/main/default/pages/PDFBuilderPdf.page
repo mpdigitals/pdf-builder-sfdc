@@ -1,0 +1,150 @@
+<apex:page
+    controller="PDFBuilderPdfPageController"
+    renderAs="pdf"
+    applyHtmlTag="false"
+    applyBodyTag="false"
+    showHeader="false"
+    sidebar="false"
+    standardStylesheets="false"
+>
+    <html>
+        <head>
+            <style>
+                @page {
+                    size: 794px 1123px;
+                    background-color: {!pageBackground};
+                    margin-top: {!pageTopMargin}px;
+                    margin-right: {!pageRightMargin}px;
+                    margin-bottom: {!pageBottomMargin}px;
+                    margin-left: {!pageLeftMargin}px;
+
+                    @top-center {
+                        content: element(dbPdfHeader);
+                    }
+
+                    @bottom-center {
+                        content: element(dbPdfFooter);
+                    }
+                }
+
+                html,
+                body {
+                    font-family: Arial, sans-serif;
+                    font-size: 12px;
+                    line-height: 1.35;
+                    color: #080707;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    width: 100%;
+                    height: auto;
+                    min-height: 0;
+                    background-color: {!pageBackground};
+                }
+
+                *,
+                *::before,
+                *::after {
+                    box-sizing: border-box;
+                }
+
+                table {
+                    border-collapse: collapse;
+                    border-spacing: 0;
+                }
+
+                .db-pdf-root img {
+                    max-width: 100%;
+                    border: 0;
+                }
+
+                .db-pdf-root ul,
+                .db-pdf-root ol {
+                    margin: 0 0 0 18px;
+                    padding-left: 20px;
+                    list-style-position: outside;
+                }
+
+                .db-pdf-root ul {
+                    list-style-type: disc;
+                }
+
+                .db-pdf-root ol {
+                    list-style-type: decimal;
+                }
+
+                .db-pdf-root li {
+                    display: list-item;
+                    white-space: normal;
+                }
+
+                /*
+                 * The editor removes the browser's default heading margins.
+                 * Flying Saucer otherwise restores a large bottom margin on
+                 * H1-H6, which hides the effect of an explicitly sized spacer
+                 * paragraph placed immediately after a heading.
+                 */
+                .db-pdf-rich h1,
+                .db-pdf-rich h2,
+                .db-pdf-rich h3,
+                .db-pdf-rich h4,
+                .db-pdf-rich h5,
+                .db-pdf-rich h6 {
+                    margin: 0;
+                    /*
+                     * Salesforce's browser reset renders pasted H1-H6 at the
+                     * surrounding rich-text size unless an inner span provides
+                     * an explicit size. Flying Saucer restores the native H1,
+                     * H2, H3... metrics, shifting equal-sized headings to
+                     * different vertical baselines. Neutralize those metrics
+                     * so the inline editor formatting is authoritative.
+                     */
+                    font-size: inherit;
+                    line-height: inherit;
+                }
+
+                /*
+                 * Match the builder's rich-text box model. Spacing between
+                 * blocks is represented by the edited paragraph line-height;
+                 * adding PDF-only paragraph margins makes that value appear
+                 * to be ignored.
+                 */
+                .db-pdf-rich p {
+                    margin: 0;
+                }
+
+                .db-pdf-root {
+                    width: 100%;
+                    margin: 0;
+                    padding: 0;
+                }
+
+                .db-pdf-fixed-header {
+                    position: running(dbPdfHeader);
+                    width: {!pageContentWidth}px;
+                    height: {!pageTopMargin}px;
+                    margin: 0;
+                    padding: 0;
+                }
+
+                .db-pdf-fixed-footer {
+                    position: running(dbPdfFooter);
+                    width: {!pageContentWidth}px;
+                    height: {!pageBottomMargin}px;
+                    margin: 0;
+                    padding: 0;
+                }
+            </style>
+        </head>
+        <body>
+            <apex:outputPanel layout="block" styleClass="db-pdf-fixed-header" rendered="{!hasFixedHeader}">
+                <apex:outputText value="{!fixedHeaderHtml}" escape="false" />
+            </apex:outputPanel>
+            <apex:outputPanel layout="block" styleClass="db-pdf-fixed-footer" rendered="{!hasFixedFooter}">
+                <apex:outputText value="{!fixedFooterHtml}" escape="false" />
+            </apex:outputPanel>
+            <div class="db-pdf-root">
+                <apex:outputText value="{!bodyHtml}" escape="false" />
+            </div>
+        </body>
+    </html>
+</apex:page>

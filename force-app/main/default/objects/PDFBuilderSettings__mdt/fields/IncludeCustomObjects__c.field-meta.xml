@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>IncludeCustomObjects__c</fullName>
+    <defaultValue>true</defaultValue>
+    <description
+  >Controls whether accessible custom objects are available in the builder object selector.</description>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Include Custom Objects</label>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,147 @@
+<template>
+  <div
+    class={blockClassName}
+    data-block-id={block.id}
+    style={block.inlineStyle}
+    onmousedown={handleMouseDown}
+    onclick={handleClick}
+    ondblclick={handleDoubleClick}
+    ondragstart={handleNativeDragStart}
+  >
+    <template lwc:if={block.isText}>
+      <div
+        class="text-content"
+        contenteditable={textContentEditable}
+        data-text-style-id={block.id}
+        data-editing={textContentEditable}
+        data-placeholder={textPlaceholder}
+        style={block.textStyle}
+        lwc:dom="manual"
+        oninput={handleTextInput}
+        onkeydown={handleEditableKeyDown}
+        onfocus={handleTextFocus}
+        onblur={handleTextBlur}
+        onkeyup={saveSelection}
+        onmouseup={saveSelection}
+        onmousedown={handleEditableMouseDown}
+        onclick={handleEditableClick}
+        ondragstart={handleNativeDragStart}
+      ></div>
+    </template>
+
+    <template lwc:if={block.isField}>
+      <span
+        class="field"
+        contenteditable={textContentEditable}
+        data-text-style-id={block.id}
+        data-editing={textContentEditable}
+        data-placeholder={textPlaceholder}
+        style={block.textStyle}
+        lwc:dom="manual"
+        oninput={handleTextInput}
+        onkeydown={handleEditableKeyDown}
+        onfocus={handleTextFocus}
+        onblur={handleTextBlur}
+        onkeyup={saveSelection}
+        onmouseup={saveSelection}
+        onmousedown={handleEditableMouseDown}
+        onclick={handleEditableClick}
+        ondragstart={handleNativeDragStart}
+      >
+      </span>
+    </template>
+
+    <template lwc:if={block.isDivider}>
+      <div class="divider-wrapper">
+        <hr class="divider-line" style={block.lineStyle} />
+      </div>
+    </template>
+
+    <template lwc:if={block.isImage}>
+      <template lwc:if={block.hasImage}>
+        <img
+          class="image-content"
+          src={block.imageSrc}
+          alt={block.imageAlt}
+          draggable="false"
+        />
+      </template>
+
+      <template lwc:else>
+        <div class="image-placeholder">Select image</div>
+      </template>
+    </template>
+
+    <template lwc:if={block.isTable}>
+      <table class="table-content">
+        <tbody>
+          <template for:each={block.tableRows} for:item="row">
+            <tr key={row.key}>
+              <template for:each={row.cells} for:item="cell">
+                <td key={cell.key} style={cell.style}>
+                  <div
+                    class="table-cell-editable"
+                    style={cell.contentStyle}
+                    data-cell-key={cell.key}
+                    data-row-index={row.index}
+                    data-column-index={cell.columnIndex}
+                    contenteditable="true"
+                    lwc:dom="manual"
+                    onfocus={handleTableCellFocus}
+                    onmousedown={handleTableCellMouseDown}
+                    onclick={handleTableCellClick}
+                    onkeydown={handleTableCellKeyDown}
+                    onkeyup={handleTableCellKeyUp}
+                    oninput={handleTableCellInput}
+                    onblur={handleTableCellBlur}
+                    ondragover={handleTableCellDragOver}
+                    ondrop={handleTableCellDrop}
+                    ondragstart={handleNativeDragStart}
+                  ></div>
+                </td>
+              </template>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+      <template lwc:if={hasTableBottomBorder}>
+        <span class="table-bottom-border" style={tableBottomBorderStyle}></span>
+      </template>
+    </template>
+
+    <template lwc:if={block.isRelatedList}>
+      <table class="table-content">
+        <thead>
+          <tr style={relatedListHeaderStyle}>
+            <template
+              for:each={block.relatedListColumnLabels}
+              for:item="columnLabel"
+            >
+              <th
+                key={columnLabel.key}
+                style={block.relatedListHeaderCellStyle}
+              >
+                {columnLabel.label}
+              </th>
+            </template>
+          </tr>
+        </thead>
+        <tbody>
+          <template for:each={block.relatedListPreviewRows} for:item="row">
+            <tr key={row.key} style={row.rowStyle}>
+              <template for:each={row.cells} for:item="cell">
+                <td key={cell.key} style={cell.style}>{cell.value}</td>
+              </template>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </template>
+
+    <template lwc:if={block.isVerticalLine}>
+      <div class="vertical-line-wrapper">
+        <div class="vertical-line-content" style={block.lineStyle}></div>
+      </div>
+    </template>
+  </div>
+</template>

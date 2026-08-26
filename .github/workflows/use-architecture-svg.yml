@@ -1,0 +1,33 @@
+name: Use architecture diagram
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/use-architecture-svg.yml"]
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update README architecture section
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('README.md')
+          s = p.read_text()
+          arch = s.index('## Architecture')
+          para_start = s.index('**Everything runs inside Salesforce.**', arch)
+          mermaid_start = s.index('```mermaid', para_start)
+          mermaid_end = s.index('```', mermaid_start + 3) + 3
+          replacement = '''**Everything runs inside Salesforce.** The visual builder creates the template model, Salesforce data and schema are resolved at runtime, the document engine merges and prepares the content, and the final PDF is produced through a Salesforce-native HTML-to-PDF rendering layer before being downloaded or saved to Salesforce Files.\n\n<p align="center">\n  <img src="docs/images/pdf-builder-architecture.svg" alt="PDF Builder for Salesforce architecture" width="92%">\n</p>'''
+          s = s[:para_start] + replacement + s[mermaid_end:]
+          p.write_text(s)
+          PY
+      - run: rm .github/workflows/use-architecture-svg.yml
+      - run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'docs: replace Mermaid architecture with polished diagram [skip ci]'
+          git push origin HEAD:main

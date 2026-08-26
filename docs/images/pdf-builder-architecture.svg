@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">PDF Builder for Salesforce architecture</title>
+  <desc id="desc">Authoring and runtime flows merge Salesforce data and templates in the document engine, render HTML to PDF, then download or save to Salesforce Files.</desc>
+  <defs>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#0B4DBB"/><stop offset="1" stop-color="#0740A5"/></linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#078A4B"/><stop offset="1" stop-color="#05773F"/></linearGradient>
+    <linearGradient id="engine" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1257C4"/><stop offset="1" stop-color="#073D9E"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#1f2937" flood-opacity=".13"/></filter>
+    <style>
+      .t{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;fill:#111827}.h{font-weight:700}.muted{fill:#475569}.line{fill:none;stroke-linecap:round;stroke-linejoin:round}.box{fill:#fff;stroke-width:1.5}.small{font-size:15px}.body{font-size:16px}.label{font-size:19px;font-weight:700}.header{font-size:24px;font-weight:700;fill:#fff}.icon{fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+    </style>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#0B5CAB"/></marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#108A50"/></marker>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#6544C7"/></marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#fff"/>
+
+  <!-- AUTHORING -->
+  <g filter="url(#shadow)">
+    <rect x="24" y="24" width="560" height="248" rx="18" class="box" stroke="#2F75D8"/>
+    <path d="M42 24h524a18 18 0 0 1 18 18v45H24V42a18 18 0 0 1 18-18z" fill="url(#blue)"/>
+  </g>
+  <circle cx="171" cy="55" r="22" fill="#fff" opacity=".96"/>
+  <path d="M163 63l15-15m-18 18l4-11 10-10 7 7-10 10z" class="icon" stroke="#0B4DBB"/>
+  <text x="205" y="64" class="t header">AUTHORING <tspan font-size="18" font-weight="500">(Design Time)</tspan></text>
+
+  <g class="t" text-anchor="middle">
+    <circle cx="117" cy="132" r="18" class="icon" stroke="#0B5CAB"/><path d="M84 184c4-27 17-40 33-40s29 13 33 40z" class="icon" stroke="#0B5CAB"/>
+    <text x="117" y="214" class="label">Template Author</text><text x="117" y="240" class="body muted">Creates and manages</text><text x="117" y="261" class="body muted">PDF templates and configuration.</text>
+
+    <rect x="247" y="112" width="72" height="55" rx="4" class="icon" stroke="#0B5CAB"/><path d="M259 126h22v27h-22zm29 0h19m-19 10h19m-19 10h19M276 167v12m-16 0h32" class="icon" stroke="#0B5CAB"/>
+    <text x="283" y="214" class="label">Visual WYSIWYG Builder</text><text x="283" y="240" class="body muted">Drag &amp; drop editor to design</text><text x="283" y="261" class="body muted">layouts visually with rich components.</text>
+
+    <ellipse cx="474" cy="127" rx="28" ry="10" class="icon" stroke="#6544C7"/><path d="M446 127v45c0 8 56 8 56 0v-45m-56 22c0 8 56 8 56 0" class="icon" stroke="#6544C7"/>
+    <text x="474" y="214" class="label">Template Model</text><text x="474" y="240" class="body muted">Templates, data bindings</text><text x="474" y="261" class="body muted">and settings stored in Salesforce.</text>
+  </g>
+  <path d="M165 150h53" class="line" stroke="#0B5CAB" stroke-width="3" marker-end="url(#arrowBlue)"/><path d="M329 150h62" class="line" stroke="#0B5CAB" stroke-width="3" marker-end="url(#arrowBlue)"/>
+
+  <!-- RUNTIME -->
+  <g filter="url(#shadow)"><rect x="616" y="24" width="560" height="248" rx="18" class="box" stroke="#16955A"/><path d="M634 24h524a18 18 0 0 1 18 18v45H616V42a18 18 0 0 1 18-18z" fill="url(#green)"/></g>
+  <circle cx="762" cy="55" r="22" fill="#fff" opacity=".96"/><circle cx="758" cy="49" r="6" class="icon" stroke="#138B51"/><path d="M748 69c2-10 7-15 10-15s8 5 10 15m5-17c5 1 8 5 9 12m-13 0h15" class="icon" stroke="#138B51"/>
+  <text x="797" y="64" class="t header">RUNTIME <tspan font-size="18" font-weight="500">(Execution Time)</tspan></text>
+
+  <g class="t" text-anchor="middle">
+    <circle cx="730" cy="132" r="18" class="icon" stroke="#138B51"/><path d="M697 184c4-27 17-40 33-40s29 13 33 40z" class="icon" stroke="#138B51"/>
+    <text x="730" y="214" class="label">Record User</text><text x="730" y="240" class="body muted">Initiates PDF generation</text><text x="730" y="261" class="body muted">from a record, process or integration.</text>
+
+    <path d="M948 112h42l18 18v48h-60zM990 112v19h18" class="icon" stroke="#138B51"/><rect x="944" y="148" width="40" height="24" rx="5" fill="#138B51"/><text x="964" y="166" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#fff">PDF</text>
+    <text x="979" y="214" class="label">PDF Generator</text><text x="979" y="240" class="body muted">Orchestrates data retrieval,</text><text x="979" y="261" class="body muted">merges content and triggers creation.</text>
+  </g>
+  <path d="M778 150h111" class="line" stroke="#138B51" stroke-width="3" marker-end="url(#arrowGreen)"/>
+
+  <!-- DATA -->
+  <g filter="url(#shadow)"><rect x="385" y="304" width="430" height="84" rx="14" fill="#F7FAFF" stroke="#6AA3EF" stroke-width="1.5"/></g>
+  <ellipse cx="448" cy="331" rx="22" ry="8" class="icon" stroke="#1264D0"/><path d="M426 331v34c0 7 44 7 44 0v-34m-44 17c0 7 44 7 44 0" class="icon" stroke="#1264D0"/>
+  <text x="493" y="337" class="t label" fill="#0B4DBB">Salesforce Data &amp; Schema</text><text x="493" y="362" class="t body muted">Standard &amp; custom objects, fields, relationships, metadata and security.</text>
+
+  <!-- ENGINE -->
+  <g filter="url(#shadow)"><rect x="385" y="424" width="430" height="104" rx="16" fill="url(#engine)"/></g>
+  <circle cx="438" cy="476" r="28" fill="#fff" opacity=".20"/><path d="M438 454v7m0 30v7m-22-22h7m30 0h7m-37-15l5 5m20 20l5 5m0-30l-5 5m-20 20l-5 5" class="icon" stroke="#fff"/><circle cx="438" cy="476" r="12" class="icon" stroke="#fff"/>
+  <text x="485" y="466" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="22" font-weight="700" fill="#fff">Document Engine</text><text x="485" y="491" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="16" fill="#fff">Merges template model with live data, applies business logic</text><text x="485" y="512" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="16" fill="#fff">and resolves all dynamic content.</text>
+
+  <!-- INPUT ARROWS -->
+  <path d="M270 272v117c0 26 23 35 56 35h59" class="line" stroke="#6544C7" stroke-width="2" marker-end="url(#arrowPurple)"/>
+  <path d="M930 272v117c0 26-23 35-56 35h-59" class="line" stroke="#108A50" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <path d="M600 388v35" class="line" stroke="#0B5CAB" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
+
+  <!-- PDF LAYER -->
+  <g filter="url(#shadow)"><rect x="350" y="566" width="500" height="92" rx="14" fill="#F8F4FF" stroke="#8D6BE8" stroke-width="1.5"/></g>
+  <circle cx="404" cy="612" r="26" fill="#fff" stroke="#8D6BE8" stroke-width="3"/><path d="M397 602l-10 10 10 10m14-20l10 10-10 10m-8-25l-8 30" class="icon" stroke="#5131A8"/>
+  <text x="450" y="600" class="t" font-size="20" font-weight="700" fill="#432399">HTML to PDF Service</text><text x="450" y="626" class="t body muted">Converts generated HTML to PDF using Salesforce-native rendering.</text><text x="450" y="647" class="t small muted">Visualforce is used only as a minimal delivery wrapper where required.</text>
+  <path d="M600 528v37" class="line" stroke="#0B5CAB" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
+
+  <!-- OUTPUTS -->
+  <g filter="url(#shadow)"><rect x="255" y="696" width="280" height="78" rx="14" fill="#F7FAFF" stroke="#6AA3EF" stroke-width="1.5"/><rect x="665" y="696" width="280" height="78" rx="14" fill="#F7FFF9" stroke="#6FBE8E" stroke-width="1.5"/></g>
+  <circle cx="304" cy="735" r="24" class="icon" stroke="#1264D0"/><path d="M280 735h48m-24-24c8 8 8 40 0 48m0-48c-8 8-8 40 0 48" class="icon" stroke="#1264D0"/>
+  <text x="345" y="728" class="t label" fill="#0B4DBB">Browser Download</text><text x="345" y="752" class="t small muted">PDF delivered directly to the user's browser.</text>
+  <path d="M714 721h22l8 8h24v28h-54z" fill="#65B56F" stroke="#16844B" stroke-width="3" stroke-linejoin="round"/><text x="783" y="728" class="t label" fill="#087A43">Salesforce Files</text><text x="783" y="752" class="t small muted">PDF automatically saved and versioned in Salesforce Files.</text>
+  <path d="M600 658v18c0 13-10 20-24 20H395v0" class="line" stroke="#6544C7" stroke-width="2" marker-end="url(#arrowPurple)"/><path d="M600 658v18c0 13 10 20 24 20h181" class="line" stroke="#6544C7" stroke-width="2" marker-end="url(#arrowPurple)"/>
+</svg>

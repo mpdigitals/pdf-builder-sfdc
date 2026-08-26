@@ -1,0 +1,44 @@
+{
+  "name": "pdf-builder-salesforce",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Salesforce App",
+  "scripts": {
+    "lint": "eslint force-app/main/default/lwc/**/*.js",
+    "lint:pdf-builder": "eslint force-app/main/default/lwc/pdfBuilder*/**/*.js",
+    "test": "npm run test:unit",
+    "test:unit": "sfdx-lwc-jest",
+    "test:pdf-builder": "sfdx-lwc-jest -- --runInBand force-app/main/default/lwc/pdfBuilder/__tests__/pdfBuilder.test.js force-app/main/default/lwc/pdfBuilderBlock/__tests__/pdfBuilderBlock.test.js force-app/main/default/lwc/pdfBuilderGenerator/__tests__/pdfBuilderGenerator.test.js force-app/main/default/lwc/pdfBuilderUtils/__tests__/pdfBuilderUtils.test.js force-app/main/default/lwc/pdfBuilderRichTextCommands/__tests__/pdfBuilderRichTextCommands.test.js",
+    "test:unit:watch": "sfdx-lwc-jest --watch",
+    "test:unit:debug": "sfdx-lwc-jest --debug",
+    "test:unit:coverage": "sfdx-lwc-jest --coverage",
+    "prettier": "prettier --write \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
+    "prettier:verify": "prettier --check \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
+    "postinstall": "husky install",
+    "precommit": "lint-staged"
+  },
+  "devDependencies": {
+    "@lwc/eslint-plugin-lwc": "^3.5.0",
+    "@prettier/plugin-xml": "^3.2.2",
+    "@salesforce/eslint-config-lwc": "^4.1.2",
+    "@eslint/js": "^9.0.0",
+    "@salesforce/eslint-plugin-aura": "^3.0.0",
+    "@salesforce/eslint-plugin-lightning": "^2.0.0",
+    "@salesforce/sfdx-lwc-jest": "^7.9.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jest": "^29.0.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.1.0",
+    "prettier": "^3.1.0",
+    "prettier-plugin-apex": "^2.0.1"
+  },
+  "lint-staged": {
+    "**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}": [
+      "prettier --write"
+    ],
+    "**/{aura,lwc}/**/*.js": [
+      "eslint"
+    ]
+  }
+}

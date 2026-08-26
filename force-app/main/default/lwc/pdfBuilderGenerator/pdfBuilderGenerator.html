@@ -1,0 +1,63 @@
+<template>
+  <lightning-card title="PDF Builder Templates" icon-name="doctype:pdf">
+    <div class="panel">
+      <template lwc:if={isBusy}>
+        <div
+          class="save-spinner-overlay"
+          role="status"
+          aria-live="polite"
+          aria-label={busyLabel}
+        >
+          <div class="save-spinner-content">
+            <span class="save-spinner-circle" aria-hidden="true"></span>
+            <span class="save-spinner-label">{busyLabel}</span>
+          </div>
+        </div>
+      </template>
+
+      <lightning-combobox
+        label="Template"
+        value={selectedTemplateId}
+        options={templateOptions}
+        placeholder="Select a template"
+        onchange={handleTemplateChange}
+        disabled={isTemplateSelectDisabled}
+      ></lightning-combobox>
+
+      <div class="destination">
+        <lightning-radio-group
+          name="pdfDestination"
+          label="Save PDF to"
+          options={destinationOptions}
+          value={destination}
+          type="button"
+          onchange={handleDestinationChange}
+          disabled={isGenerating}
+        ></lightning-radio-group>
+        <p class="destination-help">{destinationHelpText}</p>
+      </div>
+
+      <div class="actions">
+        <lightning-button
+          variant="brand"
+          label={generateButtonLabel}
+          onclick={handleGeneratePdf}
+          disabled={isGenerateDisabled}
+        ></lightning-button>
+
+        <template lwc:if={hasSavedFile}>
+          <lightning-button
+            variant="neutral"
+            label="Open file"
+            icon-name="utility:preview"
+            onclick={handleOpenSavedFile}
+          ></lightning-button>
+        </template>
+      </div>
+
+      <template lwc:if={statusMessage}>
+        <p class="status">{statusMessage}</p>
+      </template>
+    </div>
+  </lightning-card>
+</template>
