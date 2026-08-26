@@ -1,0 +1,304 @@
+.pdf-block {
+  position: relative;
+  width: var(--block-width, auto);
+  height: var(--block-height, auto);
+  max-width: 100%;
+  margin-bottom: 0;
+  padding: var(--block-padding, 0);
+  background: var(--block-background, #ffffff);
+  border: var(--block-border-width, 0) var(--block-border-style, solid)
+    var(--block-border-color, #c9c9c9);
+  border-radius: var(--block-border-radius, 0);
+  box-sizing: border-box;
+  cursor: move;
+  text-align: var(--block-text-align, left);
+  overflow: clip;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+.pdf-block.divider-block {
+  width: 100%;
+}
+
+.pdf-block,
+.pdf-block:hover,
+.pdf-block.selected {
+  box-shadow: none;
+}
+
+.text-content {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 18px;
+  margin: 0;
+  outline: none;
+  cursor: text;
+  white-space: normal;
+  max-height: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
+  line-height: 1.25;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+.text-content p,
+.text-content div,
+.text-content h1,
+.text-content h2,
+.text-content h3,
+.text-content h4,
+.text-content h5,
+.text-content h6 {
+  margin: 0;
+}
+
+.text-content ul,
+.text-content ol {
+  margin: 0 0 0 18px;
+  padding-left: 20px;
+  list-style-position: outside;
+}
+
+.text-content ul {
+  list-style-type: disc;
+}
+
+.text-content ol {
+  list-style-type: decimal;
+}
+
+.text-content li {
+  display: list-item;
+  white-space: normal;
+}
+
+.text-content .rich-native-list {
+  margin: 0 0 0 18px;
+  padding-left: 20px;
+  list-style-position: outside;
+}
+
+.text-content .rich-native-list-unordered {
+  list-style-type: disc;
+}
+
+.text-content .rich-native-list-ordered {
+  list-style-type: decimal;
+}
+
+.text-content .rich-native-list-item {
+  display: list-item;
+  white-space: normal;
+}
+
+.text-block,
+.field-block {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: var(--block-vertical-align, flex-start);
+}
+
+.field {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 18px;
+  color: #032d60;
+  font-size: 14px;
+  outline: none;
+  cursor: text;
+  white-space: pre-wrap;
+  max-height: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+.pdf-block.text-block .text-content,
+.pdf-block.field-block .field {
+  width: 100%;
+  /*
+   * The block itself is the vertical flex container. Stretching the editable
+   * child to the full block height leaves no free space for
+   * justify-content (top / middle / bottom) to distribute, so the toolbar
+   * buttons appear to do nothing for text and field blocks.
+   */
+  height: auto;
+}
+
+.divider-wrapper,
+.vertical-line-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.divider-line {
+  display: block;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.table-content {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table-content td {
+  min-width: 28px;
+}
+
+.table-block .table-content td {
+  outline: none;
+}
+
+.table-bottom-border {
+  position: absolute;
+  right: var(--block-padding, 0);
+  bottom: 0;
+  left: var(--block-padding, 0);
+  z-index: 1;
+  display: block;
+  pointer-events: none;
+}
+
+.table-cell-editable {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  outline: none;
+  cursor: text;
+  white-space: pre-wrap;
+  word-break: break-word;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+.table-cell-editable ul,
+.table-cell-editable ol,
+.table-cell-editable .rich-native-list {
+  margin: 0 0 0 18px;
+  padding-left: 20px;
+  list-style-position: outside;
+}
+
+.table-cell-editable ul,
+.table-cell-editable .rich-native-list-unordered {
+  list-style-type: disc;
+}
+
+.table-cell-editable ol,
+.table-cell-editable .rich-native-list-ordered {
+  list-style-type: decimal;
+}
+
+.table-cell-editable li,
+.table-cell-editable .rich-native-list-item {
+  display: list-item;
+  white-space: normal;
+}
+
+.table-cell-editable .table-cell-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.vertical-line-content {
+  box-sizing: border-box;
+}
+
+.block-resize-handle {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffffff;
+  border-radius: 4px;
+  background: #0176d3;
+  cursor: nwse-resize;
+  box-sizing: border-box;
+  box-shadow: 0 1px 4px rgba(1, 118, 211, 0.35);
+  z-index: 2;
+}
+
+.image-content {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+.image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  height: 100%;
+  border: 1px dashed #c9c9c9;
+  color: #747474;
+  background: #fafafa;
+  box-sizing: border-box;
+}
+
+.text-content,
+.field {
+  cursor: move;
+}
+
+.text-content[data-editing="true"],
+.field[data-editing="true"] {
+  cursor: text;
+}
+
+.text-content[data-placeholder]:empty::before,
+.field[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: #8a8d91;
+  pointer-events: none;
+}
+
+.pdf-block.editing-text-block {
+  cursor: text;
+}
+
+.pdf-block.editing-text-block .text-content,
+.pdf-block.editing-text-block .field {
+  cursor: text;
+  user-select: text;
+}
+
+.pdf-block.compact-region-text .text-content,
+.pdf-block.compact-region-text .field {
+  line-height: 1.2;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.pdf-block.compact-region-text .text-content * {
+  line-height: 1.2 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}

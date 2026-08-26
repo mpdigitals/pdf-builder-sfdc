@@ -1,0 +1,31 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "default": true,
+      "package": "PDF Builder",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.6.NEXT",
+      "versionDescription": "Native Salesforce visual PDF template builder and document generator",
+      "apexTestAccess": {
+        "permissionSets": [
+          "PDFBuilderUser"
+        ]
+      }
+    }
+  ],
+  "name": "PDFBuilder",
+  "namespace": "",
+  "sfdcLoginUrl": "https://login.salesforce.com",
+  "sourceApiVersion": "66.0",
+  "packageAliases": {
+    "PDF Builder": "0HoQy0000001yJtKAI",
+    "PDF Builder@1.0.0-1": "04tQy000000Yr1tIAC",
+    "PDF Builder@1.0.1-1": "04tQy000000YxNRIA0",
+    "PDF Builder@1.0.2-1": "04tQy000000YxaLIAS",
+    "PDF Builder@1.0.3-1": "04tQy000000ZAVxIAO",
+    "PDF Builder@1.0.4-1": "04tQy000000ZBi9IAG",
+    "PDF Builder@1.0.5-1": "04tQy000000ZC9ZIAW",
+    "PDF Builder@1.0.6-1": "04tQy000000ZCKrIAO"
+  }
+}
