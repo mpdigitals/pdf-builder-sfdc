@@ -252,13 +252,17 @@ export default class PDFBuilder extends LightningElement {
   }
 
   getBlockResizeHandles(type) {
-    if (type === "verticalLine") {
+    if (type === "divider" || type === "verticalLine") {
       return this.blockResizeHandles.filter(
-        (handle) => handle.direction === "n" || handle.direction === "s"
+        (handle) =>
+          handle.direction === "n" ||
+          handle.direction === "s" ||
+          handle.direction === "e" ||
+          handle.direction === "w"
       );
     }
 
-    if (type === "divider" || type === "relatedList") {
+    if (type === "relatedList") {
       return this.blockResizeHandles.filter(
         (handle) => handle.direction === "e" || handle.direction === "w"
       );
@@ -5117,8 +5121,16 @@ export default class PDFBuilder extends LightningElement {
         : Number.isFinite(event.y)
           ? event.y
           : this.resizeState.lastClientY;
-      const minWidth = 32;
-      const minHeight = 24;
+      const lineThickness = Math.max(
+        1,
+        Number(
+          this.findBlockById(this.resizeState.blockId)?.styles?.lineThickness
+        ) || 1
+      );
+      const minWidth =
+        this.resizeState.blockType === "verticalLine" ? lineThickness : 32;
+      const minHeight =
+        this.resizeState.blockType === "divider" ? lineThickness : 24;
       const resizeDirection = (
         this.resizeState.resizeDirection || "se"
       ).toLowerCase();
@@ -7379,6 +7391,10 @@ export default class PDFBuilder extends LightningElement {
         : preferredWidth;
     }
 
+    const lineThickness = Math.max(
+      1,
+      this.toNumber(block.styles?.lineThickness ?? 1)
+    );
     const styles = {
       background: block.styles?.background || "transparent",
       padding:
@@ -7404,14 +7420,23 @@ export default class PDFBuilder extends LightningElement {
       tableBorderColor: block.styles?.tableBorderColor || "#c9c9c9",
       tableCellVerticalAlign: block.styles?.tableCellVerticalAlign || "top",
       lineLength: this.toOptionalNumber(block.styles?.lineLength),
-      lineThickness: this.toNumber(block.styles?.lineThickness ?? 1),
+      lineThickness,
       lineStyle: block.styles?.lineStyle || "solid",
       lineColor: block.styles?.lineColor || "#181818",
-      width: block.type === "verticalLine" ? 12 : normalizedWidth,
+      width:
+        block.type === "verticalLine"
+          ? Math.max(
+              lineThickness,
+              this.toOptionalNumber(block.styles?.width) || 12
+            )
+          : normalizedWidth,
       widthRatio: horizontalGeometry.widthRatio,
       height:
         block.type === "divider"
-          ? 12
+          ? Math.max(
+              lineThickness,
+              this.toOptionalNumber(block.styles?.height) || 12
+            )
           : block.type === "relatedList"
             ? 100
             : block.type === "table"
