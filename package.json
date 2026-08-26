@@ -9,6 +9,7 @@
     "lint:pdf-builder": "eslint force-app/main/default/lwc/pdfBuilder*/**/*.js",
     "test": "npm run test:unit",
     "test:unit": "sfdx-lwc-jest",
+    "test:ci": "sfdx-lwc-jest -- --runInBand",
     "test:pdf-builder": "sfdx-lwc-jest -- --runInBand force-app/main/default/lwc/pdfBuilder/__tests__/pdfBuilder.test.js force-app/main/default/lwc/pdfBuilderBlock/__tests__/pdfBuilderBlock.test.js force-app/main/default/lwc/pdfBuilderGenerator/__tests__/pdfBuilderGenerator.test.js force-app/main/default/lwc/pdfBuilderUtils/__tests__/pdfBuilderUtils.test.js force-app/main/default/lwc/pdfBuilderRichTextCommands/__tests__/pdfBuilderRichTextCommands.test.js",
     "test:unit:watch": "sfdx-lwc-jest --watch",
     "test:unit:debug": "sfdx-lwc-jest --debug",

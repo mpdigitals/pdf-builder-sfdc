@@ -1,0 +1,47 @@
+name: Bug report
+description: Report reproducible incorrect behavior in PDF Builder
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not report security vulnerabilities here. Follow SECURITY.md instead.
+  - type: input
+    id: version
+    attributes:
+      label: PDF Builder version
+      placeholder: "1.0.7"
+    validations:
+      required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation method
+      options:
+        - Unlocked package
+        - Source deployment
+        - Live demo
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Explain the actual and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Generate ...
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Additional context
+      description: Include relevant browser, Salesforce edition, object type, logs, or redacted screenshots. Never include credentials or customer data.
