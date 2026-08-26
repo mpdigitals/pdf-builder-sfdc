@@ -5,10 +5,12 @@
       "default": true,
       "package": "PDF Builder",
       "versionName": "Version 1.0",
-      "versionNumber": "1.0.7.NEXT",
+      "versionNumber": "1.0.8.NEXT",
       "versionDescription": "Native Salesforce visual PDF template builder and document generator",
       "apexTestAccess": {
-        "permissionSets": ["PDFBuilderUser"]
+        "permissionSets": [
+          "PDFBuilderUser"
+        ]
       }
     }
   ],
@@ -25,6 +27,7 @@
     "PDF Builder@1.0.4-1": "04tQy000000ZBi9IAG",
     "PDF Builder@1.0.5-1": "04tQy000000ZC9ZIAW",
     "PDF Builder@1.0.6-1": "04tQy000000ZCKrIAO",
-    "PDF Builder@1.0.7-1": "04tQy000000ZCazIAG"
+    "PDF Builder@1.0.7-1": "04tQy000000ZCazIAG",
+    "PDF Builder@1.0.8-1": "04tQy000000ZDATIA4"
   }
 }
