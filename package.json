@@ -2,6 +2,7 @@
   "name": "pdf-builder-salesforce",
   "private": true,
   "version": "1.0.0",
+  "license": "MIT",
   "description": "Salesforce App",
   "scripts": {
     "lint": "eslint force-app/main/default/lwc/**/*.js",
