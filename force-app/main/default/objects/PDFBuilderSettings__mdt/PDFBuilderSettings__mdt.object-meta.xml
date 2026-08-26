@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Central configuration for PDF Builder editing, preview pagination, image handling, and Visualforce PDF rendering.</description>
+    <label>PDF Builder Settings</label>
+    <pluralLabel>PDF Builder Settings</pluralLabel>
+    <visibility>Public</visibility>
+</CustomObject>

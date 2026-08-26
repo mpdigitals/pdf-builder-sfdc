@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>PreferredObjectApiNames__c</fullName>
+    <description
+  >Object API names shown first in the builder object selector. Enter one value per line or separate values with commas.</description>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Preferred Objects</label>
+    <length>32768</length>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <visibleLines>8</visibleLines>
+</CustomField>

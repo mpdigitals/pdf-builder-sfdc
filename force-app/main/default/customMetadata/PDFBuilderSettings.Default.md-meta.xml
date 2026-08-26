@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomMetadata
+  xmlns="http://soap.sforce.com/2006/04/metadata"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+>
+    <label>Default</label>
+    <protected>false</protected>
+    <values><field>PreferredObjectApiNames__c</field><value
+      xsi:type="xsd:string"
+    >Lead
+Account
+Contact
+Opportunity
+Quote
+Contract
+ServiceContract
+Order
+Case
+Campaign
+Product2
+Pricebook2
+Asset
+WorkOrder
+User</value></values>
+    <values>
+        <field>IncludeCustomObjects__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values><field>SupportedImageTypes__c</field><value
+      xsi:type="xsd:string"
+    >PNG,JPG,JPEG,GIF,WEBP</value></values>
+    <values><field>LongTextLimit__c</field><value
+      xsi:type="xsd:double"
+    >131072</value></values>
+    <values><field>PageWidthPx__c</field><value
+      xsi:type="xsd:double"
+    >794</value></values>
+    <values><field>PageHeightPx__c</field><value
+      xsi:type="xsd:double"
+    >1123</value></values>
+    <values><field>DefaultPagePaddingPx__c</field><value
+      xsi:type="xsd:double"
+    >32</value></values>
+    <values><field>DefaultElementPaddingPx__c</field><value
+      xsi:type="xsd:double"
+    >0</value></values>
+    <values><field>DefaultHeaderHeightPx__c</field><value
+      xsi:type="xsd:double"
+    >110</value></values>
+    <values><field>DefaultFooterHeightPx__c</field><value
+      xsi:type="xsd:double"
+    >80</value></values>
+    <values><field>MaxPages__c</field><value
+      xsi:type="xsd:double"
+    >5</value></values>
+    <values><field>TemplateQueryLimit__c</field><value
+      xsi:type="xsd:double"
+    >200</value></values>
+    <values><field>ImageQueryLimit__c</field><value
+      xsi:type="xsd:double"
+    >60</value></values>
+    <values><field>MaxClientImageBase64__c</field><value
+      xsi:type="xsd:double"
+    >1800000</value></values>
+    <values><field>PdfContentWidthPx__c</field><value
+      xsi:type="xsd:double"
+    >540</value></values>
+    <values><field>PdfCanvasWidthPx__c</field><value
+      xsi:type="xsd:double"
+    >620</value></values>
+    <values><field>PdfFontScale__c</field><value
+      xsi:type="xsd:double"
+    >0.96</value></values>
+    <values><field>PdfImageYOffsetPx__c</field><value
+      xsi:type="xsd:double"
+    >9</value></values>
+    <values><field>PdfGridColumns__c</field><value
+      xsi:type="xsd:double"
+    >12</value></values>
+    <values><field>PdfGridGapPx__c</field><value
+      xsi:type="xsd:double"
+    >8</value></values>
+    <values><field>PdfGridRowHeightPx__c</field><value
+      xsi:type="xsd:double"
+    >24</value></values>
+    <values><field>DragGridSizePx__c</field><value
+      xsi:type="xsd:double"
+    >10</value></values>
+    <values><field>InputDebounceMs__c</field><value
+      xsi:type="xsd:double"
+    >250</value></values>
+</CustomMetadata>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DefaultHeaderHeightPx__c</fullName>
+    <description
+  >Default header region height, in CSS pixels, for newly created templates.</description>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Default Header Height Px</label>
+    <precision>4</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

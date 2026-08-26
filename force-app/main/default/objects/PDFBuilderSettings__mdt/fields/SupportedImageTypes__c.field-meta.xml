@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SupportedImageTypes__c</fullName>
+    <description
+  >Comma-separated Salesforce FileType values accepted by the builder image picker.</description>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Supported Image Types</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

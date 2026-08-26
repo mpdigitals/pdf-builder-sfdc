@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="84" viewBox="0 0 1200 84" role="img" aria-label="Salesforce Files, Record-aware output, Deployable configuration">
+  <rect width="1200" height="84" fill="#234A9B"/>
+  <line x1="400" y1="0" x2="400" y2="84" stroke="#FFFFFF" stroke-width="2" opacity="0.9"/>
+  <line x1="800" y1="0" x2="800" y2="84" stroke="#FFFFFF" stroke-width="2" opacity="0.9"/>
+  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">
+    <text x="200" y="43"><tspan font-size="40">📁</tspan><tspan dx="24" font-size="27" font-weight="700">Salesforce Files</tspan></text>
+    <text x="600" y="43"><tspan font-size="40">🎯</tspan><tspan dx="24" font-size="27" font-weight="700">Record-aware output</tspan></text>
+    <text x="1000" y="43"><tspan font-size="40">⚙️</tspan><tspan dx="24" font-size="27" font-weight="700">Deployable configuration</tspan></text>
+  </g>
+</svg>

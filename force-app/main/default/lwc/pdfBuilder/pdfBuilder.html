@@ -1,0 +1,2239 @@
+<template>
+  <div class={builderClass}>
+    <template lwc:if={isConfigurationReady}>
+      <div class="top-toolbar">
+        <img
+          class="application-logo"
+          src={applicationLogoUrl}
+          alt="PDF Builder for Salesforce"
+        />
+
+        <button
+          class="toolbar-button icon-button"
+          onclick={undo}
+          disabled={isUndoDisabled}
+          title="Undo"
+          aria-label="Undo"
+        >
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 7H4V2" />
+            <path
+              d="M4 7c2.1-2.8 5.4-4 8.7-3.2 4.1 1 6.8 4.8 6.2 9-.6 4.2-4.3 7.2-8.5 7.2-2.4 0-4.7-1-6.3-2.7"
+            />
+          </svg>
+        </button>
+
+        <button
+          class="toolbar-button icon-button"
+          onclick={redo}
+          disabled={isRedoDisabled}
+          title="Redo"
+          aria-label="Redo"
+        >
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 7h5V2" />
+            <path
+              d="M20 7c-2.1-2.8-5.4-4-8.7-3.2-4.1 1-6.8 4.8-6.2 9 .6 4.2 4.3 7.2 8.5 7.2 2.4 0 4.7-1 6.3-2.7"
+            />
+          </svg>
+        </button>
+
+        <button class="toolbar-button" onclick={showHtml}>HTML</button>
+
+        <button class="toolbar-button" onclick={openPreview}>Preview</button>
+
+        <div class="toolbar-template">
+          <select
+            class="toolbar-input toolbar-object-select"
+            data-role="object-select"
+            onchange={handleObjectChange}
+          >
+            <option value="">Select object</option>
+
+            <template for:each={objectOptions} for:item="objectOption">
+              <option key={objectOption.apiName} value={objectOption.apiName}>
+                {objectOption.label}
+              </option>
+            </template>
+          </select>
+
+          <input
+            class="toolbar-input"
+            type="text"
+            placeholder="Template name"
+            value={templateName}
+            onchange={handleTemplateNameChange}
+          />
+
+          <select
+            class="toolbar-input"
+            data-role="template-select"
+            onchange={handleTemplateSelect}
+          >
+            <option value="">Select template</option>
+
+            <template for:each={templateOptions} for:item="template">
+              <option key={template.id} value={template.id}>
+                {template.displayName}
+              </option>
+            </template>
+          </select>
+
+          <button
+            class="toolbar-button"
+            onclick={handleSaveTemplate}
+            disabled={isSaveTemplateDisabled}
+          >
+            Save
+          </button>
+
+          <button
+            class="toolbar-button toolbar-button-danger"
+            onclick={handleDeleteTemplate}
+            disabled={isDeleteTemplateDisabled}
+          >
+            Delete
+          </button>
+        </div>
+
+        <template lwc:if={templateStatus}>
+          <span class="toolbar-status">{templateStatus}</span>
+        </template>
+
+        <button
+          class="toolbar-button icon-button fullscreen-button"
+          onclick={toggleFullscreen}
+          title="Fullscreen"
+          aria-label="Fullscreen"
+        >
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 3H3v5" />
+            <path d="M16 3h5v5" />
+            <path d="M21 16v5h-5" />
+            <path d="M3 16v5h5" />
+          </svg>
+        </button>
+      </div>
+
+      <template lwc:if={isTemplateBusy}>
+        <div
+          class="save-spinner-overlay"
+          role="status"
+          aria-live="polite"
+          aria-label={templateBusyLabel}
+        >
+          <div class="save-spinner-content">
+            <span class="save-spinner-circle" aria-hidden="true"></span>
+            <span class="save-spinner-label">{templateBusyLabel}</span>
+          </div>
+        </div>
+      </template>
+
+      <template lwc:if={isDeleteConfirmOpen}>
+        <section class="delete-confirm-backdrop" role="presentation">
+          <div
+            class="delete-confirm"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-confirm-title"
+            aria-describedby="delete-confirm-description"
+          >
+            <div class="delete-confirm-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 7h16" />
+                <path d="M9 7V4h6v3" />
+                <path d="M6.5 7l.8 13h9.4l.8-13" />
+                <path d="M10 11v5" />
+                <path d="M14 11v5" />
+              </svg>
+            </div>
+
+            <div class="delete-confirm-copy">
+              <h2 id="delete-confirm-title">Delete template?</h2>
+              <p id="delete-confirm-description">
+                <strong>{pendingDeleteTemplateLabel}</strong> will be
+                permanently removed. This action cannot be undone.
+              </p>
+            </div>
+
+            <div class="delete-confirm-actions">
+              <button
+                class="delete-confirm-cancel"
+                type="button"
+                onclick={handleCancelDeleteTemplate}
+              >
+                Cancel
+              </button>
+              <button
+                class="delete-confirm-submit"
+                type="button"
+                onclick={handleConfirmDeleteTemplate}
+              >
+                Delete template
+              </button>
+            </div>
+          </div>
+        </section>
+      </template>
+
+      <template lwc:if={isUnsavedChangesConfirmOpen}>
+        <section class="delete-confirm-backdrop" role="presentation">
+          <div
+            class="delete-confirm unsaved-changes-confirm"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="unsaved-changes-title"
+            aria-describedby="unsaved-changes-description"
+          >
+            <div
+              class="delete-confirm-icon unsaved-changes-confirm-icon"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24">
+                <path d="M5 3h11l3 3v15H5z" />
+                <path d="M8 3v6h8V3" />
+                <path d="M8 14h8v7H8z" />
+              </svg>
+            </div>
+
+            <div class="delete-confirm-copy">
+              <h2 id="unsaved-changes-title">{unsavedChangesDialogTitle}</h2>
+              <p id="unsaved-changes-description">
+                <template lwc:if={canSaveUnsavedTemplateChanges}>
+                  Changes to <strong>{unsavedChangesTemplateLabel}</strong> have
+                  not been saved. Save them before leaving this template?
+                </template>
+                <template lwc:else>
+                  This template cannot be saved because
+                  {unsavedChangesCannotSaveReason}. Do you want to leave without
+                  saving your changes?
+                </template>
+              </p>
+            </div>
+
+            <div class="delete-confirm-actions unsaved-changes-actions">
+              <button
+                class="delete-confirm-cancel"
+                data-role="unsaved-cancel"
+                type="button"
+                disabled={isTemplateBusy}
+                onclick={handleCancelUnsavedTemplateChanges}
+              >
+                Cancel
+              </button>
+              <button
+                class="unsaved-changes-discard"
+                data-role="unsaved-discard"
+                type="button"
+                disabled={isTemplateBusy}
+                onclick={handleDiscardUnsavedTemplateChanges}
+              >
+                {unsavedDiscardButtonLabel}
+              </button>
+              <template lwc:if={canSaveUnsavedTemplateChanges}>
+                <button
+                  class="unsaved-changes-save"
+                  data-role="unsaved-save"
+                  type="button"
+                  disabled={isTemplateBusy}
+                  onclick={handleSaveUnsavedTemplateChanges}
+                >
+                  Save changes
+                </button>
+              </template>
+            </div>
+          </div>
+        </section>
+      </template>
+
+      <template lwc:if={showRichTextToolbar}>
+        <div
+          class="rich-text-toolbar"
+          style={richTextToolbarStyle}
+          onmousedown={handleRichToolbarMouseDown}
+          onmouseup={handleRichToolbarMouseUp}
+        >
+          <input
+            class="rich-color"
+            type="color"
+            value={richTextColor}
+            data-command="foreColor"
+            onmousedown={handleRichColorMouseDown}
+            oninput={handleRichColorChange}
+            title="Text color"
+          />
+
+          <span class="rich-separator"></span>
+
+          <div class="rich-font-picker">
+            <button
+              class="rich-select rich-font-trigger"
+              type="button"
+              onmousedown={handleFontMenuMouseDown}
+              title="Font"
+            >
+              <span>{richTextFontFamily}</span>
+              <span class="rich-font-caret">▾</span>
+            </button>
+
+            <template lwc:if={isFontMenuOpen}>
+              <div
+                class="rich-font-menu"
+                onmousedown={handleRichToolbarMouseDown}
+              >
+                <template for:each={fontOptions} for:item="fontOption">
+                  <button
+                    key={fontOption.value}
+                    class={fontOption.className}
+                    type="button"
+                    data-value={fontOption.value}
+                    style={fontOption.style}
+                    onmousedown={handleFontOptionMouseDown}
+                  >
+                    {fontOption.label}
+                  </button>
+                </template>
+              </div>
+            </template>
+          </div>
+
+          <span class="rich-separator"></span>
+
+          <div class="rich-size-combo">
+            <input
+              class="rich-size rich-size-input"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              data-command="fontSize"
+              value={richTextFontSize}
+              onmousedown={handleRichTextSizeMouseDown}
+              oninput={handleRichTextSizeInput}
+              onchange={handleRichTextSizeChange}
+              onkeydown={handleRichTextSizeKeyDown}
+              onblur={handleRichTextSizeBlur}
+              title="Size"
+            />
+            <button
+              class="rich-size-caret-button"
+              type="button"
+              onmousedown={handleFontSizeMenuMouseDown}
+              title="Preset sizes"
+            >
+              <span class="rich-font-caret">▾</span>
+            </button>
+            <template lwc:if={isFontSizeMenuOpen}>
+              <div
+                class="rich-size-menu"
+                onmousedown={handleRichToolbarMouseDown}
+              >
+                <template for:each={fontSizeOptions} for:item="sizeOption">
+                  <button
+                    key={sizeOption.value}
+                    class="rich-font-option"
+                    type="button"
+                    data-value={sizeOption.value}
+                    onmousedown={handleFontSizeOptionMouseDown}
+                  >
+                    {sizeOption.label}
+                  </button>
+                </template>
+              </div>
+            </template>
+          </div>
+          <datalist id="rich-size-presets">
+            <template for:each={fontSizeOptions} for:item="sizeOption">
+              <option
+                key={sizeOption.value}
+                value={sizeOption.value}
+                label={sizeOption.label}
+              ></option>
+            </template>
+          </datalist>
+
+          <span class="rich-separator"></span>
+
+          <select
+            class="rich-select rich-line-height"
+            data-command="lineHeight"
+            onchange={handleRichTextInputCommand}
+            title="Line spacing"
+            aria-label="Line spacing"
+          >
+            <template for:each={lineHeightOptions} for:item="lineHeightOption">
+              <option
+                key={lineHeightOption.value}
+                value={lineHeightOption.value}
+              >
+                {lineHeightOption.label}
+              </option>
+            </template>
+          </select>
+
+          <span class="rich-separator"></span>
+
+          <button
+            class={richBoldButtonClass}
+            data-command="bold"
+            onmousedown={handleRichTextButtonCommand}
+            title="Bold"
+          >
+            B
+          </button>
+
+          <button
+            class={richItalicButtonClass}
+            data-command="italic"
+            onmousedown={handleRichTextButtonCommand}
+            title="Italic"
+          >
+            I
+          </button>
+
+          <button
+            class={richUnderlineButtonClass}
+            data-command="underline"
+            onmousedown={handleRichTextButtonCommand}
+            title="Underline"
+          >
+            U
+          </button>
+
+          <button
+            class={richUnorderedListButtonClass}
+            data-command="insertUnorderedList"
+            onmousedown={handleRichTextButtonCommand}
+            title="Bulleted list"
+          >
+            <svg class="rich-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6h11M9 12h11M9 18h11" />
+              <circle cx="4" cy="6" r="1.4"></circle>
+              <circle cx="4" cy="12" r="1.4"></circle>
+              <circle cx="4" cy="18" r="1.4"></circle>
+            </svg>
+          </button>
+
+          <button
+            class={richOrderedListButtonClass}
+            data-command="insertOrderedList"
+            onmousedown={handleRichTextButtonCommand}
+            title="Numbered list"
+          >
+            <svg class="rich-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 6h10M10 12h10M10 18h10" />
+              <path d="M4 5h1v4M3.5 9h3" />
+              <path d="M3.5 11.5h3L4 15h2.5" />
+              <path d="M3.5 17h3L5 19l1.5 2h-3" />
+            </svg>
+          </button>
+
+          <span class="rich-separator"></span>
+
+          <button
+            class={richAlignLeftButtonClass}
+            data-command="justifyLeft"
+            onmousedown={handleRichTextButtonCommand}
+            title="Align left"
+          >
+            <svg class="rich-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h14M4 10h10M4 14h14M4 18h10" />
+            </svg>
+          </button>
+
+          <button
+            class={richAlignCenterButtonClass}
+            data-command="justifyCenter"
+            onmousedown={handleRichTextButtonCommand}
+            title="Align center"
+          >
+            <svg class="rich-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 6h14M7 10h10M5 14h14M7 18h10" />
+            </svg>
+          </button>
+
+          <button
+            class={richAlignRightButtonClass}
+            data-command="justifyRight"
+            onmousedown={handleRichTextButtonCommand}
+            title="Align right"
+          >
+            <svg class="rich-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6h14M10 10h10M6 14h14M10 18h10" />
+            </svg>
+          </button>
+
+          <button
+            class={richAlignJustifyButtonClass}
+            data-command="justifyFull"
+            onmousedown={handleRichTextButtonCommand}
+            title="Justify"
+          >
+            <svg class="rich-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+          </button>
+
+          <span class="rich-separator"></span>
+
+          <button
+            class={richVerticalTopButtonClass}
+            data-command="verticalAlign"
+            data-value="top"
+            onmousedown={handleRichTextButtonCommand}
+            title="Align top"
+          >
+            <svg class="rich-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 4h14" />
+              <path d="M7 8h10" />
+              <path d="M7 11h10" />
+            </svg>
+          </button>
+
+          <button
+            class={richVerticalMiddleButtonClass}
+            data-command="verticalAlign"
+            data-value="middle"
+            onmousedown={handleRichTextButtonCommand}
+            title="Align middle"
+          >
+            <svg class="rich-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 4h14" />
+              <path d="M7 11h10" />
+              <path d="M7 14h10" />
+              <path d="M5 20h14" />
+            </svg>
+          </button>
+
+          <button
+            class={richVerticalBottomButtonClass}
+            data-command="verticalAlign"
+            data-value="bottom"
+            onmousedown={handleRichTextButtonCommand}
+            title="Align bottom"
+          >
+            <svg class="rich-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 13h10" />
+              <path d="M7 16h10" />
+              <path d="M5 20h14" />
+            </svg>
+          </button>
+
+          <span class="rich-separator"></span>
+
+          <button
+            class="rich-button"
+            type="button"
+            onmousedown={handleLinkButtonMouseDown}
+            title="Add link"
+            aria-label="Add link"
+          >
+            <svg class="rich-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+              />
+              <path
+                d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+              />
+            </svg>
+          </button>
+
+          <template lwc:if={isLinkPopoverOpen}>
+            <section
+              class="link-popover"
+              onmousedown={handleLinkPopoverMouseDown}
+            >
+              <label class="link-label" for="link-alias">Alias</label>
+              <input
+                id="link-alias"
+                class="link-input"
+                type="text"
+                value={linkAlias}
+                oninput={handleLinkAliasChange}
+                placeholder="Text shown in the builder"
+              />
+
+              <label class="link-label" for="link-url">URL</label>
+              <input
+                id="link-url"
+                class="link-input link-url-input"
+                type="text"
+                value={linkUrl}
+                oninput={handleLinkUrlChange}
+                placeholder="https://example.com"
+              />
+
+              <template lwc:if={linkError}>
+                <div class="link-error">{linkError}</div>
+              </template>
+
+              <div class="link-actions">
+                <button
+                  class="link-secondary-button"
+                  type="button"
+                  onclick={handleLinkCancel}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  class="link-primary-button"
+                  type="button"
+                  onclick={handleLinkSave}
+                  disabled={linkSaveDisabled}
+                >
+                  Apply
+                </button>
+              </div>
+            </section>
+          </template>
+        </div>
+      </template>
+
+      <aside class="sidebar" style={sidebarStyle}>
+        <section class="sidebar-section">
+          <label class="sidebar-label">Elements</label>
+
+          <div class="tool-grid">
+            <div
+              class="tool"
+              draggable={paletteItemDraggable}
+              data-type="text"
+              ondragstart={handleDragStart}
+              ondragend={handleDragEnd}
+              onmousedown={handlePaletteToolMouseDown}
+            >
+              <span class="element-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M5.5 7V5.5h13V7M12 5.5v13M9.25 18.5h5.5"
+                    stroke="currentColor"
+                    fill="none"
+                  />
+                </svg>
+              </span>
+              <span>Text</span>
+            </div>
+
+            <div
+              class="tool"
+              draggable={paletteItemDraggable}
+              data-type="image"
+              ondragstart={handleDragStart}
+              ondragend={handleDragEnd}
+              onmousedown={handlePaletteToolMouseDown}
+            >
+              <span class="element-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect
+                    x="3.75"
+                    y="4.75"
+                    width="16.5"
+                    height="14.5"
+                    rx="2.75"
+                    stroke="currentColor"
+                    fill="none"
+                  ></rect>
+                  <circle
+                    cx="9"
+                    cy="9.5"
+                    r="1.5"
+                    stroke="currentColor"
+                    fill="none"
+                  ></circle>
+                  <path
+                    d="m5.5 17 4.25-4.25 2.5 2.5 2.25-2.5 4 4.25"
+                    stroke="currentColor"
+                    fill="none"
+                  />
+                </svg>
+              </span>
+              <span>Image</span>
+            </div>
+
+            <div
+              class="tool"
+              draggable={paletteItemDraggable}
+              data-type="divider"
+              ondragstart={handleDragStart}
+              ondragend={handleDragEnd}
+              onmousedown={handlePaletteToolMouseDown}
+            >
+              <span class="element-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="4.5" cy="12" r="1" fill="currentColor"></circle>
+                  <path d="M7 12h10" stroke="currentColor" />
+                  <circle cx="19.5" cy="12" r="1" fill="currentColor"></circle>
+                </svg>
+              </span>
+              <span>Line</span>
+            </div>
+
+            <div
+              class="tool"
+              draggable={paletteItemDraggable}
+              data-type="verticalLine"
+              ondragstart={handleDragStart}
+              ondragend={handleDragEnd}
+              onmousedown={handlePaletteToolMouseDown}
+            >
+              <span class="element-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="4.5" r="1" fill="currentColor"></circle>
+                  <path d="M12 7v10" stroke="currentColor" />
+                  <circle cx="12" cy="19.5" r="1" fill="currentColor"></circle>
+                </svg>
+              </span>
+              <span>Vertical</span>
+            </div>
+
+            <div
+              class="tool"
+              draggable={paletteItemDraggable}
+              data-type="table"
+              ondragstart={handleDragStart}
+              ondragend={handleDragEnd}
+              onmousedown={handlePaletteToolMouseDown}
+            >
+              <span class="element-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect
+                    x="3.75"
+                    y="4.75"
+                    width="16.5"
+                    height="14.5"
+                    rx="2.5"
+                    stroke="currentColor"
+                    fill="none"
+                  ></rect>
+                  <path d="M4 9.5h16M9.5 5v14M15 5v14" stroke="currentColor" />
+                  <path
+                    d="M9.5 14.25h10.5"
+                    stroke="currentColor"
+                    opacity=".65"
+                  />
+                </svg>
+              </span>
+              <span>Table</span>
+            </div>
+
+            <div
+              class="tool"
+              draggable={paletteItemDraggable}
+              data-type="relatedList"
+              ondragstart={handleDragStart}
+              ondragend={handleDragEnd}
+              onmousedown={handlePaletteToolMouseDown}
+            >
+              <span class="element-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect
+                    x="4.25"
+                    y="3.75"
+                    width="15.5"
+                    height="16.5"
+                    rx="2.5"
+                    stroke="currentColor"
+                    fill="none"
+                  ></rect>
+                  <circle
+                    cx="8"
+                    cy="9"
+                    r="1.25"
+                    stroke="currentColor"
+                    fill="none"
+                  ></circle>
+                  <circle
+                    cx="8"
+                    cy="15"
+                    r="1.25"
+                    stroke="currentColor"
+                    fill="none"
+                  ></circle>
+                  <path
+                    d="M11.5 8.25h5M11.5 10h3.5M11.5 14.25h5M11.5 16h3.5"
+                    stroke="currentColor"
+                  />
+                </svg>
+              </span>
+              <span>Related List</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="sidebar-section">
+          <div class="sidebar-shared-field-controls">
+            <div class="property-group">
+              <label>Field insert mode</label>
+              <select
+                class="sidebar-input"
+                data-role="field-insert-mode-select"
+                onchange={handleFieldInsertModeChange}
+              >
+                <option value="value">Value only</option>
+                <option value="labelOnly">Label only</option>
+                <option value="labelAndValue">Label + value</option>
+              </select>
+            </div>
+
+            <input
+              class="sidebar-input"
+              type="search"
+              placeholder="Search fields"
+              value={fieldSearchTerm}
+              oninput={handleFieldSearchChange}
+            />
+          </div>
+
+          <details class="sidebar-collapsible">
+            <summary>Organization</summary>
+
+            <div class="field-list">
+              <template lwc:if={hasOrganizationFields}>
+                <template for:each={organizationFieldOptions} for:item="field">
+                  <div
+                    key={field.apiName}
+                    class="field-tool"
+                    data-field-api-name={field.apiName}
+                    draggable={paletteItemDraggable}
+                    ondragstart={handleFieldDragStart}
+                    ondragend={handleDragEnd}
+                    onmousedown={handlePaletteFieldMouseDown}
+                  >
+                    <span class="field-text">
+                      <span class="field-label"> {field.label} </span>
+                      <span class="field-api">{field.apiName}</span>
+                      <span class="field-token">{field.mergeToken}</span>
+                    </span>
+                    <button
+                      class="field-insert-button"
+                      type="button"
+                      title="Insert field at cursor"
+                      data-field-api-name={field.apiName}
+                      onmousedown={handleFieldInsertMouseDown}
+                      onclick={handleFieldInsert}
+                    >
+                      →
+                    </button>
+                  </div>
+                </template>
+              </template>
+
+              <template lwc:else>
+                <p class="sidebar-status">No fields found</p>
+              </template>
+            </div>
+          </details>
+
+          <details class="sidebar-collapsible">
+            <summary>Object fields</summary>
+
+            <div class="field-list">
+              <template lwc:if={hasFields}>
+                <template for:each={baseFieldOptions} for:item="field">
+                  <div
+                    key={field.apiName}
+                    class="field-tool"
+                    data-field-api-name={field.apiName}
+                    draggable={paletteItemDraggable}
+                    ondragstart={handleFieldDragStart}
+                    ondragend={handleDragEnd}
+                    onmousedown={handlePaletteFieldMouseDown}
+                  >
+                    <span class="field-text">
+                      <span class="field-label"> {field.label} </span>
+                      <span class="field-api">{field.apiName}</span>
+                      <span class="field-token">{field.mergeToken}</span>
+                    </span>
+                    <button
+                      class="field-insert-button"
+                      type="button"
+                      title="Insert field at cursor"
+                      data-field-api-name={field.apiName}
+                      onmousedown={handleFieldInsertMouseDown}
+                      onclick={handleFieldInsert}
+                    >
+                      →
+                    </button>
+                  </div>
+                </template>
+              </template>
+
+              <template lwc:else>
+                <p class="sidebar-status">No fields found</p>
+              </template>
+            </div>
+          </details>
+
+          <template lwc:if={hasParentFieldGroups}>
+            <details class="sidebar-collapsible">
+              <summary>Parent object fields</summary>
+
+              <select
+                class="sidebar-input"
+                data-role="parent-relationship-select"
+                onchange={handleParentRelationshipChange}
+              >
+                <option value="">Select parent object</option>
+                <template
+                  for:each={parentRelationshipOptions}
+                  for:item="relationshipOption"
+                >
+                  <option
+                    key={relationshipOption.value}
+                    value={relationshipOption.value}
+                  >
+                    {relationshipOption.label}
+                  </option>
+                </template>
+              </select>
+
+              <div class="field-list parent-field-list">
+                <template lwc:if={hasDisplayedParentFields}>
+                  <template
+                    for:each={displayedParentFieldOptions}
+                    for:item="field"
+                  >
+                    <div
+                      key={field.apiName}
+                      class="field-tool field-tool-parent"
+                      data-field-api-name={field.apiName}
+                      draggable={paletteItemDraggable}
+                      ondragstart={handleFieldDragStart}
+                      ondragend={handleDragEnd}
+                      onmousedown={handlePaletteFieldMouseDown}
+                    >
+                      <span class="field-text">
+                        <span class="field-label">
+                          {field.parentFieldDisplayLabel}
+                          <span class="field-badge">Parent</span>
+                        </span>
+                        <span class="field-api">{field.apiName}</span>
+                        <span class="field-token">{field.mergeToken}</span>
+                      </span>
+                      <button
+                        class="field-insert-button"
+                        type="button"
+                        title="Insert field at cursor"
+                        data-field-api-name={field.apiName}
+                        onmousedown={handleFieldInsertMouseDown}
+                        onclick={handleFieldInsert}
+                      >
+                        →
+                      </button>
+                    </div>
+                  </template>
+                </template>
+                <template lwc:else>
+                  <p class="sidebar-status">
+                    Select a parent object to view its fields
+                  </p>
+                </template>
+              </div>
+            </details>
+          </template>
+
+          <template lwc:if={metadataError}>
+            <p class="sidebar-error">{metadataError}</p>
+          </template>
+        </section>
+
+        <button
+          class="delete-button"
+          onclick={deleteSelectedBlock}
+          disabled={isDeleteDisabled}
+        >
+          Delete selected
+        </button>
+      </aside>
+
+      <div
+        class="sidebar-resize-handle"
+        onmousedown={handleSidebarResizeStart}
+        title="Resize left panel"
+      ></div>
+
+      <main class="canvas-wrapper">
+        <div class="pdf-page" style={pageStyle}>
+          <template lwc:if={hasHeader}>
+            <section
+              class={header.className}
+              style={header.inlineStyle}
+              data-region-id={header.id}
+              onclick={handleRegionClick}
+              ondragover={handleDragOver}
+              ondrop={handleRegionDrop}
+            >
+              <div class="region-label">Header</div>
+
+              <template for:each={header.blocks} for:item="block">
+                <div
+                  key={block.id}
+                  class={block.shellClass}
+                  style={block.shellStyle}
+                  data-block-id={block.id}
+                  data-region-id={header.id}
+                  draggable={blockShellDraggable}
+                  ondragstart={handleCanvasBlockDragStart}
+                  ondragend={handleDragEnd}
+                  onmousedown={handleCanvasBlockMouseDown}
+                  onclick={handleCanvasBlockShellClick}
+                >
+                  <c-pdf-builder-block
+                    block={block}
+                    region-id={header.id}
+                    onselectblock={handleBlockSelect}
+                    ontextchange={handleTextChange}
+                    ontextfocus={handleTextFocus}
+                    ontextblur={handleTextBlur}
+                    onrichtextstatechange={handleRichTextStateChange}
+                    onblockresizestart={handleBlockResizeStart}
+                    onimagedoubleclick={handleImageDoubleClick}
+                  >
+                  </c-pdf-builder-block>
+
+                  <template lwc:if={block.isSelected}>
+                    <template for:each={block.resizeHandles} for:item="handle">
+                      <div
+                        key={handle.key}
+                        class={handle.className}
+                        data-block-id={block.id}
+                        data-resize-dir={handle.direction}
+                        onmousedown={handleCanvasBlockResizeStart}
+                      ></div>
+                    </template>
+                  </template>
+                </div>
+              </template>
+
+              <template lwc:if={header.isEmpty}>
+                <p class="drop-placeholder">Drop header content here</p>
+              </template>
+
+              <div
+                class="region-resize-handle"
+                data-region-id={header.id}
+                onmousedown={handleResizeStart}
+              ></div>
+            </section>
+          </template>
+
+          <template lwc:if={hasBody}>
+            <section class={bodyClass}>
+              <template for:each={firstPageBodySections} for:item="section">
+                <div
+                  key={section.id}
+                  class={section.className}
+                  style={section.inlineStyle}
+                  data-region-id={section.id}
+                  onclick={handleRegionClick}
+                  ondragover={handleDragOver}
+                  ondrop={handleRegionDrop}
+                >
+                  <div class="region-label">{section.label}</div>
+
+                  <template for:each={section.blocks} for:item="block">
+                    <div
+                      key={block.id}
+                      class={block.shellClass}
+                      style={block.shellStyle}
+                      data-block-id={block.id}
+                      data-region-id={section.id}
+                      data-render-y={block.styles.y}
+                      draggable={blockShellDraggable}
+                      ondragstart={handleCanvasBlockDragStart}
+                      ondragend={handleDragEnd}
+                      onmousedown={handleCanvasBlockMouseDown}
+                      onclick={handleCanvasBlockShellClick}
+                    >
+                      <c-pdf-builder-block
+                        block={block}
+                        region-id={section.id}
+                        onselectblock={handleBlockSelect}
+                        ontextchange={handleTextChange}
+                        ontextfocus={handleTextFocus}
+                        ontextblur={handleTextBlur}
+                        onrichtextstatechange={handleRichTextStateChange}
+                        onblockresizestart={handleBlockResizeStart}
+                        onimagedoubleclick={handleImageDoubleClick}
+                      >
+                      </c-pdf-builder-block>
+
+                      <template lwc:if={block.isSelected}>
+                        <template
+                          for:each={block.resizeHandles}
+                          for:item="handle"
+                        >
+                          <div
+                            key={handle.key}
+                            class={handle.className}
+                            data-block-id={block.id}
+                            data-resize-dir={handle.direction}
+                            onmousedown={handleCanvasBlockResizeStart}
+                          ></div>
+                        </template>
+                      </template>
+                    </div>
+                  </template>
+
+                  <template lwc:if={section.isEmpty}>
+                    <p class="drop-placeholder">Drop body content here</p>
+                  </template>
+                </div>
+              </template>
+            </section>
+          </template>
+
+          <template lwc:if={hasFooter}>
+            <section
+              class={footer.className}
+              style={footer.inlineStyle}
+              data-region-id={footer.id}
+              onclick={handleRegionClick}
+              ondragover={handleDragOver}
+              ondrop={handleRegionDrop}
+            >
+              <div class="region-label">Footer</div>
+
+              <template for:each={footer.blocks} for:item="block">
+                <div
+                  key={block.id}
+                  class={block.shellClass}
+                  style={block.shellStyle}
+                  data-block-id={block.id}
+                  data-region-id={footer.id}
+                  draggable={blockShellDraggable}
+                  ondragstart={handleCanvasBlockDragStart}
+                  ondragend={handleDragEnd}
+                  onmousedown={handleCanvasBlockMouseDown}
+                  onclick={handleCanvasBlockShellClick}
+                >
+                  <c-pdf-builder-block
+                    block={block}
+                    region-id={footer.id}
+                    onselectblock={handleBlockSelect}
+                    ontextchange={handleTextChange}
+                    ontextfocus={handleTextFocus}
+                    ontextblur={handleTextBlur}
+                    onrichtextstatechange={handleRichTextStateChange}
+                    onblockresizestart={handleBlockResizeStart}
+                    onimagedoubleclick={handleImageDoubleClick}
+                  >
+                  </c-pdf-builder-block>
+
+                  <template lwc:if={block.isSelected}>
+                    <template for:each={block.resizeHandles} for:item="handle">
+                      <div
+                        key={handle.key}
+                        class={handle.className}
+                        data-block-id={block.id}
+                        data-resize-dir={handle.direction}
+                        onmousedown={handleCanvasBlockResizeStart}
+                      ></div>
+                    </template>
+                  </template>
+                </div>
+              </template>
+
+              <template lwc:if={footer.isEmpty}>
+                <p class="drop-placeholder">Drop footer content here</p>
+              </template>
+
+              <div
+                class="region-resize-handle"
+                data-region-id={footer.id}
+                onmousedown={handleResizeStart}
+              ></div>
+            </section>
+          </template>
+
+          <template lwc:if={showAddButtonOnFirstPage}>
+            <button
+              class="page-add-button"
+              type="button"
+              title="Añadir nueva página"
+              onclick={handleAddPage}
+            >
+              +
+            </button>
+          </template>
+        </div>
+
+        <template for:each={continuationPages} for:item="page">
+          <div
+            key={page.id}
+            class="pdf-page continuation-page"
+            style={pageStyle}
+          >
+            <div class="continuation-page-header">
+              <span class="continuation-page-badge"
+                >Page {page.pageNumber}</span
+              >
+              <template lwc:if={page.canRemove}>
+                <button
+                  class="continuation-remove-button"
+                  type="button"
+                  title="Remove added page"
+                  onclick={handleRemovePage}
+                >
+                  Remove
+                </button>
+              </template>
+            </div>
+
+            <template lwc:if={page.showHeader}>
+              <section
+                class={page.header.className}
+                style={page.header.inlineStyle}
+                data-region-id={page.header.id}
+                onclick={handleRegionClick}
+                ondragover={handleDragOver}
+                ondrop={handleRegionDrop}
+              >
+                <div class="region-label">Header · repeated</div>
+                <template for:each={page.headerBlocks} for:item="block">
+                  <div
+                    key={block.renderKey}
+                    class={block.shellClass}
+                    style={block.shellStyle}
+                    data-block-id={block.id}
+                    data-region-id={page.header.id}
+                    data-repeated="true"
+                    draggable={blockShellDraggable}
+                    ondragstart={handleCanvasBlockDragStart}
+                    ondragend={handleDragEnd}
+                    onmousedown={handleCanvasBlockMouseDown}
+                    onclick={handleCanvasBlockShellClick}
+                  >
+                    <c-pdf-builder-block
+                      block={block}
+                      region-id={page.header.id}
+                      onselectblock={handleBlockSelect}
+                      ontextchange={handleTextChange}
+                      ontextfocus={handleTextFocus}
+                      ontextblur={handleTextBlur}
+                      onrichtextstatechange={handleRichTextStateChange}
+                      onblockresizestart={handleBlockResizeStart}
+                      onimagedoubleclick={handleImageDoubleClick}
+                    ></c-pdf-builder-block>
+                  </div>
+                </template>
+              </section>
+            </template>
+
+            <section class={page.bodyClass}>
+              <template for:each={page.bodySections} for:item="section">
+                <div
+                  key={section.id}
+                  class={section.className}
+                  style={section.inlineStyle}
+                  data-region-id={section.id}
+                  onclick={handleRegionClick}
+                  ondragover={handleDragOver}
+                  ondrop={handleRegionDrop}
+                >
+                  <div class="region-label">
+                    {section.label} · Page {page.pageNumber}
+                  </div>
+                  <template for:each={section.blocks} for:item="block">
+                    <div
+                      key={block.id}
+                      class={block.shellClass}
+                      style={block.shellStyle}
+                      data-block-id={block.id}
+                      data-region-id={section.id}
+                      data-render-y={block.styles.y}
+                      draggable={blockShellDraggable}
+                      ondragstart={handleCanvasBlockDragStart}
+                      ondragend={handleDragEnd}
+                      onmousedown={handleCanvasBlockMouseDown}
+                      onclick={handleCanvasBlockShellClick}
+                    >
+                      <c-pdf-builder-block
+                        block={block}
+                        region-id={section.id}
+                        onselectblock={handleBlockSelect}
+                        ontextchange={handleTextChange}
+                        ontextfocus={handleTextFocus}
+                        ontextblur={handleTextBlur}
+                        onrichtextstatechange={handleRichTextStateChange}
+                        onblockresizestart={handleBlockResizeStart}
+                        onimagedoubleclick={handleImageDoubleClick}
+                      ></c-pdf-builder-block>
+                      <template lwc:if={block.isSelected}>
+                        <template
+                          for:each={block.resizeHandles}
+                          for:item="handle"
+                        >
+                          <div
+                            key={handle.key}
+                            class={handle.className}
+                            data-block-id={block.id}
+                            data-resize-dir={handle.direction}
+                            onmousedown={handleCanvasBlockResizeStart}
+                          ></div>
+                        </template>
+                      </template>
+                    </div>
+                  </template>
+                  <template lwc:if={section.isEmpty}>
+                    <p class="drop-placeholder">Drop body content here</p>
+                  </template>
+                </div>
+              </template>
+            </section>
+
+            <template lwc:if={page.showFooter}>
+              <section
+                class={page.footer.className}
+                style={page.footer.inlineStyle}
+                data-region-id={page.footer.id}
+                onclick={handleRegionClick}
+                ondragover={handleDragOver}
+                ondrop={handleRegionDrop}
+              >
+                <div class="region-label">Footer · repeated</div>
+                <template for:each={page.footerBlocks} for:item="block">
+                  <div
+                    key={block.renderKey}
+                    class={block.shellClass}
+                    style={block.shellStyle}
+                    data-block-id={block.id}
+                    data-region-id={page.footer.id}
+                    data-repeated="true"
+                    draggable={blockShellDraggable}
+                    ondragstart={handleCanvasBlockDragStart}
+                    ondragend={handleDragEnd}
+                    onmousedown={handleCanvasBlockMouseDown}
+                    onclick={handleCanvasBlockShellClick}
+                  >
+                    <c-pdf-builder-block
+                      block={block}
+                      region-id={page.footer.id}
+                      onselectblock={handleBlockSelect}
+                      ontextchange={handleTextChange}
+                      ontextfocus={handleTextFocus}
+                      ontextblur={handleTextBlur}
+                      onrichtextstatechange={handleRichTextStateChange}
+                      onblockresizestart={handleBlockResizeStart}
+                      onimagedoubleclick={handleImageDoubleClick}
+                    ></c-pdf-builder-block>
+                  </div>
+                </template>
+              </section>
+            </template>
+
+            <template lwc:if={page.showAddButton}>
+              <button
+                class="page-add-button"
+                type="button"
+                title="Añadir nueva página"
+                onclick={handleAddPage}
+              >
+                +
+              </button>
+            </template>
+          </div>
+        </template>
+      </main>
+
+      <div
+        class="properties-resize-handle"
+        onmousedown={handlePropertiesResizeStart}
+        title="Resize right panel"
+      ></div>
+
+      <aside
+        class="properties-panel"
+        style={propertiesPanelStyle}
+        onkeydown={handlePropertiesPanelKeyDown}
+      >
+        <template lwc:if={showPageProperties}>
+          <h2>PDF Layout</h2>
+
+          <details
+            class="property-section"
+            ontoggle={handlePropertySectionToggle}
+          >
+            <summary>Layout</summary>
+
+            <div class="property-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={hasHeader}
+                  data-visibility="showHeader"
+                  onchange={handleRegionVisibilityChange}
+                />
+                <span class="checkbox-text">Header</span>
+              </label>
+
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={hasFooter}
+                  data-visibility="showFooter"
+                  onchange={handleRegionVisibilityChange}
+                />
+                <span class="checkbox-text">Footer</span>
+              </label>
+
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={repeatHeaderOnEachPage}
+                  data-repeat="repeatHeaderOnEachPage"
+                  onchange={handleRepeatRegionChange}
+                />
+                <span class="checkbox-text">Repeat header on next pages</span>
+              </label>
+
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={repeatFooterOnEachPage}
+                  data-repeat="repeatFooterOnEachPage"
+                  onchange={handleRepeatRegionChange}
+                />
+                <span class="checkbox-text">Repeat footer on next pages</span>
+              </label>
+            </div>
+
+            <div class="property-group">
+              <label>Page padding</label>
+              <input
+                type="number"
+                min="0"
+                value={pagePaddingValue}
+                data-role="page-padding"
+                onchange={handlePagePaddingChange}
+              />
+            </div>
+
+            <div class="property-group">
+              <label>Page background</label>
+              <input
+                type="color"
+                value={pageBackgroundValue}
+                oninput={handlePageBackgroundChange}
+              />
+            </div>
+
+            <div class="property-group">
+              <label>Global element padding</label>
+              <input
+                type="number"
+                min="0"
+                value={globalPaddingValue}
+                onchange={handleGlobalPaddingChange}
+              />
+            </div>
+
+            <div class="property-group">
+              <label>Body sections</label>
+              <select
+                data-role="body-layout-select"
+                onchange={handleBodyLayoutChange}
+              >
+                <option value="one">One section</option>
+                <option value="two">Two sections</option>
+              </select>
+            </div>
+          </details>
+        </template>
+
+        <template lwc:if={selectedElement}>
+          <h2>{selectedPanelTitle}</h2>
+
+          <template lwc:if={selectedBlock}>
+            <details
+              class="property-section"
+              ontoggle={handlePropertySectionToggle}
+            >
+              <summary>Position</summary>
+
+              <div class="property-group">
+                <label>X (px)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={selectedBlockX}
+                  data-position="x"
+                  oninput={handleBlockPositionChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Y (px)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={selectedBlockY}
+                  data-position="y"
+                  oninput={handleBlockPositionChange}
+                />
+              </div>
+            </details>
+          </template>
+
+          <template lwc:if={showSizeProperties}>
+            <details
+              class="property-section"
+              ontoggle={handlePropertySectionToggle}
+            >
+              <summary>Size</summary>
+
+              <template lwc:if={showRegionHeight}>
+                <div class="property-group">
+                  <label>Width</label>
+                  <input
+                    type="number"
+                    min="40"
+                    value={selectedFixedRegionWidth}
+                    data-style="width"
+                    onchange={handleStyleChange}
+                  />
+                </div>
+
+                <div class="property-group">
+                  <label>Height</label>
+                  <input
+                    type="number"
+                    min="40"
+                    value={selectedElement.styles.height}
+                    data-style="height"
+                    onchange={handleStyleChange}
+                  />
+                </div>
+              </template>
+
+              <template lwc:if={showBlockSizeProperties}>
+                <div class="property-group">
+                  <label>Width</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={selectedElement.styles.width}
+                    data-style="width"
+                    onchange={handleStyleChange}
+                  />
+                </div>
+
+                <template lwc:if={showBlockHeightProperty}>
+                  <div class="property-group">
+                    <label>Height</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={selectedElement.styles.height}
+                      data-style="height"
+                      onchange={handleStyleChange}
+                    />
+                  </div>
+                </template>
+              </template>
+            </details>
+          </template>
+
+          <details
+            class="property-section"
+            ontoggle={handlePropertySectionToggle}
+          >
+            <summary>Appearance</summary>
+
+            <div class="property-group">
+              <label>Background</label>
+              <input
+                type="color"
+                data-style="background"
+                oninput={handleStyleChange}
+              />
+            </div>
+
+            <template lwc:if={showElementPaddingProperty}>
+              <div class="property-group">
+                <label>Padding</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={selectedElement.styles.padding}
+                  data-style="padding"
+                  onchange={handleStyleChange}
+                />
+              </div>
+            </template>
+
+            <div class="property-group">
+              <label>Border style</label>
+              <select data-style="borderStyle" onchange={handleStyleChange}>
+                <option value="solid">Solid</option>
+                <option value="dashed">Dashed</option>
+                <option value="dotted">Dotted</option>
+                <option value="double">Double</option>
+                <option value="none">None</option>
+              </select>
+            </div>
+
+            <div class="property-group">
+              <label>Border width</label>
+              <input
+                type="number"
+                min="0"
+                value={selectedElement.styles.borderWidth}
+                data-style="borderWidth"
+                disabled={isBorderWidthDisabled}
+                onchange={handleStyleChange}
+              />
+            </div>
+
+            <div class="property-group">
+              <label>Border color</label>
+              <input
+                type="color"
+                value={selectedElement.styles.borderColor}
+                data-style="borderColor"
+                oninput={handleStyleChange}
+              />
+            </div>
+
+            <div class="property-group">
+              <label>Border radius</label>
+              <input
+                type="number"
+                min="0"
+                value={selectedElement.styles.borderRadius}
+                data-style="borderRadius"
+                onchange={handleStyleChange}
+              />
+            </div>
+          </details>
+
+          <template lwc:if={showTextProperties}>
+            <details
+              class="property-section"
+              ontoggle={handlePropertySectionToggle}
+            >
+              <summary>Typography</summary>
+
+              <div class="property-group">
+                <label>Text color</label>
+                <input
+                  type="color"
+                  value={selectedElement.styles.color}
+                  data-style="color"
+                  onclick={handlePropertyColorClick}
+                  oninput={handleStyleChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Font family</label>
+                <select data-style="fontFamily" onchange={handleStyleChange}>
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="Helvetica, sans-serif">Helvetica</option>
+                  <option value="Verdana, sans-serif">Verdana</option>
+                  <option value="Tahoma, sans-serif">Tahoma</option>
+                  <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+                  <option value="Times New Roman, serif">
+                    Times New Roman
+                  </option>
+                  <option value="Georgia, serif">Georgia</option>
+                  <option value="Garamond, serif">Garamond</option>
+                  <option value="Courier New, monospace">Courier New</option>
+                  <option value="Lucida Console, monospace">
+                    Lucida Console
+                  </option>
+                  <option value="Impact, fantasy">Impact</option>
+                  <option value="Palatino Linotype, serif">Palatino</option>
+                  <option value="Segoe UI, sans-serif">Segoe UI</option>
+                  <option value="Calibri, sans-serif">Calibri</option>
+                  <option value="Cambria, serif">Cambria</option>
+                  <option value="Open Sans, sans-serif">Open Sans</option>
+                  <option value="Roboto, sans-serif">Roboto</option>
+                  <option value="Montserrat, sans-serif">Montserrat</option>
+                  <option value="Lato, sans-serif">Lato</option>
+                  <option value="Poppins, sans-serif">Poppins</option>
+                </select>
+              </div>
+
+              <div class="property-group">
+                <label>Font size</label>
+                <div class="rich-size-combo property-size-combo">
+                  <input
+                    class="rich-size rich-size-input property-size-input"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    value={propertyFontSizeValue}
+                    data-style="fontSize"
+                    oninput={handlePropertyFontSizeInput}
+                  />
+                  <button
+                    class="rich-size-caret-button"
+                    type="button"
+                    onmousedown={handlePropertyFontSizeMenuMouseDown}
+                    title="Preset sizes"
+                  >
+                    <span class="rich-font-caret">▾</span>
+                  </button>
+                  <template lwc:if={isPropertyFontSizeMenuOpen}>
+                    <div class="rich-size-menu property-size-menu">
+                      <template
+                        for:each={fontSizeOptions}
+                        for:item="sizeOption"
+                      >
+                        <button
+                          key={sizeOption.value}
+                          class="rich-font-option"
+                          type="button"
+                          data-value={sizeOption.value}
+                          onmousedown={handlePropertyFontSizeOptionMouseDown}
+                        >
+                          {sizeOption.label}
+                        </button>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <div class="property-group">
+                <label>Font weight</label>
+                <select data-style="fontWeight" onchange={handleStyleChange}>
+                  <option value="normal">Normal</option>
+                  <option value="bold">Bold</option>
+                </select>
+              </div>
+
+              <div class="property-group">
+                <label>Font style</label>
+                <select data-style="fontStyle" onchange={handleStyleChange}>
+                  <option value="normal">Normal</option>
+                  <option value="italic">Italic</option>
+                </select>
+              </div>
+
+              <div class="property-group">
+                <label>Align</label>
+                <select data-style="textAlign" onchange={handleStyleChange}>
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+
+              <div class="property-group">
+                <label>Vertical align</label>
+                <select data-style="verticalAlign" onchange={handleStyleChange}>
+                  <option value="top">Top</option>
+                  <option value="middle">Center</option>
+                  <option value="bottom">Bottom</option>
+                </select>
+              </div>
+            </details>
+          </template>
+
+          <template lwc:if={showImageProperties}>
+            <details
+              class="property-section"
+              ontoggle={handlePropertySectionToggle}
+            >
+              <summary>Image</summary>
+
+              <div class="property-group">
+                <label>Image URL</label>
+                <input
+                  type="url"
+                  value={selectedElement.imageSrc}
+                  onchange={handleImageUrlChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Upload image</label>
+                <input
+                  class="property-image-upload-input"
+                  type="file"
+                  accept="image/*"
+                  onchange={handleImageUpload}
+                />
+                <button
+                  class="computer-image-upload-button"
+                  type="button"
+                  onclick={handleOpenComputerImageUpload}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 16V4" />
+                    <path d="m7 9 5-5 5 5" />
+                    <path d="M5 14v5h14v-5" />
+                  </svg>
+                  Upload from computer
+                </button>
+                <button
+                  class="files-image-picker-button"
+                  type="button"
+                  onclick={handleOpenSalesforceImagePicker}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M3 7.5h7l2 2h9v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                    />
+                    <path d="M3 7.5V5a2 2 0 0 1 2-2h5l2 2h5" />
+                    <path d="M12 12v6" />
+                    <path d="M9 15h6" />
+                  </svg>
+                  Choose from Salesforce Files
+                </button>
+              </div>
+            </details>
+          </template>
+
+          <template lwc:if={showTableProperties}>
+            <details
+              class="property-section"
+              ontoggle={handlePropertySectionToggle}
+            >
+              <summary>Table</summary>
+
+              <div class="property-group">
+                <label>Rows</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={selectedElement.styles.tableRows}
+                  data-style="tableRows"
+                  onchange={handleStyleChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Columns</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={selectedElement.styles.tableColumns}
+                  data-style="tableColumns"
+                  onchange={handleStyleChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Cell padding</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={selectedElement.styles.tableCellPadding}
+                  data-style="tableCellPadding"
+                  onchange={handleStyleChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Cell border width</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={selectedElement.styles.tableBorderWidth}
+                  data-style="tableBorderWidth"
+                  onchange={handleStyleChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Cell border color</label>
+                <input
+                  type="color"
+                  value={selectedElement.styles.tableBorderColor}
+                  data-style="tableBorderColor"
+                  oninput={handleStyleChange}
+                />
+              </div>
+            </details>
+          </template>
+
+          <template lwc:if={showRelatedListProperties}>
+            <details
+              class="property-section"
+              data-section="related-list"
+              ontoggle={handlePropertySectionToggle}
+            >
+              <summary>Related List</summary>
+
+              <div class="property-group">
+                <label>Child relationship</label>
+                <select
+                  data-role="related-list-select"
+                  onchange={handleRelatedListChange}
+                >
+                  <option value="">Select relationship</option>
+                  <template
+                    for:each={relatedListSelectOptions}
+                    for:item="option"
+                  >
+                    <option
+                      key={option.relationshipName}
+                      value={option.relationshipName}
+                    >
+                      {option.label}
+                    </option>
+                  </template>
+                </select>
+
+                <template lwc:if={selectedRelatedListObjectName}>
+                  <div class="related-list-object-info">
+                    <span>Related object</span>
+                    <strong>{selectedRelatedListObjectName}</strong>
+                  </div>
+                </template>
+              </div>
+
+              <div class="property-group">
+                <label>Columns</label>
+                <lightning-dual-listbox
+                  name="relatedListColumns"
+                  source-label="Available fields"
+                  selected-label="Selected fields"
+                  options={relatedListFieldOptionItems}
+                  value={selectedRelatedListColumns}
+                  onchange={handleRelatedListColumnsChange}
+                >
+                </lightning-dual-listbox>
+              </div>
+
+              <div class="property-group">
+                <label>Header color</label>
+                <input
+                  type="color"
+                  data-key="relatedListHeaderRowColor"
+                  value={selectedBlock.relatedListHeaderRowColor}
+                  oninput={handleRelatedListColorChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Odd row color</label>
+                <input
+                  type="color"
+                  data-key="relatedListOddRowColor"
+                  value={selectedBlock.relatedListOddRowColor}
+                  oninput={handleRelatedListColorChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Even row color</label>
+                <input
+                  type="color"
+                  data-key="relatedListEvenRowColor"
+                  value={selectedBlock.relatedListEvenRowColor}
+                  oninput={handleRelatedListColorChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Header text color</label>
+                <input
+                  type="color"
+                  data-key="relatedListTextColor"
+                  value={selectedBlock.relatedListTextColor}
+                  oninput={handleRelatedListColorChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Odd row text color</label>
+                <input
+                  type="color"
+                  data-key="relatedListOddTextColor"
+                  value={selectedBlock.relatedListOddTextColor}
+                  oninput={handleRelatedListColorChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Even row text color</label>
+                <input
+                  type="color"
+                  data-key="relatedListEvenTextColor"
+                  value={selectedBlock.relatedListEvenTextColor}
+                  oninput={handleRelatedListColorChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Font size</label>
+                <input
+                  type="number"
+                  min="8"
+                  max="36"
+                  data-key="relatedListFontSize"
+                  value={selectedBlock.relatedListFontSize}
+                  onchange={handleRelatedListNumberChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Grid lines</label>
+                <select
+                  data-key="relatedListBorderMode"
+                  onchange={handleRelatedListSelectChange}
+                >
+                  <option value="all">All lines</option>
+                  <option value="none">No lines</option>
+                  <option value="horizontal">Horizontal only</option>
+                  <option value="vertical">Vertical only</option>
+                </select>
+              </div>
+            </details>
+          </template>
+
+          <template lwc:if={showLineProperties}>
+            <details
+              class="property-section"
+              ontoggle={handlePropertySectionToggle}
+            >
+              <summary>Line</summary>
+
+              <div class="property-group">
+                <label>Line length</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={selectedElement.styles.lineLength}
+                  data-style="lineLength"
+                  onchange={handleStyleChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Line thickness</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={selectedElement.styles.lineThickness}
+                  data-style="lineThickness"
+                  onchange={handleStyleChange}
+                />
+              </div>
+
+              <div class="property-group">
+                <label>Line style</label>
+                <select data-style="lineStyle" onchange={handleStyleChange}>
+                  <option value="solid">Solid</option>
+                  <option value="dashed">Dashed</option>
+                  <option value="dotted">Dotted</option>
+                  <option value="double">Double</option>
+                </select>
+              </div>
+
+              <div class="property-group">
+                <label>Line color</label>
+                <input
+                  type="color"
+                  value={selectedElement.styles.lineColor}
+                  data-style="lineColor"
+                  oninput={handleStyleChange}
+                />
+              </div>
+            </details>
+          </template>
+
+          <template lwc:if={selectedBlock}>
+            <details
+              class="property-section"
+              ontoggle={handlePropertySectionToggle}
+            >
+              <summary>Actions</summary>
+
+              <div class="button-row">
+                <button onclick={copySelectedBlock} disabled={isCopyDisabled}>
+                  Copy
+                </button>
+                <button onclick={pasteCopiedBlock} disabled={isPasteDisabled}>
+                  Paste
+                </button>
+              </div>
+            </details>
+          </template>
+        </template>
+      </aside>
+
+      <template lwc:if={isHtmlOpen}>
+        <section class="modal-backdrop">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Generated HTML</h2>
+              <button
+                class="modal-close-button"
+                type="button"
+                onclick={closeHtml}
+                aria-label="Close generated HTML"
+              >
+                <span>Close</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 6l12 12" />
+                  <path d="M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+            <textarea class="html-output" readonly></textarea>
+          </div>
+        </section>
+      </template>
+
+      <template lwc:if={isPreviewOpen}>
+        <section class="modal-backdrop">
+          <div class="modal preview-modal" style={previewModalStyle}>
+            <div class="modal-header">
+              <h2>Preview</h2>
+              <button
+                class="modal-close-button"
+                type="button"
+                onclick={closePreview}
+                aria-label="Close preview"
+              >
+                <span>Close</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 6l12 12" />
+                  <path d="M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+            <div class="preview-controls">
+              <label for="preview-record-id">Record ID</label>
+              <input
+                id="preview-record-id"
+                class="toolbar-input preview-record-id"
+                type="text"
+                value={previewRecordId}
+                placeholder="Salesforce Record ID (optional)"
+                onchange={handlePreviewRecordIdChange}
+              />
+              <button
+                class="toolbar-button"
+                type="button"
+                disabled={isPreviewGenerating}
+                onclick={handleGeneratePreview}
+              >
+                Generate Preview
+              </button>
+            </div>
+            <template lwc:if={isPreviewGenerating}>
+              <div class="preview-loading">
+                <lightning-spinner
+                  alternative-text="Generating preview"
+                  size="medium"
+                ></lightning-spinner>
+              </div>
+            </template>
+            <template lwc:else>
+              <div class="preview-content" lwc:dom="manual"></div>
+            </template>
+          </div>
+        </section>
+      </template>
+
+      <template lwc:if={isImageFilePickerOpen}>
+        <section class="modal-backdrop">
+          <div class="modal image-files-modal">
+            <div class="modal-header image-files-header">
+              <div>
+                <h2>Choose image from Salesforce Files</h2>
+                <p>Select an existing image without uploading a duplicate.</p>
+              </div>
+              <button
+                class="modal-close-button"
+                type="button"
+                onclick={handleCloseSalesforceImagePicker}
+                aria-label="Close Salesforce Files"
+              >
+                <span>Close</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 6l12 12" />
+                  <path d="M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="image-files-search-wrap">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M16 16l5 5" />
+              </svg>
+              <input
+                class="image-files-search"
+                type="search"
+                placeholder="Search images in Files"
+                value={imageFileSearchTerm}
+                oninput={handleSalesforceImageSearch}
+              />
+            </div>
+
+            <div class="image-files-content">
+              <template lwc:if={isImageFileLoading}>
+                <div class="image-files-loading">
+                  <lightning-spinner
+                    alternative-text="Loading images from Salesforce Files"
+                    size="medium"
+                  ></lightning-spinner>
+                </div>
+              </template>
+              <template lwc:elseif={hasSalesforceImageFiles}>
+                <div class="image-files-grid">
+                  <template for:each={salesforceImageFileItems} for:item="file">
+                    <button
+                      class="image-file-card"
+                      type="button"
+                      key={file.contentVersionId}
+                      data-version-id={file.contentVersionId}
+                      onclick={handleSelectSalesforceImage}
+                      title={file.fileName}
+                    >
+                      <span class="image-file-thumbnail">
+                        <img src={file.thumbnailUrl} alt={file.fileName} />
+                      </span>
+                      <span class="image-file-name">{file.fileName}</span>
+                      <span class="image-file-meta">{file.displaySize}</span>
+                    </button>
+                  </template>
+                </div>
+              </template>
+              <template lwc:else>
+                <div class="image-files-empty">
+                  <strong>No images found</strong>
+                  <span>Try a different search or upload a new image.</span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </section>
+      </template>
+
+      <input
+        class="image-upload-input"
+        type="file"
+        accept="image/*"
+        onclick={resetImageUploadInput}
+        onchange={handleImageUpload}
+      />
+    </template>
+    <template lwc:else>
+      <div class="configuration-state" role="status" aria-live="polite">
+        <template lwc:if={isMetadataLoading}>
+          <lightning-spinner
+            alternative-text="Loading PDF Builder configuration"
+            size="medium"
+          ></lightning-spinner>
+          <p>Loading PDF Builder configuration…</p>
+        </template>
+        <template lwc:else>
+          <h2>PDF Builder configuration is unavailable</h2>
+          <p>{metadataError}</p>
+        </template>
+      </div>
+    </template>
+  </div>
+</template>
