@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest a focused improvement to PDF Builder
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or administrator problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Explain the desired behavior without including confidential data.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: impact
+    attributes:
+      label: Salesforce impact
+      description: Note relevant objects, permissions, metadata, packaging, rendering, or compatibility considerations.

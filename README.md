@@ -7,6 +7,7 @@
   <img alt="WYSIWYG" src="https://img.shields.io/badge/Builder-WYSIWYG-0176D3">
   <img alt="No external renderer" src="https://img.shields.io/badge/Rendering-no%20external%20service-2E844A">
   <img alt="Release status" src="https://img.shields.io/badge/release-v1-2E844A">
+  <a href="https://app.codacy.com/gh/mpdigitals/pdf-builder-sfdc/dashboard"><img alt="Codacy code quality" src="https://app.codacy.com/project/badge/Grade/30cd2cc87bc44f6cbc299ffb0e519094"></a>
 </p>
 
 <p align="center">
@@ -92,8 +93,8 @@ Source deployment is intended for contributors and organizations that want to
 inspect or modify the application. It requires Salesforce CLI (`sf`) and Git.
 
 ```bash
-git clone https://github.com/mpdigitals/pdf-builder-sfdc0.git
-cd pdf-builder-sfdc0
+git clone https://github.com/mpdigitals/pdf-builder-sfdc.git
+cd pdf-builder-sfdc
 
 sf org login web --alias pdf-builder-target
 sf project deploy start --manifest manifest/pdf-builder.xml --target-org pdf-builder-target
@@ -428,8 +429,8 @@ manifest/                Metadata manifests used during development
 - Reusable blocks.
 - Related-list filtering and totals.
 - Publish subsequent unlocked-package versions with upgrade notes.
-- Add automated CI validation for Apex, LWC Jest, ESLint, formatting, and metadata integrity.
-- Expand administrator and contributor documentation.
+- Add automated Apex deployment validation and metadata integrity checks to CI.
+- Expand administrator documentation.
 - Continue hardening browser-preview and server-side PDF parity.
 - Add additional portable, unbranded example templates.
 
