@@ -3,6 +3,26 @@ import PDFBuilderGenerator from "c/pdfBuilderGenerator";
 import getTemplatesForObject from "@salesforce/apex/PDFBuilderController.getTemplatesForObject";
 import generatePdf from "@salesforce/apex/PDFBuilderController.generatePdf";
 import generatePdfToFiles from "@salesforce/apex/PDFBuilderController.generatePdfToFiles";
+import { notifyRecordUpdateAvailable } from "lightning/uiRecordApi";
+
+jest.mock(
+  "lightning/refresh",
+  () => ({
+    RefreshEvent: class RefreshEvent extends CustomEvent {
+      constructor() {
+        super("refresh");
+      }
+    }
+  }),
+  { virtual: true }
+);
+jest.mock(
+  "lightning/uiRecordApi",
+  () => ({
+    notifyRecordUpdateAvailable: jest.fn(() => Promise.resolve())
+  }),
+  { virtual: true }
+);
 
 jest.mock(
   "@salesforce/apex/PDFBuilderController.getTemplatesForObject",
@@ -107,10 +127,11 @@ describe("c-pdf-builder-generator", () => {
   });
 
   it("saves the generated PDF to Files when Files destination is selected", async () => {
-    jest.useFakeTimers();
     const element = createElement("c-pdf-builder-generator", {
       is: PDFBuilderGenerator
     });
+    const refreshHandler = jest.fn();
+    element.addEventListener("refresh", refreshHandler);
     element.recordId = "001000000000001AAA";
     element.objectApiName = "Account";
 
@@ -136,12 +157,12 @@ describe("c-pdf-builder-generator", () => {
       recordId: "001000000000001AAA"
     });
     expect(generatePdf).not.toHaveBeenCalled();
-    expect(jest.getTimerCount()).toBe(1);
+    expect(notifyRecordUpdateAvailable).toHaveBeenCalledWith([
+      { recordId: "001000000000001AAA" }
+    ]);
+    expect(refreshHandler).toHaveBeenCalledTimes(1);
     expect(
       element.shadowRoot.querySelectorAll("lightning-button")
     ).toHaveLength(2);
-
-    jest.clearAllTimers();
-    jest.useRealTimers();
   });
 });

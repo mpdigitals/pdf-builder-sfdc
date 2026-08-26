@@ -1,6 +1,8 @@
 import { LightningElement, api } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
+import { RefreshEvent } from "lightning/refresh";
+import { notifyRecordUpdateAvailable } from "lightning/uiRecordApi";
 
 import getTemplatesForObject from "@salesforce/apex/PDFBuilderController.getTemplatesForObject";
 import generatePdf from "@salesforce/apex/PDFBuilderController.generatePdf";
@@ -200,20 +202,7 @@ export default class PDFBuilderGenerator extends NavigationMixin(
           `${savedPdf.warning ? ` ${savedPdf.warning}` : ""}`;
 
         this.showToast("PDF saved", this.statusMessage, "success");
-
-        /*
-         * Experience Cloud's standard Record Related List
-         * does not reliably react to RefreshView events
-         * after ContentVersion / ContentDocumentLink
-         * records are created through Apex.
-         *
-         * Force a real page reload so the standard related
-         * list queries the data again.
-         */
-        // eslint-disable-next-line @lwc/lwc/no-async-operation
-        setTimeout(() => {
-          window.location.reload();
-        }, 700);
+        await this.refreshRecordPage();
       } else {
         const pdf = await generatePdf({
           templateId: this.selectedTemplateId,
@@ -264,6 +253,11 @@ export default class PDFBuilderGenerator extends NavigationMixin(
         selectedRecordId: this.savedContentDocumentId
       }
     });
+  }
+
+  async refreshRecordPage() {
+    await notifyRecordUpdateAvailable([{ recordId: this._recordId }]);
+    this.dispatchEvent(new RefreshEvent());
   }
 
   getErrorMessage(error) {
