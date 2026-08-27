@@ -39,8 +39,12 @@ jobs:
 
   code-analyzer:
     name: Salesforce Code Analyzer
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
     env:
       SF_AUTOUPDATE_DISABLE: "true"
       SF_DISABLE_TELEMETRY: "true"
@@ -71,12 +75,17 @@ jobs:
         run: sf plugins install code-analyzer@5.16.0
 
       - name: Run Salesforce Code Analyzer
-        id: code-analyzer
-        uses: forcedotcom/run-code-analyzer@318e7429b49b97904dc41f7acbd41003db403965
+        shell: bash
+        run: |
+          if ! sf code-analyzer run \
+            --workspace force-app \
+            --output-file "$RUNNER_TEMP/sfca-results.sarif" \
+            >"$RUNNER_TEMP/sfca-output.log" 2>&1; then
+            echo "::error::Salesforce Code Analyzer could not complete."
+            exit 1
+          fi
+
+      - name: Upload results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d
         with:
-          run-arguments: >-
-            --workspace force-app
-            --view detail
-            --output-file sfca-results.html
-            --output-file sfca-results.json
-          results-artifact-name: salesforce-code-analyzer-results
+          sarif_file: ${{ runner.temp }}/sfca-results.sarif
