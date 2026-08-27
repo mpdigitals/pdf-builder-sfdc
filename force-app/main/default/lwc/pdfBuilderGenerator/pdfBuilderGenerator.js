@@ -87,17 +87,29 @@ export default class PDFBuilderGenerator extends NavigationMixin(
     );
   }
 
-  get destinationOptions() {
+  get isLocalDestinationSelected() {
+    return this.destination === "local";
+  }
+
+  get isFilesDestinationSelected() {
+    return this.destination === "files";
+  }
+
+  get localDestinationClass() {
+    return this.destinationOptionClass("local");
+  }
+
+  get filesDestinationClass() {
+    return this.destinationOptionClass("files");
+  }
+
+  destinationOptionClass(value) {
     return [
-      {
-        label: "Download to computer",
-        value: "local"
-      },
-      {
-        label: "Save to Salesforce Files",
-        value: "files"
-      }
-    ];
+      "destination-option",
+      this.destination === value ? "destination-option-selected" : ""
+    ]
+      .filter(Boolean)
+      .join(" ");
   }
 
   get generateButtonLabel() {
@@ -176,6 +188,12 @@ export default class PDFBuilderGenerator extends NavigationMixin(
     this.statusMessage = "";
     this.errorMessage = "";
     this.savedContentDocumentId = "";
+  }
+
+  handleDestinationClick(event) {
+    this.handleDestinationChange({
+      detail: { value: event.currentTarget.dataset.value }
+    });
   }
 
   async handleGeneratePdf() {

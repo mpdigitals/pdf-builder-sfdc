@@ -25,15 +25,37 @@
       ></lightning-combobox>
 
       <div class="destination">
-        <lightning-radio-group
-          name="pdfDestination"
-          label="Save PDF to"
-          options={destinationOptions}
-          value={destination}
-          type="button"
-          onchange={handleDestinationChange}
-          disabled={isGenerating}
-        ></lightning-radio-group>
+        <span class="destination-label" id="pdf-destination-label">
+          Save PDF to
+        </span>
+        <div
+          class="destination-options"
+          role="radiogroup"
+          aria-labelledby="pdf-destination-label"
+        >
+          <button
+            class={localDestinationClass}
+            type="button"
+            role="radio"
+            aria-checked={isLocalDestinationSelected}
+            data-value="local"
+            disabled={isGenerating}
+            onclick={handleDestinationClick}
+          >
+            Download to computer
+          </button>
+          <button
+            class={filesDestinationClass}
+            type="button"
+            role="radio"
+            aria-checked={isFilesDestinationSelected}
+            data-value="files"
+            disabled={isGenerating}
+            onclick={handleDestinationClick}
+          >
+            Save to Salesforce Files
+          </button>
+        </div>
         <p class="destination-help">{destinationHelpText}</p>
       </div>
 
