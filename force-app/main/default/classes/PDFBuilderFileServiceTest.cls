@@ -159,7 +159,7 @@ private class PDFBuilderFileServiceTest {
     quote.put('Pricebook2Id', Test.getStandardPricebookId());
     Database.SaveResult quoteSaveResult = Database.insert(
       quote,
-      AccessLevel.SYSTEM_MODE
+      AccessLevel.USER_MODE
     );
     Assert.isTrue(quoteSaveResult.isSuccess(), 'The Quote fixture must save.');
     Id quoteId = quoteSaveResult.getId();
@@ -173,8 +173,11 @@ private class PDFBuilderFileServiceTest {
     );
     Test.stopTest();
 
-    List<SObject> quotePdfs = Database.query(
-      'SELECT QuoteId, ContentVersionDocumentId FROM QuoteDocument WHERE QuoteId = :quoteId LIMIT 1'
+    List<SObject> quotePdfs = Database.queryWithBinds(
+      'SELECT QuoteId, ContentVersionDocumentId ' +
+      'FROM QuoteDocument WHERE QuoteId = :quoteId LIMIT 1',
+      new Map<String, Object>{ 'quoteId' => quoteId },
+      AccessLevel.USER_MODE
     );
     Id quoteContentVersionId = (Id) quotePdfs[0]
       .get('ContentVersionDocumentId');

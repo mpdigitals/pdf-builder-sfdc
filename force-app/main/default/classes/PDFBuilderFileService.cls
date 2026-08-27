@@ -85,23 +85,11 @@ public with sharing class PDFBuilderFileService {
     Blob pdfData,
     Id recordId
   ) {
-    /*
-     * QuoteDocument is deliberately handled in system context.
-     *
-     * Guest Users cannot create QuoteDocument themselves, but for this
-     * demo application we want the generated PDF to appear in Quote PDFs.
-     */
     if (isQuoteRecord(recordId) && isQuoteDocumentAvailable()) {
       return saveQuotePdf(pdfData, recordId);
     }
 
-    /*
-     * For regular Salesforce Files, each generated PDF is an independent
-     * ContentDocument.
-     *
-     * This is important for Guest Users because they cannot reliably
-     * create a new ContentVersion on an existing ContentDocument.
-     */
+    // Each generated PDF is stored as an independent ContentDocument.
     Integer nextVersionNumber = getNextPdfSequenceNumber(title, recordId);
 
     String versionedTitle = title + ' V' + nextVersionNumber;
@@ -132,8 +120,8 @@ public with sharing class PDFBuilderFileService {
    * QuoteDocument causes Salesforce to create the ContentVersion and associate
    * it with the Quote's standard Quote PDFs related list.
    *
-   * This method intentionally uses SYSTEM MODE so that it can also be invoked
-   * from an Experience Cloud Guest User.
+   * All persistence and subsequent reads honor the authenticated caller's
+   * object, field and record access.
    */
   private static ContentVersion saveQuotePdf(Blob pdfData, Id quoteId) {
     Schema.SObjectType quoteDocumentType = Schema.getGlobalDescribe()
@@ -151,30 +139,25 @@ public with sharing class PDFBuilderFileService {
 
     quotePdf.put('Document', pdfData);
 
-    /*
-     * SYSTEM MODE.
-     *
-     * Do NOT use:
-     *
-     * insert as user quotePdf;
-     *
-     * because Guest Users can't insert QuoteDocument.
-     */
-    insert quotePdf;
+    Database.SaveResult quotePdfResult = Database.insert(
+      quotePdf,
+      false,
+      AccessLevel.USER_MODE
+    );
+    if (!quotePdfResult.isSuccess()) {
+      throw new AuraHandledException(
+        'The Quote PDF could not be saved with the current user permissions.'
+      );
+    }
 
-    Id quoteDocumentId = (Id) quotePdf.get('Id');
-
-    /*
-     * Also SYSTEM MODE.
-     *
-     * Guest Users don't have direct access to QuoteDocument, so
-     * WITH USER_MODE must not be used here.
-     */
-    List<SObject> quoteDocuments = Database.query(
+    Id quoteDocumentId = quotePdfResult.getId();
+    List<SObject> quoteDocuments = Database.queryWithBinds(
       'SELECT ContentVersionDocumentId ' +
         'FROM QuoteDocument ' +
         'WHERE Id = :quoteDocumentId ' +
-        'LIMIT 1'
+        'LIMIT 1',
+      new Map<String, Object>{ 'quoteDocumentId' => quoteDocumentId },
+      AccessLevel.USER_MODE
     );
 
     if (quoteDocuments.isEmpty()) {
@@ -186,15 +169,11 @@ public with sharing class PDFBuilderFileService {
     Id contentVersionId = (Id) quoteDocuments[0]
       .get('ContentVersionDocumentId');
 
-    /*
-     * SYSTEM MODE query for the generated ContentVersion as well,
-     * because a Guest may not have direct visibility on the file
-     * immediately after QuoteDocument creation.
-     */
     List<ContentVersion> generatedVersions = [
       SELECT Id, ContentDocumentId, Title, PathOnClient, VersionNumber
       FROM ContentVersion
       WHERE Id = :contentVersionId
+      WITH USER_MODE
       LIMIT 1
     ];
 
