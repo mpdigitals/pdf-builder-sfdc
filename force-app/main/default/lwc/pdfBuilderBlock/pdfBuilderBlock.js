@@ -3,6 +3,14 @@ import {
   executeRichTextCommand,
   getRichTextCommandState
 } from "c/pdfBuilderRichTextCommands";
+import {
+  normalizeImageUrl,
+  normalizeLinkUrl,
+  getFragmentHtml,
+  getSanitizedInnerHtml,
+  sanitizeRichTextHtml,
+  setSanitizedInnerHtml
+} from "c/pdfBuilderSecurity";
 
 export default class PDFBuilderBlock extends LightningElement {
   _block = {};
@@ -444,11 +452,12 @@ export default class PDFBuilderBlock extends LightningElement {
 
   @api
   applyLink(alias, url) {
+    const safeUrl = normalizeLinkUrl(url);
     const savedRange =
       this.savedNonCollapsedSelectionRange || this.savedSelectionRange;
     const editableElement = this.getActiveEditableElement(savedRange);
 
-    if (!editableElement || !alias || !url) {
+    if (!editableElement || !alias || !safeUrl) {
       return;
     }
 
@@ -482,7 +491,7 @@ export default class PDFBuilderBlock extends LightningElement {
     }
 
     const anchor = document.createElement("a");
-    anchor.setAttribute("href", url);
+    anchor.setAttribute("href", safeUrl);
     anchor.setAttribute("target", "_blank");
     anchor.setAttribute("rel", "noopener noreferrer");
     anchor.textContent = alias;
@@ -1114,9 +1123,7 @@ export default class PDFBuilderBlock extends LightningElement {
   }
 
   getFragmentHtml(fragment) {
-    const container = document.createElement("div");
-    container.appendChild(fragment);
-    return container.innerHTML;
+    return getFragmentHtml(fragment);
   }
 
   extractListLines(container) {
@@ -1419,8 +1426,9 @@ export default class PDFBuilderBlock extends LightningElement {
 
     const content = this._block.content || "";
 
-    if (editableElement.innerHTML !== content) {
-      editableElement.innerHTML = this.normalizeRichTextContent(content);
+    const normalizedContent = this.normalizeRichTextContent(content);
+    if (getSanitizedInnerHtml(editableElement) !== normalizedContent) {
+      setSanitizedInnerHtml(editableElement, normalizedContent);
     }
   }
 
@@ -1735,7 +1743,10 @@ export default class PDFBuilderBlock extends LightningElement {
     if (imageFile) {
       const reader = new FileReader();
       reader.onload = () => {
-        cellElement.innerHTML = this.buildTableCellImageHtml(reader.result);
+        setSanitizedInnerHtml(
+          cellElement,
+          this.buildTableCellImageHtml(reader.result)
+        );
         this.dispatchTableDataChange();
       };
       reader.readAsDataURL(imageFile);
@@ -1744,8 +1755,11 @@ export default class PDFBuilderBlock extends LightningElement {
 
     const uri =
       transfer.getData("text/uri-list") || transfer.getData("text/plain");
-    if (uri && /^https?:\/\//i.test(uri)) {
-      cellElement.innerHTML = this.buildTableCellImageHtml(uri.trim());
+    if (normalizeImageUrl(uri)) {
+      setSanitizedInnerHtml(
+        cellElement,
+        this.buildTableCellImageHtml(uri.trim())
+      );
       this.dispatchTableDataChange();
       return;
     }
@@ -1754,7 +1768,10 @@ export default class PDFBuilderBlock extends LightningElement {
     if (html) {
       const srcMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
       if (srcMatch?.[1]) {
-        cellElement.innerHTML = this.buildTableCellImageHtml(srcMatch[1]);
+        setSanitizedInnerHtml(
+          cellElement,
+          this.buildTableCellImageHtml(srcMatch[1])
+        );
         this.dispatchTableDataChange();
       }
     }
@@ -1805,6 +1822,9 @@ export default class PDFBuilderBlock extends LightningElement {
         )
     );
 
+    const editedCells = new Map();
+    const editedAlignments = new Map();
+
     this.template
       .querySelectorAll(".table-cell-editable")
       .forEach((cellElement) => {
@@ -1818,17 +1838,32 @@ export default class PDFBuilderBlock extends LightningElement {
           data[rowIndex] &&
           columnIndex < data[rowIndex].length
         ) {
-          data[rowIndex][columnIndex] = cellElement.innerHTML || "";
-          tableCellAlignments[rowIndex][columnIndex] =
+          const cellKey = `${rowIndex}:${columnIndex}`;
+          editedCells.set(cellKey, getSanitizedInnerHtml(cellElement));
+          editedAlignments.set(
+            cellKey,
             tableCell?.style?.verticalAlign ||
-            this.block?.tableCellAlignments?.[rowIndex]?.[columnIndex] ||
-            "top";
+              this.block?.tableCellAlignments?.[rowIndex]?.[columnIndex] ||
+              "top"
+          );
         }
       });
 
     return {
-      tableData: data,
-      tableCellAlignments
+      tableData: data.map((row, rowIndex) =>
+        row.map((cell, columnIndex) => {
+          const cellKey = `${rowIndex}:${columnIndex}`;
+          return editedCells.has(cellKey) ? editedCells.get(cellKey) : cell;
+        })
+      ),
+      tableCellAlignments: tableCellAlignments.map((row, rowIndex) =>
+        row.map((alignment, columnIndex) => {
+          const cellKey = `${rowIndex}:${columnIndex}`;
+          return editedAlignments.has(cellKey)
+            ? editedAlignments.get(cellKey)
+            : alignment;
+        })
+      )
     };
   }
 
@@ -1846,24 +1881,25 @@ export default class PDFBuilderBlock extends LightningElement {
       .forEach((cellElement) => {
         const rowIndex = Number(cellElement.dataset.rowIndex);
         const columnIndex = Number(cellElement.dataset.columnIndex);
-        const nextHtml =
-          this.block?.tableRows?.[rowIndex]?.cells?.[columnIndex]?.content ||
-          "";
+        const nextHtml = sanitizeRichTextHtml(
+          this.block?.tableRows?.[rowIndex]?.cells?.[columnIndex]?.content || ""
+        );
         const isActiveCell =
           cellElement === document.activeElement ||
           cellElement.dataset.cellKey === this.activeTableCellKey;
 
-        if (!isActiveCell && cellElement.innerHTML !== nextHtml) {
-          cellElement.innerHTML = nextHtml;
+        if (!isActiveCell && getSanitizedInnerHtml(cellElement) !== nextHtml) {
+          setSanitizedInnerHtml(cellElement, nextHtml);
         }
       });
   }
 
   buildTableCellImageHtml(source) {
-    if (!source) {
+    const normalizedSource = normalizeImageUrl(source);
+    if (!normalizedSource) {
       return "";
     }
-    const safeSource = String(source)
+    const safeSource = normalizedSource
       .replaceAll("&", "&amp;")
       .replaceAll('"', "&quot;")
       .replaceAll("<", "&lt;")
@@ -1975,7 +2011,7 @@ export default class PDFBuilderBlock extends LightningElement {
 
     this.removeFrameworkRuntimeAttributes(clone);
     this.removeDefaultInlineEditorColors(clone);
-    return clone.innerHTML;
+    return getSanitizedInnerHtml(clone);
   }
 
   removeFrameworkRuntimeAttributes(container) {
@@ -2416,15 +2452,15 @@ export default class PDFBuilderBlock extends LightningElement {
   normalizeRichTextContent(value) {
     const content = value || "";
 
-    if (/<[a-z][\s\S]*>/i.test(content)) {
+    if (content.includes("<") && content.includes(">")) {
       const container = document.createElement("div");
-      container.innerHTML = content;
+      setSanitizedInnerHtml(container, content);
       this.removeFrameworkRuntimeAttributes(container);
       this.removeDefaultInlineEditorColors(container);
       container.querySelectorAll("b, strong").forEach((element) => {
         element.style.fontWeight = "700";
       });
-      return container.innerHTML;
+      return getSanitizedInnerHtml(container);
     }
 
     return this.escapeHtml(content).replace(/\r?\n/g, "<br>");
