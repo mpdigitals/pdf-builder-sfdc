@@ -51,8 +51,13 @@ public with sharing class PDFBuilderPdfPageController {
       }
     }
 
-    fixedHeaderHtml = fixedHeaderHtmlForRender;
-    fixedFooterHtml = fixedFooterHtmlForRender;
+    bodyHtml = PDFBuilderHtmlSanitizer.sanitize(bodyHtml);
+    fixedHeaderHtml = PDFBuilderHtmlSanitizer.sanitize(
+      fixedHeaderHtmlForRender
+    );
+    fixedFooterHtml = PDFBuilderHtmlSanitizer.sanitize(
+      fixedFooterHtmlForRender
+    );
     pageTopMargin = pageTopMarginForRender == null ? 0 : pageTopMarginForRender;
     pageRightMargin = pageRightMarginForRender == null
       ? 0

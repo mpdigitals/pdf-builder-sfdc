@@ -447,6 +447,7 @@ public with sharing class PDFBuilderController {
     }
 
     validateLongTextSize('Template content', contentJson);
+    generatedHtml = PDFBuilderHtmlSanitizer.sanitize(generatedHtml);
     validateLongTextSize('Generated HTML', generatedHtml);
 
     PDFBuilderTemplate__c template = templateId == null
@@ -799,7 +800,9 @@ public with sharing class PDFBuilderController {
       objectApiName,
       false
     );
-    return sanitizeLwcRuntimeArtifacts(previewHtml);
+    return PDFBuilderHtmlSanitizer.sanitize(
+      sanitizeLwcRuntimeArtifacts(previewHtml)
+    );
   }
 
   @AuraEnabled
@@ -1031,7 +1034,9 @@ public with sharing class PDFBuilderController {
       bodyHtml = generatedHtml;
     }
 
-    String globallyMergedBodyHtml = mergeGlobalFields(bodyHtml);
+    String globallyMergedBodyHtml = PDFBuilderHtmlSanitizer.sanitize(
+      mergeGlobalFields(bodyHtml)
+    );
     mergePdfPageLayoutGlobalFields();
     return globallyMergedBodyHtml;
   }
