@@ -1,3 +1,4 @@
+# PDF Builder for Salesforce (Beta)
 <p align="center">
   <img src="docs/images/pdf-builder-header-compact.png" alt="PDF Builder for Salesforce" width="850">
 </p>
