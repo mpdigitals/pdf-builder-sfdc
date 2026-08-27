@@ -130,4 +130,34 @@ private class PDFBuilderPdfPageControllerTest {
       'Missing footer markup must disable the fixed footer.'
     );
   }
+
+  /**
+   * @description Verifies arbitrary CSS cannot cross the Visualforce style boundary.
+   */
+  @IsTest
+  static void rejectsUnsafePageBackgroundValues() {
+    Test.setCurrentPage(Page.PDFBuilderPdf);
+    PDFBuilderPdfPageController.bodyHtmlForRender = '<main>Body</main>';
+    PDFBuilderPdfPageController.pageBackgroundForRender = '#fff;</style><script>alert(1)</script>';
+
+    Test.startTest();
+    PDFBuilderPdfPageController controller = new PDFBuilderPdfPageController();
+    Test.stopTest();
+
+    Assert.areEqual(
+      '#ffffff',
+      controller.pageBackground,
+      'Only a six-digit hexadecimal color may enter the Visualforce CSS.'
+    );
+    Assert.areEqual(
+      '#A1b2C3',
+      PDFBuilderPdfPageController.normalizePageBackground('#A1b2C3'),
+      'Valid builder colors must be preserved.'
+    );
+    Assert.areEqual(
+      '#ffffff',
+      PDFBuilderPdfPageController.normalizePageBackground('red'),
+      'Named colors are outside the supported builder format.'
+    );
+  }
 }

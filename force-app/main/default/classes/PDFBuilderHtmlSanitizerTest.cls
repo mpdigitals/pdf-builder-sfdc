@@ -73,7 +73,8 @@ private class PDFBuilderHtmlSanitizerTest {
       '<a href="java\nscript:alert(1)">Whitespace link</a>' +
       '<img src=vbscript:alert(2) />' +
       '<div style="width:expression(alert(3));background:url(javascript:alert(4));behavior:url(x)">Text</div>' +
-      '<style>@import "https://evil.example/x.css"; .safe{color:red}.bad{-moz-binding:url(x)}</style>';
+      '<style>@import "https://evil.example/x.css"; .bad{-moz-binding:url(x)}</style>' +
+      '<style>.safe{color:red}</style>';
 
     Test.startTest();
     String result = PDFBuilderHtmlSanitizer.sanitize(unsafeMarkup);
@@ -106,6 +107,46 @@ private class PDFBuilderHtmlSanitizerTest {
     Assert.isTrue(
       result.contains('.safe{color:red}'),
       'Safe stylesheet rules must remain.'
+    );
+  }
+
+  @IsTest
+  static void blocksCanonicalizationBypassesWithoutRemovingSafeCss() {
+    String unsafeMarkup =
+      '<a href="java&#x0A;script:alert(1)">Encoded control</a>' +
+      '<img src="data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+" />' +
+      '<div style="background:url(\\6a avascript:alert(2));color:red">Unsafe inline CSS</div>' +
+      '<style>.bad{background:u\\72l(javascript:alert(3))}</style>' +
+      '<div style="color:#123456;padding:8px">Safe CSS</div>' +
+      '<style>.safe{font-weight:700}</style>';
+
+    Test.startTest();
+    String result = PDFBuilderHtmlSanitizer.sanitize(unsafeMarkup);
+    Test.stopTest();
+
+    Assert.isFalse(
+      result.containsIgnoreCase('java&#x0A;script:'),
+      'Encoded control characters must not hide an active URL scheme.'
+    );
+    Assert.isFalse(
+      result.containsIgnoreCase('data:image/svg+xml'),
+      'Executable data formats must not be accepted as inline images.'
+    );
+    Assert.isFalse(
+      result.contains('\\6a avascript'),
+      'CSS escapes must not hide JavaScript URLs in style attributes.'
+    );
+    Assert.isFalse(
+      result.contains('u\\72l'),
+      'CSS escapes must not hide active URLs in style elements.'
+    );
+    Assert.isTrue(
+      result.contains('style="color:#123456;padding:8px"'),
+      'Safe inline layout CSS must remain unchanged.'
+    );
+    Assert.isTrue(
+      result.contains('<style>.safe{font-weight:700}</style>'),
+      'Safe generated style rules must remain unchanged.'
     );
   }
 

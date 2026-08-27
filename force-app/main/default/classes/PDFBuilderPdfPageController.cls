@@ -71,10 +71,23 @@ public with sharing class PDFBuilderPdfPageController {
     pageContentWidth = pageContentWidthForRender == null
       ? PDFBuilderConfiguration.getSettings().pageWidth
       : pageContentWidthForRender;
-    pageBackground = String.isBlank(pageBackgroundForRender)
-      ? '#ffffff'
-      : pageBackgroundForRender;
+    pageBackground = normalizePageBackground(pageBackgroundForRender);
     hasFixedHeader = !String.isBlank(fixedHeaderHtml);
     hasFixedFooter = !String.isBlank(fixedFooterHtml);
+  }
+
+  /**
+   * Restricts the value interpolated into the Visualforce style sheet to the
+   * six-digit hexadecimal format emitted by the builder color control.
+   */
+  @TestVisible
+  private static String normalizePageBackground(String candidate) {
+    if (
+      !String.isBlank(candidate) &&
+      Pattern.matches('^#[0-9A-Fa-f]{6}$', candidate)
+    ) {
+      return candidate;
+    }
+    return '#ffffff';
   }
 }

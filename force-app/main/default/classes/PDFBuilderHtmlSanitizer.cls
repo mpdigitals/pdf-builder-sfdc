@@ -124,11 +124,16 @@ public inherited sharing class PDFBuilderHtmlSanitizer {
       .toLowerCase();
     return canonicalValue.startsWith('javascript:') ||
       canonicalValue.startsWith('vbscript:') ||
-      canonicalValue.startsWith('data:text/html');
+      (canonicalValue.startsWith('data:') &&
+      !Pattern.matches(
+        '^data:image/(?:png|jpeg|gif|webp|bmp);base64,[a-z0-9+/=]+$',
+        canonicalValue
+      ));
   }
 
   private static String sanitizeCss(String html) {
-    String sanitized = html;
+    String sanitized = removeUnsafeStyleElements(html);
+    sanitized = removeUnsafeStyleAttributes(sanitized);
     sanitized = sanitized.replaceAll('(?is)expression\\s*\\([^)]*\\)', '');
     sanitized = sanitized.replaceAll(
       '(?is)url\\s*\\(\\s*["\']?\\s*(?:javascript|vbscript|data\\s*:\\s*text\\s*/\\s*html)[^)]*\\)',
@@ -140,5 +145,129 @@ public inherited sharing class PDFBuilderHtmlSanitizer {
       ''
     );
     return sanitized;
+  }
+
+  private static String removeUnsafeStyleElements(String html) {
+    Pattern stylePattern = Pattern.compile(
+      '(?is)<style\\b([^>]*)>(.*?)</style\\s*>'
+    );
+    Matcher matcher = stylePattern.matcher(html);
+    Integer cursor = 0;
+    String result = '';
+
+    while (matcher.find()) {
+      result += html.substring(cursor, matcher.start());
+      if (!containsActiveCss(matcher.group(2))) {
+        result += matcher.group(0);
+      }
+      cursor = matcher.end();
+    }
+    return cursor == 0 ? html : result + html.substring(cursor);
+  }
+
+  private static String removeUnsafeStyleAttributes(String html) {
+    return removeUnsafeStyleAttributes(
+      removeUnsafeStyleAttributes(
+        removeUnsafeStyleAttributes(
+          html,
+          '(?is)(\\s+style\\s*=\\s*)(")([^"]*)(")'
+        ),
+        '(?is)(\\s+style\\s*=\\s*)(\')([^\']*)(\')'
+      ),
+      '(?is)(\\s+style\\s*=\\s*)()([^\\s>]+)()'
+    );
+  }
+
+  private static String removeUnsafeStyleAttributes(String html, String regex) {
+    Matcher matcher = Pattern.compile(regex).matcher(html);
+    Integer cursor = 0;
+    String result = '';
+
+    while (matcher.find()) {
+      result += html.substring(cursor, matcher.start());
+      if (!containsActiveCss(matcher.group(3))) {
+        result += matcher.group(0);
+      }
+      cursor = matcher.end();
+    }
+    return cursor == 0 ? html : result + html.substring(cursor);
+  }
+
+  private static Boolean containsActiveCss(String css) {
+    String canonicalCss = decodeCssEscapes(
+        css == null ? '' : css.unescapeHtml4()
+      )
+      .replaceAll('[\\x00-\\x20\\x7f]+', '')
+      .toLowerCase();
+    return canonicalCss.contains('expression(') ||
+      canonicalCss.contains('javascript:') ||
+      canonicalCss.contains('vbscript:') ||
+      canonicalCss.contains('data:text/html') ||
+      canonicalCss.contains('@import') ||
+      canonicalCss.contains('behavior:') ||
+      canonicalCss.contains('-moz-binding:');
+  }
+
+  /**
+   * Canonicalizes CSS escape sequences before security decisions. CSS permits
+   * one to six hexadecimal digits followed by optional whitespace.
+   */
+  private static String decodeCssEscapes(String value) {
+    String result = '';
+    Integer index = 0;
+
+    while (index < value.length()) {
+      if (value.substring(index, index + 1) != '\\') {
+        result += value.substring(index, index + 1);
+        index++;
+        continue;
+      }
+
+      Integer cursor = index + 1;
+      String hexadecimal = '';
+      while (
+        cursor < value.length() &&
+        hexadecimal.length() < 6 &&
+        isHexadecimal(value.substring(cursor, cursor + 1))
+      ) {
+        hexadecimal += value.substring(cursor, cursor + 1);
+        cursor++;
+      }
+
+      if (hexadecimal != '') {
+        Integer codePoint = parseHexadecimal(hexadecimal);
+        result += codePoint <= 127
+          ? String.fromCharArray(new List<Integer>{ codePoint })
+          : ' ';
+        if (
+          cursor < value.length() &&
+          Pattern.matches('\\s', value.substring(cursor, cursor + 1))
+        ) {
+          cursor++;
+        }
+        index = cursor;
+      } else if (cursor < value.length()) {
+        result += value.substring(cursor, cursor + 1);
+        index = cursor + 1;
+      } else {
+        index++;
+      }
+    }
+    return result;
+  }
+
+  private static Boolean isHexadecimal(String character) {
+    return Pattern.matches('[0-9A-Fa-f]', character);
+  }
+
+  private static Integer parseHexadecimal(String value) {
+    String digits = '0123456789abcdef';
+    Integer result = 0;
+    String normalized = value.toLowerCase();
+    for (Integer index = 0; index < normalized.length(); index++) {
+      result =
+        (result * 16) + digits.indexOf(normalized.substring(index, index + 1));
+    }
+    return result;
   }
 }
