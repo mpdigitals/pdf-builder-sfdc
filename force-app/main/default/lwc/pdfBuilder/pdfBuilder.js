@@ -6,6 +6,12 @@ import {
   formatTemplateOptions,
   resolveBuilderConfiguration
 } from "c/pdfBuilderUtils";
+import {
+  normalizeColor,
+  normalizeImageUrl,
+  sanitizeDocumentModel,
+  sanitizeRichTextHtml
+} from "c/pdfBuilderSecurity";
 import getConfiguration from "@salesforce/apex/PDFBuilderController.getConfiguration";
 import getObjects from "@salesforce/apex/PDFBuilderController.getObjects";
 import getFields from "@salesforce/apex/PDFBuilderController.getFields";
@@ -1781,7 +1787,7 @@ export default class PDFBuilder extends LightningElement {
       await this.persistEmbeddedTemplateImages();
 
       const contentJson = JSON.stringify(
-        this.stripRuntimeState(this.documentModel)
+        sanitizeDocumentModel(this.stripRuntimeState(this.documentModel))
       );
       const generatedHtml = this.getGeneratedHtml();
 
@@ -1918,9 +1924,9 @@ export default class PDFBuilder extends LightningElement {
         return;
       }
 
-      const content = template.contentJson
-        ? JSON.parse(template.contentJson)
-        : null;
+      const content = sanitizeDocumentModel(
+        template.contentJson ? JSON.parse(template.contentJson) : null
+      );
 
       this.saveHistory();
       this.templateName = template.name || "";
@@ -7107,7 +7113,7 @@ export default class PDFBuilder extends LightningElement {
       ...model,
       lineHeightSchemaVersion: 3,
       pagePadding: this.toNumber(model.pagePadding ?? this.defaultPagePadding),
-      pageBackground: model.pageBackground || "#ffffff",
+      pageBackground: normalizeColor(model.pageBackground, "#ffffff"),
       globalElementPadding: this.toNumber(
         model.globalElementPadding ?? this.defaultElementPadding
       ),
@@ -8572,7 +8578,7 @@ export default class PDFBuilder extends LightningElement {
       // Persist the schema marker. Without it, reloading treats every
       // saved template as legacy and rewrites line heights below 1.
       lineHeightSchemaVersion: 3,
-      pageBackground: documentModel.pageBackground || "#ffffff",
+      pageBackground: normalizeColor(documentModel.pageBackground, "#ffffff"),
       pagePadding: documentModel.pagePadding,
       globalElementPadding: documentModel.globalElementPadding,
       showHeader: documentModel.showHeader,
@@ -8814,7 +8820,9 @@ export default class PDFBuilder extends LightningElement {
   }
 
   getGeneratedHtml(isPreview = false, useRelatedListTokens = false) {
-    const model = this.stripRuntimeState(this.documentModel);
+    const model = sanitizeDocumentModel(
+      this.stripRuntimeState(this.documentModel)
+    );
     const bodyCapacity = Math.max(420, this.getBodyContentCapacityPerPage());
     const bodyMinHeightStyle = `min-height:${bodyCapacity}px;`;
     const sectionMinHeightStyle = `;min-height:${bodyCapacity}px;`;
@@ -9132,10 +9140,12 @@ export default class PDFBuilder extends LightningElement {
         return `<div style="${blockStyle};${textStyle}">${this.getRichTextHtml(block.content)}</div>`;
       case "divider":
         return `<div style="${blockStyle};display:flex;align-items:center;justify-content:center"><div style="${this.getExportLineStyle(block.type, block.styles)}"></div></div>`;
-      case "image":
-        return block.imageSrc
-          ? `<div style="${blockStyle};display:block"><img src="${this.escapeHtml(block.imageSrc)}" alt="${this.escapeHtml(block.imageAlt || "")}" style="display:block;width:100%;height:100%;max-width:100%;object-fit:contain"></div>`
+      case "image": {
+        const safeImageSource = normalizeImageUrl(block.imageSrc);
+        return safeImageSource
+          ? `<div style="${blockStyle};display:block"><img src="${this.escapeHtml(safeImageSource)}" alt="${this.escapeHtml(block.imageAlt || "")}" style="display:block;width:100%;height:100%;max-width:100%;object-fit:contain"></div>`
           : "";
+      }
       case "table":
         return this.getTableHtml(block, blockStyle);
       case "relatedList":
@@ -9205,7 +9215,7 @@ export default class PDFBuilder extends LightningElement {
               block.styles || {},
               cellVerticalAlign
             );
-            return `<td style="${cellStyle}">${cellContent}</td>`;
+            return `<td style="${cellStyle}">${sanitizeRichTextHtml(cellContent)}</td>`;
           })
           .join("");
 
@@ -9338,11 +9348,11 @@ export default class PDFBuilder extends LightningElement {
 
     if (/<[a-z][\s\S]*>/i.test(value)) {
       const container = document.createElement("div");
-      container.innerHTML = value;
+      container.innerHTML = sanitizeRichTextHtml(value);
       container.querySelectorAll("b, strong").forEach((element) => {
         element.style.fontWeight = "700";
       });
-      return container.innerHTML;
+      return sanitizeRichTextHtml(container.innerHTML);
     }
 
     return this.escapeHtml(value).replace(/\r?\n/g, "<br>");
