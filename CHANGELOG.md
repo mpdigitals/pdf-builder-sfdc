@@ -4,6 +4,10 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+### Security
+
+- Template HTML is sanitized at persistence, preview, and final PDF-render boundaries while preserving supported rich-text and layout formatting.
+
 ## [1.0.10] - 2026-08-27
 
 ### Security
