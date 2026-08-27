@@ -36,3 +36,47 @@ jobs:
 
       - name: Run LWC unit tests
         run: npm run test:ci
+
+  code-analyzer:
+    name: Salesforce Code Analyzer
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SF_AUTOUPDATE_DISABLE: "true"
+      SF_DISABLE_TELEMETRY: "true"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Salesforce CLI
+        run: npm install --global @salesforce/cli@2.149.9
+
+      - name: Install Salesforce Code Analyzer
+        run: sf plugins install code-analyzer@5.16.0
+
+      - name: Run Salesforce Code Analyzer
+        id: code-analyzer
+        uses: forcedotcom/run-code-analyzer@318e7429b49b97904dc41f7acbd41003db403965
+        with:
+          run-arguments: >-
+            --workspace force-app
+            --view detail
+            --output-file sfca-results.html
+            --output-file sfca-results.json
+          results-artifact-name: salesforce-code-analyzer-results
