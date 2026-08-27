@@ -79,6 +79,7 @@ jobs:
         run: |
           if ! sf code-analyzer run \
             --workspace force-app \
+            --rule-selector "Security:Recommended" \
             --output-file "$RUNNER_TEMP/sfca-results.sarif" \
             >"$RUNNER_TEMP/sfca-output.log" 2>&1; then
             echo "::error::Salesforce Code Analyzer could not complete."
