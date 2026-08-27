@@ -1,4 +1,5 @@
 # PDF Builder for Salesforce (Beta)
+
 <p align="center">
   <img src="docs/images/pdf-builder-header-compact.png" alt="PDF Builder for Salesforce" width="850">
 </p>
@@ -66,10 +67,10 @@ Install the released unlocked package. Sandbox and production use the same
 versioned artifact, so the package tested in a sandbox is exactly the package
 installed in production.
 
-| Target                          | Installation link                                                                                                            |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Sandbox                         | [Install PDF Builder 1.0.10 in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZDgjIAG)   |
-| Production or Developer Edition | [Install PDF Builder 1.0.10 in production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZDgjIAG) |
+| Target                          | Installation link                                                                                                             |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Sandbox                         | [Install PDF Builder 1.0.11 in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZE1hIAG)   |
+| Production or Developer Edition | [Install PDF Builder 1.0.11 in production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZE1hIAG) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
@@ -79,7 +80,7 @@ The same version can also be installed with Salesforce CLI:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZDgjIAG \
+  --package 04tQy000000ZE1hIAG \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
