@@ -126,6 +126,27 @@ describe("c-pdf-builder-generator", () => {
     expect(clickSpy).toHaveBeenCalled();
   });
 
+  it("renders separate responsive destination buttons", async () => {
+    const element = createElement("c-pdf-builder-generator", {
+      is: PDFBuilderGenerator
+    });
+    element.recordId = "001000000000001AAA";
+    element.objectApiName = "Account";
+
+    document.body.appendChild(element);
+    await flushPromises();
+    await flushPromises();
+
+    const destinationButtons = element.shadowRoot.querySelectorAll(
+      ".destination-option"
+    );
+    expect(destinationButtons).toHaveLength(2);
+    expect(destinationButtons[0].dataset.value).toBe("local");
+    expect(destinationButtons[0].getAttribute("aria-checked")).toBe("true");
+    expect(destinationButtons[1].dataset.value).toBe("files");
+    expect(destinationButtons[1].getAttribute("aria-checked")).toBe("false");
+  });
+
   it("saves the generated PDF to Files when Files destination is selected", async () => {
     const element = createElement("c-pdf-builder-generator", {
       is: PDFBuilderGenerator
@@ -144,9 +165,7 @@ describe("c-pdf-builder-generator", () => {
       .dispatchEvent(
         new CustomEvent("change", { detail: { value: "a01000000000001AAA" } })
       );
-    element.shadowRoot
-      .querySelector("lightning-radio-group")
-      .dispatchEvent(new CustomEvent("change", { detail: { value: "files" } }));
+    element.shadowRoot.querySelector('[data-value="files"]').click();
     await flushPromises();
     element.shadowRoot.querySelector("lightning-button").click();
     await flushPromises();
