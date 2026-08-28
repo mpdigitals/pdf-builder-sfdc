@@ -5,6 +5,6 @@
     <description
   >Controls whether accessible custom objects are available in the builder object selector.</description>
     <fieldManageability>DeveloperControlled</fieldManageability>
-    <label>Include Custom Objects</label>
+    <label>Include All Custom Objects</label>
     <type>Checkbox</type>
 </CustomField>

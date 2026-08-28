@@ -87,13 +87,13 @@ export default class PDFBuilder extends LightningElement {
   lastKnownDropPointer;
   dragGridSize;
   sidebarResizeState;
-  sidebarWidth = 280;
-  sidebarMinWidth = 280;
-  sidebarMaxWidth = 560;
+  sidebarWidth = 340;
+  sidebarMinWidth = 320;
+  sidebarMaxWidth = 520;
   propertiesResizeState;
-  propertiesPanelWidth = 360;
-  propertiesPanelMinWidth = 320;
-  propertiesPanelMaxWidth = 640;
+  propertiesPanelWidth = 400;
+  propertiesPanelMinWidth = 340;
+  propertiesPanelMaxWidth = 580;
   boundMouseMoveHandler;
   boundMouseUpHandler;
   boundKeyDownHandler;
@@ -1593,9 +1593,17 @@ export default class PDFBuilder extends LightningElement {
   }
 
   handleObjectChange(event) {
-    this.selectedObjectApiName = event.target.value;
+    const nextObjectApiName = event.target.value;
+    const objectChanged = this.selectedObjectApiName !== nextObjectApiName;
+
+    this.selectedObjectApiName = nextObjectApiName;
     this.fieldSearchTerm = "";
     this.selectedParentRelationshipKey = "";
+
+    if (objectChanged) {
+      this.clearPreviewState();
+    }
+
     Promise.all([
       this.loadFieldsForSelectedObject(),
       this.loadRelatedListsForSelectedObject()
@@ -1634,8 +1642,13 @@ export default class PDFBuilder extends LightningElement {
     event.target.value = currentTemplateId || "";
 
     if (templateId === currentTemplateId) {
+      if (!templateId) {
+        this.clearPreviewState();
+      }
       return;
     }
+
+    this.clearPreviewState();
 
     if (this.hasUnsavedTemplateChanges()) {
       this.pendingTemplateSelectionId = templateId;
@@ -1730,6 +1743,7 @@ export default class PDFBuilder extends LightningElement {
   resetTemplateEditor() {
     this.stopTextEditing();
     this.closeLinkPopover();
+    this.clearPreviewState();
     this.resetSelectedObjectContext();
     this.templateName = "";
     this.loadedTemplateName = "";
@@ -1913,6 +1927,7 @@ export default class PDFBuilder extends LightningElement {
     const requestId = ++this.templateLoadRequestId;
     this.isTemplateLoading = true;
     this.templateStatus = "";
+    this.clearPreviewState();
 
     try {
       const template = await getTemplate({ templateId });
@@ -2106,6 +2121,34 @@ export default class PDFBuilder extends LightningElement {
     }
 
     event.stopPropagation();
+  }
+
+  clearPreviewState() {
+    this.previewGenerationRequestId += 1;
+    this.previewRecordId = "";
+    this.previewHtml = "";
+    this.previewFlow = null;
+    this.isPreviewGenerating = false;
+
+    const previewContainer = this.template.querySelector(".preview-content");
+    if (previewContainer) {
+      previewContainer.innerHTML = "";
+    }
+  }
+
+  blurPropertiesPanelControl() {
+    const activeElement = this.template.activeElement;
+    const propertiesPanel = this.template.querySelector(".properties-panel");
+
+    if (
+      activeElement &&
+      propertiesPanel &&
+      activeElement !== propertiesPanel &&
+      propertiesPanel.contains(activeElement) &&
+      typeof activeElement.blur === "function"
+    ) {
+      activeElement.blur();
+    }
   }
 
   isInteractiveKeyboardTarget(target) {
@@ -2874,6 +2917,7 @@ export default class PDFBuilder extends LightningElement {
       return;
     }
 
+    this.blurPropertiesPanelControl();
     this.stopTextEditing();
     this.selectedKind = "region";
     this.selectedBlockId = null;
@@ -2898,6 +2942,7 @@ export default class PDFBuilder extends LightningElement {
       this.stopTextEditing();
     }
 
+    this.blurPropertiesPanelControl();
     this.selectedKind = "block";
     this.selectedBlockId = nextBlockId;
     this.selectedRegionId = event.detail.regionId || null;
