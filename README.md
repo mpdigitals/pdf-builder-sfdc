@@ -8,7 +8,7 @@
   <img alt="Salesforce native" src="https://img.shields.io/badge/Salesforce-native-0B5CAB?logo=salesforce&logoColor=white">
   <img alt="WYSIWYG" src="https://img.shields.io/badge/Builder-WYSIWYG-0176D3">
   <img alt="No external renderer" src="https://img.shields.io/badge/Rendering-no%20external%20service-2E844A">
-  <img alt="Release status" src="https://img.shields.io/badge/release-v1.0.12-2E844A">
+  <img alt="Release status" src="https://img.shields.io/badge/release-v1.0.13-2E844A">
 </p>
 
 <p align="center">
@@ -68,8 +68,8 @@ installed in production.
 
 | Target                          | Installation link                                                                                                               |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Sandbox                         | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZEHpIAO)                        |
-| Production or Developer Edition | [Install in production or Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZEHpIAO) |
+| Sandbox                         | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZEhdIAG)                        |
+| Production or Developer Edition | [Install in production or Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZEhdIAG) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
@@ -79,7 +79,7 @@ The same version can also be installed with Salesforce CLI:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZEHpIAO \
+  --package 04tQy000000ZEhdIAG \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
