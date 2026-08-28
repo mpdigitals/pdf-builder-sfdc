@@ -83,8 +83,50 @@ jobs:
             --output-file "$RUNNER_TEMP/sfca-results.sarif" \
             >"$RUNNER_TEMP/sfca-output.log" 2>&1; then
             echo "::error::Salesforce Code Analyzer could not complete."
+            cat "$RUNNER_TEMP/sfca-output.log"
             exit 1
           fi
+
+      - name: Sanitize SARIF for GitHub Code Scanning
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          path = os.path.join(os.environ["RUNNER_TEMP"], "sfca-results.sarif")
+
+          with open(path, "r", encoding="utf-8") as f:
+              sarif = json.load(f)
+
+          removed = 0
+
+          for run in sarif.get("runs", []):
+              valid_results = []
+
+              for result in run.get("results", []):
+                  locations = result.get("locations", [])
+
+                  has_artifact_location = any(
+                      location
+                      .get("physicalLocation", {})
+                      .get("artifactLocation", {})
+                      .get("uri")
+                      for location in locations
+                  )
+
+                  if has_artifact_location:
+                      valid_results.append(result)
+                  else:
+                      removed += 1
+
+              run["results"] = valid_results
+
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(sarif, f)
+
+          print(f"Removed {removed} SARIF result(s) without artifact locations.")
+          PY
 
       - name: Upload results to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d
