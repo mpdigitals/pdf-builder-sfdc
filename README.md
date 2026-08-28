@@ -5,11 +5,10 @@
 </p>
 
 <p align="center">
-  <a href="https://app.codacy.com/gh/mpdigitals/pdf-builder-sfdc/dashboard"><img alt="Codacy code quality" src="https://app.codacy.com/project/badge/Grade/30cd2cc87bc44f6cbc299ffb0e519094"></a>
   <img alt="Salesforce native" src="https://img.shields.io/badge/Salesforce-native-0B5CAB?logo=salesforce&logoColor=white">
   <img alt="WYSIWYG" src="https://img.shields.io/badge/Builder-WYSIWYG-0176D3">
   <img alt="No external renderer" src="https://img.shields.io/badge/Rendering-no%20external%20service-2E844A">
-  <img alt="Release status" src="https://img.shields.io/badge/release-v1.0.9-2E844A">
+  <img alt="Release status" src="https://img.shields.io/badge/release-v1.0.12-2E844A">
 </p>
 
 <p align="center">
@@ -67,10 +66,10 @@ Install the released unlocked package. Sandbox and production use the same
 versioned artifact, so the package tested in a sandbox is exactly the package
 installed in production.
 
-| Target                          | Installation link                                                                                                             |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Sandbox                         | [Install PDF Builder 1.0.11 in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZE1hIAG)   |
-| Production or Developer Edition | [Install PDF Builder 1.0.11 in production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZE1hIAG) |
+| Target                          | Installation link                                                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Sandbox                         | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZEHpIAO)                        |
+| Production or Developer Edition | [Install in production or Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZEHpIAO) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
@@ -80,7 +79,7 @@ The same version can also be installed with Salesforce CLI:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZE1hIAG \
+  --package 04tQy000000ZEHpIAO \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
@@ -320,8 +319,6 @@ and Apex.
 | `ContentJson__c`   | Canonical editable document model.                         | 131,072 characters |
 | `GeneratedHtml__c` | Generated browser-preview HTML retained with the template. | 131,072 characters |
 
-The two long-text fields have independent limits. Their capacities are not shared: one template can store up to 131,072 characters in each field, subject to Salesforce record storage and the application's configured validation limit.
-
 ### Configuration
 
 Runtime behavior is controlled by the public Custom Metadata type `PDFBuilderSettings__mdt`. The application requires the record whose Developer Name is `Default`; missing or invalid required values raise an explicit configuration error instead of silently applying inconsistent defaults.
@@ -331,31 +328,31 @@ All dimensions use CSS pixels unless stated otherwise.
 <details>
 <summary><strong>View full configuration reference</strong></summary>
 
-| Field API name               |                 Default | Description                                                                                                                                                                   |
-| ---------------------------- | ----------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PreferredObjectApiNames__c` |               See below | Object API names displayed first in the object selector. Accepts one name per line or comma-separated values. Invalid or unavailable objects are ignored.                     |
-| `IncludeCustomObjects__c`    |                  `true` | When enabled, appends accessible custom objects to the selector. Custom Metadata objects are excluded. When disabled, custom objects are omitted even if listed as preferred. |
-| `SupportedImageTypes__c`     | `PNG,JPG,JPEG,GIF,WEBP` | Comma-separated Salesforce `FileType` values accepted by the image picker.                                                                                                    |
-| `LongTextLimit__c`           |                `131072` | Maximum accepted length for each template JSON and generated HTML value. Keep this at or below the corresponding Salesforce field length.                                     |
-| `PageWidthPx__c`             |                   `794` | Canonical page width shared by the builder, preview, and PDF renderer. The default approximates A4 at 96 DPI.                                                                 |
-| `PageHeightPx__c`            |                  `1123` | Canonical page height shared by the builder, preview, and PDF renderer. The default approximates A4 at 96 DPI.                                                                |
-| `DefaultPagePaddingPx__c`    |                    `32` | Initial inner padding for newly created template pages.                                                                                                                       |
-| `DefaultElementPaddingPx__c` |                     `8` | Initial inner padding assigned to newly created elements.                                                                                                                     |
-| `DefaultHeaderHeightPx__c`   |                   `110` | Initial header-region height for new templates.                                                                                                                               |
-| `DefaultFooterHeightPx__c`   |                    `80` | Initial footer-region height for new templates.                                                                                                                               |
-| `MaxPages__c`                |                     `5` | Maximum number of manual pages available in the builder. Automatically paginated preview/output can still span pages according to content.                                    |
-| `TemplateQueryLimit__c`      |                   `200` | Maximum number of templates returned to a selector. Valid range: 1–2,000.                                                                                                     |
-| `ImageQueryLimit__c`         |                    `60` | Maximum number of matching Salesforce Files returned by the image picker. Valid range: 1–200.                                                                                 |
-| `MaxClientImageBase64__c`    |               `1800000` | Maximum Base64 string length accepted when a user uploads an image from the builder.                                                                                          |
-| `PdfContentWidthPx__c`       |                   `540` | Compatibility content width used when translating legacy positioned layouts.                                                                                                  |
-| `PdfCanvasWidthPx__c`        |                   `620` | Compatibility canvas width used when translating legacy positioned layouts.                                                                                                   |
-| `PdfFontScale__c`            |                  `0.96` | Font-metric compensation applied to server-side PDF output.                                                                                                                   |
-| `PdfImageYOffsetPx__c`       |                     `9` | Vertical image-alignment compensation for server-side PDF output.                                                                                                             |
-| `PdfGridColumns__c`          |                    `12` | Column count used by the compatibility PDF grid layout.                                                                                                                       |
-| `PdfGridGapPx__c`            |                     `8` | Gap between compatibility PDF grid columns.                                                                                                                                   |
-| `PdfGridRowHeightPx__c`      |                    `24` | Row height used by the compatibility PDF grid.                                                                                                                                |
-| `DragGridSizePx__c`          |                    `10` | Positioning increment used while dragging elements.                                                                                                                           |
-| `InputDebounceMs__c`         |                   `250` | Delay in milliseconds for inputs that defer expensive document updates.                                                                                                       |
+| Field API name               |                 Default | Description                                                                                                                                                                                           |
+| ---------------------------- | ----------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PreferredObjectApiNames__c` |               See below | Object API names displayed first in the object selector. Accepts one name per line or comma-separated values. Invalid or unavailable objects are ignored.                                             |
+| `IncludeCustomObjects__c`    |                  `true` | When enabled, appends accessible custom objects to the selector. Preferred objects are still shown when accessible, including explicitly listed custom objects. Custom Metadata objects are excluded. |
+| `SupportedImageTypes__c`     | `PNG,JPG,JPEG,GIF,WEBP` | Comma-separated Salesforce `FileType` values accepted by the image picker.                                                                                                                            |
+| `LongTextLimit__c`           |                `131072` | Maximum accepted length for each template JSON and generated HTML value. Keep this at or below the corresponding Salesforce field length.                                                             |
+| `PageWidthPx__c`             |                   `794` | Canonical page width shared by the builder, preview, and PDF renderer. The default approximates A4 at 96 DPI.                                                                                         |
+| `PageHeightPx__c`            |                  `1123` | Canonical page height shared by the builder, preview, and PDF renderer. The default approximates A4 at 96 DPI.                                                                                        |
+| `DefaultPagePaddingPx__c`    |                    `32` | Initial inner padding for newly created template pages.                                                                                                                                               |
+| `DefaultElementPaddingPx__c` |                     `8` | Initial inner padding assigned to newly created elements.                                                                                                                                             |
+| `DefaultHeaderHeightPx__c`   |                   `110` | Initial header-region height for new templates.                                                                                                                                                       |
+| `DefaultFooterHeightPx__c`   |                    `80` | Initial footer-region height for new templates.                                                                                                                                                       |
+| `MaxPages__c`                |                     `5` | Maximum number of manual pages available in the builder. Automatically paginated preview/output can still span pages according to content.                                                            |
+| `TemplateQueryLimit__c`      |                   `200` | Maximum number of templates returned to a selector. Valid range: 1–2,000.                                                                                                                             |
+| `ImageQueryLimit__c`         |                    `60` | Maximum number of matching Salesforce Files returned by the image picker. Valid range: 1–200.                                                                                                         |
+| `MaxClientImageBase64__c`    |               `1800000` | Maximum Base64 string length accepted when a user uploads an image from the builder.                                                                                                                  |
+| `PdfContentWidthPx__c`       |                   `540` | Compatibility content width used when translating legacy positioned layouts.                                                                                                                          |
+| `PdfCanvasWidthPx__c`        |                   `620` | Compatibility canvas width used when translating legacy positioned layouts.                                                                                                                           |
+| `PdfFontScale__c`            |                  `0.96` | Font-metric compensation applied to server-side PDF output.                                                                                                                                           |
+| `PdfImageYOffsetPx__c`       |                     `9` | Vertical image-alignment compensation for server-side PDF output.                                                                                                                                     |
+| `PdfGridColumns__c`          |                    `12` | Column count used by the compatibility PDF grid layout.                                                                                                                                               |
+| `PdfGridGapPx__c`            |                     `8` | Gap between compatibility PDF grid columns.                                                                                                                                                           |
+| `PdfGridRowHeightPx__c`      |                    `24` | Row height used by the compatibility PDF grid.                                                                                                                                                        |
+| `DragGridSizePx__c`          |                    `10` | Positioning increment used while dragging elements.                                                                                                                                                   |
+| `InputDebounceMs__c`         |                   `250` | Delay in milliseconds for inputs that defer expensive document updates.                                                                                                                               |
 
 </details>
 
@@ -363,8 +360,7 @@ The default preferred-object order is:
 
 ```text
 Lead, Account, Contact, Opportunity, Quote, Contract, ServiceContract,
-Order, Case, Campaign, Product2, Pricebook2, Asset, WorkOrder, User,
-Project__c, Project
+Order, Case, Campaign, Product2, Pricebook2, Asset, WorkOrder, User
 ```
 
 Only objects that exist in the target org and are available to the running user are shown.
@@ -376,6 +372,9 @@ Only objects that exist in the target org and are available to the running user 
 - The supplied permission set grants access to the PDF Builder classes, PDF delivery container, tabs, configuration, and template object. Access to source objects and fields still comes from the user's own profiles and permission sets.
 - PDF generation never grants access to record data the running user cannot read.
 - Saving a PDF requires permission to create Salesforce Files. Deleting or editing templates requires the corresponding object permissions.
+- Template HTML is sanitized at persistence, preview, and final PDF-render boundaries before it is treated as trusted rendering input.
+- The Visualforce PDF page intentionally renders sanitized template HTML without escaping so rich text, layout, and merge-field output can be preserved.
+- Static analysis tools can flag intentional rich-HTML rendering sinks such as `innerHTML` and `escape="false"`. Review those findings in the context of the sanitizer boundary instead of removing the rendering sinks blindly.
 - No credentials, org-specific record IDs, endpoints, or external service dependencies are stored in the repository.
 
 ### Images and public distributions
@@ -433,7 +432,7 @@ manifest/                Metadata manifests used during development
 - Publish subsequent unlocked-package versions with upgrade notes.
 - Add automated Apex deployment validation and metadata integrity checks to CI.
 - Expand administrator documentation.
-- Continue hardening browser-preview and server-side PDF parity.
+- Continue incremental rendering refactors to improve maintainability, automated coverage, and browser/PDF parity.
 - Add additional portable, unbranded example templates.
 
 ## Support and feedback

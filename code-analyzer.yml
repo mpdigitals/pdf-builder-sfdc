@@ -1,3 +1,5 @@
 engines:
   eslint:
     eslint_config_file: "eslint.config.js"
+  flow:
+    disable_engine: true

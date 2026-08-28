@@ -148,10 +148,7 @@ public inherited sharing class PDFBuilderDescribeService {
       if (!isInternalObjectApiName(apiName) && objectMap.containsKey(apiName)) {
         Schema.DescribeSObjectResult describe = objectMap.get(apiName)
           .getDescribe(SObjectDescribeOptions.DEFERRED);
-        if (
-          isObjectAvailable(describe) &&
-          (customObjectsEnabled || !describe.isCustom())
-        ) {
+        if (isObjectAvailable(describe)) {
           preferred.add(
             new ObjectDescriptor(
               describe.getLabel(),
