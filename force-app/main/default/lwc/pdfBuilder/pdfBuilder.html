@@ -1,13 +1,7 @@
 <template>
-  <div class={builderClass}>
+  <div class={builderClass} style={builderStyle}>
     <template lwc:if={isConfigurationReady}>
       <div class="top-toolbar">
-        <img
-          class="application-logo"
-          src={applicationLogoUrl}
-          alt="PDF Builder for Salesforce"
-        />
-
         <button
           class="toolbar-button icon-button"
           onclick={undo}
@@ -952,354 +946,159 @@
         title="Resize left panel"
       ></div>
 
-      <main class="canvas-wrapper">
-        <div class="pdf-page" style={pageStyle}>
-          <template lwc:if={hasHeader}>
-            <section
-              class={header.className}
-              style={header.inlineStyle}
-              data-region-id={header.id}
-              onclick={handleRegionClick}
-              ondragover={handleDragOver}
-              ondrop={handleRegionDrop}
-            >
-              <div class="region-label">Header</div>
-
-              <template for:each={header.blocks} for:item="block">
-                <div
-                  key={block.id}
-                  class={block.shellClass}
-                  style={block.shellStyle}
-                  data-block-id={block.id}
-                  data-region-id={header.id}
-                  draggable={blockShellDraggable}
-                  ondragstart={handleCanvasBlockDragStart}
-                  ondragend={handleDragEnd}
-                  onmousedown={handleCanvasBlockMouseDown}
-                  onclick={handleCanvasBlockShellClick}
-                >
-                  <c-pdf-builder-block
-                    block={block}
-                    region-id={header.id}
-                    onselectblock={handleBlockSelect}
-                    ontextchange={handleTextChange}
-                    ontextfocus={handleTextFocus}
-                    ontextblur={handleTextBlur}
-                    onrichtextstatechange={handleRichTextStateChange}
-                    onblockresizestart={handleBlockResizeStart}
-                    onimagedoubleclick={handleImageDoubleClick}
-                  >
-                  </c-pdf-builder-block>
-
-                  <template lwc:if={block.isSelected}>
-                    <template for:each={block.resizeHandles} for:item="handle">
-                      <div
-                        key={handle.key}
-                        class={handle.className}
-                        data-block-id={block.id}
-                        data-resize-dir={handle.direction}
-                        onmousedown={handleCanvasBlockResizeStart}
-                      ></div>
-                    </template>
-                  </template>
-                </div>
-              </template>
-
-              <template lwc:if={header.isEmpty}>
-                <p class="drop-placeholder">Drop header content here</p>
-              </template>
-
-              <div
-                class="region-resize-handle"
+      <main class="canvas-wrapper" style={canvasWrapperStyle}>
+        <div class="canvas-stage" style={canvasStageStyle}>
+          <div class="pdf-page" style={pageStyle}>
+            <template lwc:if={hasHeader}>
+              <section
+                class={header.className}
+                style={header.inlineStyle}
                 data-region-id={header.id}
-                onmousedown={handleResizeStart}
-              ></div>
-            </section>
-          </template>
+                onclick={handleRegionClick}
+                ondragover={handleDragOver}
+                ondrop={handleRegionDrop}
+              >
+                <div class="region-label">Header</div>
 
-          <template lwc:if={hasBody}>
-            <section class={bodyClass}>
-              <template for:each={firstPageBodySections} for:item="section">
-                <div
-                  key={section.id}
-                  class={section.className}
-                  style={section.inlineStyle}
-                  data-region-id={section.id}
-                  onclick={handleRegionClick}
-                  ondragover={handleDragOver}
-                  ondrop={handleRegionDrop}
-                >
-                  <div class="region-label">{section.label}</div>
-
-                  <template for:each={section.blocks} for:item="block">
-                    <div
-                      key={block.id}
-                      class={block.shellClass}
-                      style={block.shellStyle}
-                      data-block-id={block.id}
-                      data-region-id={section.id}
-                      data-render-y={block.styles.y}
-                      draggable={blockShellDraggable}
-                      ondragstart={handleCanvasBlockDragStart}
-                      ondragend={handleDragEnd}
-                      onmousedown={handleCanvasBlockMouseDown}
-                      onclick={handleCanvasBlockShellClick}
+                <template for:each={header.blocks} for:item="block">
+                  <div
+                    key={block.id}
+                    class={block.shellClass}
+                    style={block.shellStyle}
+                    data-block-id={block.id}
+                    data-region-id={header.id}
+                    draggable={blockShellDraggable}
+                    ondragstart={handleCanvasBlockDragStart}
+                    ondragend={handleDragEnd}
+                    onmousedown={handleCanvasBlockMouseDown}
+                    onclick={handleCanvasBlockShellClick}
+                  >
+                    <c-pdf-builder-block
+                      block={block}
+                      region-id={header.id}
+                      onselectblock={handleBlockSelect}
+                      ontextchange={handleTextChange}
+                      ontextfocus={handleTextFocus}
+                      ontextblur={handleTextBlur}
+                      onrichtextstatechange={handleRichTextStateChange}
+                      onblockresizestart={handleBlockResizeStart}
+                      onimagedoubleclick={handleImageDoubleClick}
                     >
-                      <c-pdf-builder-block
-                        block={block}
-                        region-id={section.id}
-                        onselectblock={handleBlockSelect}
-                        ontextchange={handleTextChange}
-                        ontextfocus={handleTextFocus}
-                        ontextblur={handleTextBlur}
-                        onrichtextstatechange={handleRichTextStateChange}
-                        onblockresizestart={handleBlockResizeStart}
-                        onimagedoubleclick={handleImageDoubleClick}
+                    </c-pdf-builder-block>
+
+                    <template lwc:if={block.isSelected}>
+                      <template
+                        for:each={block.resizeHandles}
+                        for:item="handle"
                       >
-                      </c-pdf-builder-block>
-
-                      <template lwc:if={block.isSelected}>
-                        <template
-                          for:each={block.resizeHandles}
-                          for:item="handle"
-                        >
-                          <div
-                            key={handle.key}
-                            class={handle.className}
-                            data-block-id={block.id}
-                            data-resize-dir={handle.direction}
-                            onmousedown={handleCanvasBlockResizeStart}
-                          ></div>
-                        </template>
+                        <div
+                          key={handle.key}
+                          class={handle.className}
+                          data-block-id={block.id}
+                          data-resize-dir={handle.direction}
+                          onmousedown={handleCanvasBlockResizeStart}
+                        ></div>
                       </template>
-                    </div>
-                  </template>
-
-                  <template lwc:if={section.isEmpty}>
-                    <p class="drop-placeholder">Drop body content here</p>
-                  </template>
-                </div>
-              </template>
-            </section>
-          </template>
-
-          <template lwc:if={hasFooter}>
-            <section
-              class={footer.className}
-              style={footer.inlineStyle}
-              data-region-id={footer.id}
-              onclick={handleRegionClick}
-              ondragover={handleDragOver}
-              ondrop={handleRegionDrop}
-            >
-              <div class="region-label">Footer</div>
-
-              <template for:each={footer.blocks} for:item="block">
-                <div
-                  key={block.id}
-                  class={block.shellClass}
-                  style={block.shellStyle}
-                  data-block-id={block.id}
-                  data-region-id={footer.id}
-                  draggable={blockShellDraggable}
-                  ondragstart={handleCanvasBlockDragStart}
-                  ondragend={handleDragEnd}
-                  onmousedown={handleCanvasBlockMouseDown}
-                  onclick={handleCanvasBlockShellClick}
-                >
-                  <c-pdf-builder-block
-                    block={block}
-                    region-id={footer.id}
-                    onselectblock={handleBlockSelect}
-                    ontextchange={handleTextChange}
-                    ontextfocus={handleTextFocus}
-                    ontextblur={handleTextBlur}
-                    onrichtextstatechange={handleRichTextStateChange}
-                    onblockresizestart={handleBlockResizeStart}
-                    onimagedoubleclick={handleImageDoubleClick}
-                  >
-                  </c-pdf-builder-block>
-
-                  <template lwc:if={block.isSelected}>
-                    <template for:each={block.resizeHandles} for:item="handle">
-                      <div
-                        key={handle.key}
-                        class={handle.className}
-                        data-block-id={block.id}
-                        data-resize-dir={handle.direction}
-                        onmousedown={handleCanvasBlockResizeStart}
-                      ></div>
                     </template>
-                  </template>
-                </div>
-              </template>
-
-              <template lwc:if={footer.isEmpty}>
-                <p class="drop-placeholder">Drop footer content here</p>
-              </template>
-
-              <div
-                class="region-resize-handle"
-                data-region-id={footer.id}
-                onmousedown={handleResizeStart}
-              ></div>
-            </section>
-          </template>
-
-          <template lwc:if={showAddButtonOnFirstPage}>
-            <button
-              class="page-add-button"
-              type="button"
-              title="Añadir nueva página"
-              onclick={handleAddPage}
-            >
-              +
-            </button>
-          </template>
-        </div>
-
-        <template for:each={continuationPages} for:item="page">
-          <div
-            key={page.id}
-            class="pdf-page continuation-page"
-            style={pageStyle}
-          >
-            <div class="continuation-page-header">
-              <span class="continuation-page-badge"
-                >Page {page.pageNumber}</span
-              >
-              <template lwc:if={page.canRemove}>
-                <button
-                  class="continuation-remove-button"
-                  type="button"
-                  title="Remove added page"
-                  onclick={handleRemovePage}
-                >
-                  Remove
-                </button>
-              </template>
-            </div>
-
-            <template lwc:if={page.showHeader}>
-              <section
-                class={page.header.className}
-                style={page.header.inlineStyle}
-                data-region-id={page.header.id}
-                onclick={handleRegionClick}
-                ondragover={handleDragOver}
-                ondrop={handleRegionDrop}
-              >
-                <div class="region-label">Header · repeated</div>
-                <template for:each={page.headerBlocks} for:item="block">
-                  <div
-                    key={block.renderKey}
-                    class={block.shellClass}
-                    style={block.shellStyle}
-                    data-block-id={block.id}
-                    data-region-id={page.header.id}
-                    data-repeated="true"
-                    draggable={blockShellDraggable}
-                    ondragstart={handleCanvasBlockDragStart}
-                    ondragend={handleDragEnd}
-                    onmousedown={handleCanvasBlockMouseDown}
-                    onclick={handleCanvasBlockShellClick}
-                  >
-                    <c-pdf-builder-block
-                      block={block}
-                      region-id={page.header.id}
-                      onselectblock={handleBlockSelect}
-                      ontextchange={handleTextChange}
-                      ontextfocus={handleTextFocus}
-                      ontextblur={handleTextBlur}
-                      onrichtextstatechange={handleRichTextStateChange}
-                      onblockresizestart={handleBlockResizeStart}
-                      onimagedoubleclick={handleImageDoubleClick}
-                    ></c-pdf-builder-block>
                   </div>
                 </template>
-              </section>
-            </template>
 
-            <section class={page.bodyClass}>
-              <template for:each={page.bodySections} for:item="section">
+                <template lwc:if={header.isEmpty}>
+                  <p class="drop-placeholder">Drop header content here</p>
+                </template>
+
                 <div
-                  key={section.id}
-                  class={section.className}
-                  style={section.inlineStyle}
-                  data-region-id={section.id}
-                  onclick={handleRegionClick}
-                  ondragover={handleDragOver}
-                  ondrop={handleRegionDrop}
-                >
-                  <div class="region-label">
-                    {section.label} · Page {page.pageNumber}
-                  </div>
-                  <template for:each={section.blocks} for:item="block">
-                    <div
-                      key={block.id}
-                      class={block.shellClass}
-                      style={block.shellStyle}
-                      data-block-id={block.id}
-                      data-region-id={section.id}
-                      data-render-y={block.styles.y}
-                      draggable={blockShellDraggable}
-                      ondragstart={handleCanvasBlockDragStart}
-                      ondragend={handleDragEnd}
-                      onmousedown={handleCanvasBlockMouseDown}
-                      onclick={handleCanvasBlockShellClick}
-                    >
-                      <c-pdf-builder-block
-                        block={block}
-                        region-id={section.id}
-                        onselectblock={handleBlockSelect}
-                        ontextchange={handleTextChange}
-                        ontextfocus={handleTextFocus}
-                        ontextblur={handleTextBlur}
-                        onrichtextstatechange={handleRichTextStateChange}
-                        onblockresizestart={handleBlockResizeStart}
-                        onimagedoubleclick={handleImageDoubleClick}
-                      ></c-pdf-builder-block>
-                      <template lwc:if={block.isSelected}>
-                        <template
-                          for:each={block.resizeHandles}
-                          for:item="handle"
-                        >
-                          <div
-                            key={handle.key}
-                            class={handle.className}
-                            data-block-id={block.id}
-                            data-resize-dir={handle.direction}
-                            onmousedown={handleCanvasBlockResizeStart}
-                          ></div>
-                        </template>
-                      </template>
-                    </div>
-                  </template>
-                  <template lwc:if={section.isEmpty}>
-                    <p class="drop-placeholder">Drop body content here</p>
-                  </template>
-                </div>
-              </template>
-            </section>
+                  class="region-resize-handle"
+                  data-region-id={header.id}
+                  onmousedown={handleResizeStart}
+                ></div>
+              </section>
+            </template>
 
-            <template lwc:if={page.showFooter}>
+            <template lwc:if={hasBody}>
+              <section class={bodyClass}>
+                <template for:each={firstPageBodySections} for:item="section">
+                  <div
+                    key={section.id}
+                    class={section.className}
+                    style={section.inlineStyle}
+                    data-region-id={section.id}
+                    onclick={handleRegionClick}
+                    ondragover={handleDragOver}
+                    ondrop={handleRegionDrop}
+                  >
+                    <div class="region-label">{section.label}</div>
+
+                    <template for:each={section.blocks} for:item="block">
+                      <div
+                        key={block.id}
+                        class={block.shellClass}
+                        style={block.shellStyle}
+                        data-block-id={block.id}
+                        data-region-id={section.id}
+                        data-render-y={block.styles.y}
+                        draggable={blockShellDraggable}
+                        ondragstart={handleCanvasBlockDragStart}
+                        ondragend={handleDragEnd}
+                        onmousedown={handleCanvasBlockMouseDown}
+                        onclick={handleCanvasBlockShellClick}
+                      >
+                        <c-pdf-builder-block
+                          block={block}
+                          region-id={section.id}
+                          onselectblock={handleBlockSelect}
+                          ontextchange={handleTextChange}
+                          ontextfocus={handleTextFocus}
+                          ontextblur={handleTextBlur}
+                          onrichtextstatechange={handleRichTextStateChange}
+                          onblockresizestart={handleBlockResizeStart}
+                          onimagedoubleclick={handleImageDoubleClick}
+                        >
+                        </c-pdf-builder-block>
+
+                        <template lwc:if={block.isSelected}>
+                          <template
+                            for:each={block.resizeHandles}
+                            for:item="handle"
+                          >
+                            <div
+                              key={handle.key}
+                              class={handle.className}
+                              data-block-id={block.id}
+                              data-resize-dir={handle.direction}
+                              onmousedown={handleCanvasBlockResizeStart}
+                            ></div>
+                          </template>
+                        </template>
+                      </div>
+                    </template>
+
+                    <template lwc:if={section.isEmpty}>
+                      <p class="drop-placeholder">Drop body content here</p>
+                    </template>
+                  </div>
+                </template>
+              </section>
+            </template>
+
+            <template lwc:if={hasFooter}>
               <section
-                class={page.footer.className}
-                style={page.footer.inlineStyle}
-                data-region-id={page.footer.id}
+                class={footer.className}
+                style={footer.inlineStyle}
+                data-region-id={footer.id}
                 onclick={handleRegionClick}
                 ondragover={handleDragOver}
                 ondrop={handleRegionDrop}
               >
-                <div class="region-label">Footer · repeated</div>
-                <template for:each={page.footerBlocks} for:item="block">
+                <div class="region-label">Footer</div>
+
+                <template for:each={footer.blocks} for:item="block">
                   <div
-                    key={block.renderKey}
+                    key={block.id}
                     class={block.shellClass}
                     style={block.shellStyle}
                     data-block-id={block.id}
-                    data-region-id={page.footer.id}
-                    data-repeated="true"
+                    data-region-id={footer.id}
                     draggable={blockShellDraggable}
                     ondragstart={handleCanvasBlockDragStart}
                     ondragend={handleDragEnd}
@@ -1308,7 +1107,7 @@
                   >
                     <c-pdf-builder-block
                       block={block}
-                      region-id={page.footer.id}
+                      region-id={footer.id}
                       onselectblock={handleBlockSelect}
                       ontextchange={handleTextChange}
                       ontextfocus={handleTextFocus}
@@ -1316,13 +1115,39 @@
                       onrichtextstatechange={handleRichTextStateChange}
                       onblockresizestart={handleBlockResizeStart}
                       onimagedoubleclick={handleImageDoubleClick}
-                    ></c-pdf-builder-block>
+                    >
+                    </c-pdf-builder-block>
+
+                    <template lwc:if={block.isSelected}>
+                      <template
+                        for:each={block.resizeHandles}
+                        for:item="handle"
+                      >
+                        <div
+                          key={handle.key}
+                          class={handle.className}
+                          data-block-id={block.id}
+                          data-resize-dir={handle.direction}
+                          onmousedown={handleCanvasBlockResizeStart}
+                        ></div>
+                      </template>
+                    </template>
                   </div>
                 </template>
+
+                <template lwc:if={footer.isEmpty}>
+                  <p class="drop-placeholder">Drop footer content here</p>
+                </template>
+
+                <div
+                  class="region-resize-handle"
+                  data-region-id={footer.id}
+                  onmousedown={handleResizeStart}
+                ></div>
               </section>
             </template>
 
-            <template lwc:if={page.showAddButton}>
+            <template lwc:if={showAddButtonOnFirstPage}>
               <button
                 class="page-add-button"
                 type="button"
@@ -1333,7 +1158,184 @@
               </button>
             </template>
           </div>
-        </template>
+
+          <template for:each={continuationPages} for:item="page">
+            <div
+              key={page.id}
+              class="pdf-page continuation-page"
+              style={pageStyle}
+            >
+              <div class="continuation-page-header">
+                <span class="continuation-page-badge"
+                  >Page {page.pageNumber}</span
+                >
+                <template lwc:if={page.canRemove}>
+                  <button
+                    class="continuation-remove-button"
+                    type="button"
+                    title="Remove added page"
+                    onclick={handleRemovePage}
+                  >
+                    Remove
+                  </button>
+                </template>
+              </div>
+
+              <template lwc:if={page.showHeader}>
+                <section
+                  class={page.header.className}
+                  style={page.header.inlineStyle}
+                  data-region-id={page.header.id}
+                  onclick={handleRegionClick}
+                  ondragover={handleDragOver}
+                  ondrop={handleRegionDrop}
+                >
+                  <div class="region-label">Header · repeated</div>
+                  <template for:each={page.headerBlocks} for:item="block">
+                    <div
+                      key={block.renderKey}
+                      class={block.shellClass}
+                      style={block.shellStyle}
+                      data-block-id={block.id}
+                      data-region-id={page.header.id}
+                      data-repeated="true"
+                      draggable={blockShellDraggable}
+                      ondragstart={handleCanvasBlockDragStart}
+                      ondragend={handleDragEnd}
+                      onmousedown={handleCanvasBlockMouseDown}
+                      onclick={handleCanvasBlockShellClick}
+                    >
+                      <c-pdf-builder-block
+                        block={block}
+                        region-id={page.header.id}
+                        onselectblock={handleBlockSelect}
+                        ontextchange={handleTextChange}
+                        ontextfocus={handleTextFocus}
+                        ontextblur={handleTextBlur}
+                        onrichtextstatechange={handleRichTextStateChange}
+                        onblockresizestart={handleBlockResizeStart}
+                        onimagedoubleclick={handleImageDoubleClick}
+                      ></c-pdf-builder-block>
+                    </div>
+                  </template>
+                </section>
+              </template>
+
+              <section class={page.bodyClass}>
+                <template for:each={page.bodySections} for:item="section">
+                  <div
+                    key={section.id}
+                    class={section.className}
+                    style={section.inlineStyle}
+                    data-region-id={section.id}
+                    onclick={handleRegionClick}
+                    ondragover={handleDragOver}
+                    ondrop={handleRegionDrop}
+                  >
+                    <div class="region-label">
+                      {section.label} · Page {page.pageNumber}
+                    </div>
+                    <template for:each={section.blocks} for:item="block">
+                      <div
+                        key={block.id}
+                        class={block.shellClass}
+                        style={block.shellStyle}
+                        data-block-id={block.id}
+                        data-region-id={section.id}
+                        data-render-y={block.styles.y}
+                        draggable={blockShellDraggable}
+                        ondragstart={handleCanvasBlockDragStart}
+                        ondragend={handleDragEnd}
+                        onmousedown={handleCanvasBlockMouseDown}
+                        onclick={handleCanvasBlockShellClick}
+                      >
+                        <c-pdf-builder-block
+                          block={block}
+                          region-id={section.id}
+                          onselectblock={handleBlockSelect}
+                          ontextchange={handleTextChange}
+                          ontextfocus={handleTextFocus}
+                          ontextblur={handleTextBlur}
+                          onrichtextstatechange={handleRichTextStateChange}
+                          onblockresizestart={handleBlockResizeStart}
+                          onimagedoubleclick={handleImageDoubleClick}
+                        ></c-pdf-builder-block>
+                        <template lwc:if={block.isSelected}>
+                          <template
+                            for:each={block.resizeHandles}
+                            for:item="handle"
+                          >
+                            <div
+                              key={handle.key}
+                              class={handle.className}
+                              data-block-id={block.id}
+                              data-resize-dir={handle.direction}
+                              onmousedown={handleCanvasBlockResizeStart}
+                            ></div>
+                          </template>
+                        </template>
+                      </div>
+                    </template>
+                    <template lwc:if={section.isEmpty}>
+                      <p class="drop-placeholder">Drop body content here</p>
+                    </template>
+                  </div>
+                </template>
+              </section>
+
+              <template lwc:if={page.showFooter}>
+                <section
+                  class={page.footer.className}
+                  style={page.footer.inlineStyle}
+                  data-region-id={page.footer.id}
+                  onclick={handleRegionClick}
+                  ondragover={handleDragOver}
+                  ondrop={handleRegionDrop}
+                >
+                  <div class="region-label">Footer · repeated</div>
+                  <template for:each={page.footerBlocks} for:item="block">
+                    <div
+                      key={block.renderKey}
+                      class={block.shellClass}
+                      style={block.shellStyle}
+                      data-block-id={block.id}
+                      data-region-id={page.footer.id}
+                      data-repeated="true"
+                      draggable={blockShellDraggable}
+                      ondragstart={handleCanvasBlockDragStart}
+                      ondragend={handleDragEnd}
+                      onmousedown={handleCanvasBlockMouseDown}
+                      onclick={handleCanvasBlockShellClick}
+                    >
+                      <c-pdf-builder-block
+                        block={block}
+                        region-id={page.footer.id}
+                        onselectblock={handleBlockSelect}
+                        ontextchange={handleTextChange}
+                        ontextfocus={handleTextFocus}
+                        ontextblur={handleTextBlur}
+                        onrichtextstatechange={handleRichTextStateChange}
+                        onblockresizestart={handleBlockResizeStart}
+                        onimagedoubleclick={handleImageDoubleClick}
+                      ></c-pdf-builder-block>
+                    </div>
+                  </template>
+                </section>
+              </template>
+
+              <template lwc:if={page.showAddButton}>
+                <button
+                  class="page-add-button"
+                  type="button"
+                  title="Añadir nueva página"
+                  onclick={handleAddPage}
+                >
+                  +
+                </button>
+              </template>
+            </div>
+          </template>
+        </div>
       </main>
 
       <div

@@ -217,6 +217,7 @@
 }
 
 .top-toolbar {
+  container-type: inline-size;
   position: absolute;
   top: 0;
   left: 0;
@@ -231,16 +232,6 @@
   border-bottom: 1px solid #d8dde6;
   background: #ffffff;
   box-sizing: border-box;
-}
-
-.application-logo {
-  position: absolute;
-  left: 16px;
-  width: auto;
-  height: 36px;
-  object-fit: contain;
-  user-select: none;
-  pointer-events: none;
 }
 
 .fullscreen-button {
@@ -561,6 +552,29 @@
 
 .properties-resize-handle:hover::before {
   background: #0176d3;
+}
+
+.builder-responsive .sidebar,
+.builder-responsive .properties-panel {
+  flex: 0 0 auto;
+}
+
+.builder-responsive .canvas-wrapper {
+  min-width: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+@media (max-width: 1100px) {
+  .builder-responsive .sidebar,
+  .builder-responsive .properties-panel {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .builder-responsive .tool-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .properties-panel h2 {
@@ -1114,6 +1128,12 @@
   padding: 24px;
   overflow: auto;
   box-sizing: border-box;
+}
+
+.canvas-stage {
+  width: max-content;
+  margin: 0 auto;
+  transform-origin: top center;
 }
 
 .pdf-page {
