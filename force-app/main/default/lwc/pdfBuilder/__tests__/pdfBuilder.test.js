@@ -160,9 +160,7 @@ describe("c-pdf-builder", () => {
       "Account proposal (ACC)",
       "Quote proposal (QUO)"
     ]);
-    expect(
-      element.shadowRoot.querySelector(".application-logo").getAttribute("alt")
-    ).toBe("PDF Builder for Salesforce");
+    expect(element.shadowRoot.querySelector(".application-logo")).toBeNull();
   });
 
   it("warns when inserting a variable without a text or table block", async () => {

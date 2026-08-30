@@ -1,7 +1,6 @@
 import { LightningElement, api, track, wire } from "lwc";
 import { CurrentPageReference } from "lightning/navigation";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
-import pdfBuilderLogo from "@salesforce/resourceUrl/PDFBuilderBrandLogo";
 import {
   formatTemplateOptions,
   resolveBuilderConfiguration
@@ -54,7 +53,6 @@ const DEFAULT_TABLE_HEIGHT = 120;
 
 export default class PDFBuilder extends LightningElement {
   @api recordId;
-  applicationLogoUrl = pdfBuilderLogo;
   pageRefRecordId;
   enablePointerBlockMove = true;
   enableExistingBlockDrag = false;
@@ -89,16 +87,23 @@ export default class PDFBuilder extends LightningElement {
   sidebarResizeState;
   sidebarWidth = 340;
   sidebarMinWidth = 320;
-  sidebarMaxWidth = 520;
+  sidebarMaxWidth = 560;
+  liveDemoSidebarRatio = 0.21;
+  liveDemoSidebarMinWidth = 240;
   propertiesResizeState;
   propertiesPanelWidth = 400;
   propertiesPanelMinWidth = 340;
-  propertiesPanelMaxWidth = 580;
+  propertiesPanelMaxWidth = 640;
+  liveDemoPropertiesPanelRatio = 0.23;
+  liveDemoPropertiesPanelMinWidth = 280;
+  liveDemoCanvasScale = 1;
+  liveDemoBuilderHeight;
   boundMouseMoveHandler;
   boundMouseUpHandler;
   boundKeyDownHandler;
   boundOutsideMouseDownHandler;
   boundNativeBlockDragStartHandler;
+  boundWindowResizeHandler;
   paletteDragState;
   editingTextBlockId;
   activeEditingBlockComponent;
@@ -193,15 +198,31 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get builderClass() {
-    return this.isFullscreen ? "builder builder-fullscreen" : "builder";
+    return [
+      "builder",
+      "builder-responsive",
+      this.isFullscreen ? "builder-fullscreen" : ""
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  get builderStyle() {
+    return this.liveDemoBuilderHeight
+      ? `height:${this.liveDemoBuilderHeight}px;min-height:0;`
+      : "";
+  }
+
+  get canvasWrapperStyle() {
+    return "padding-left:0;padding-right:0;";
   }
 
   get sidebarStyle() {
-    return `width:${this.sidebarWidth}px;min-width:${this.sidebarMinWidth}px;`;
+    return `width:${this.sidebarWidth}px;min-width:${this.liveDemoSidebarMinWidth}px;`;
   }
 
   get propertiesPanelStyle() {
-    return `width:${this.propertiesPanelWidth}px;min-width:${this.propertiesPanelMinWidth}px;`;
+    return `width:${this.propertiesPanelWidth}px;min-width:${this.liveDemoPropertiesPanelMinWidth}px;`;
   }
 
   get blockShellDraggable() {
@@ -316,6 +337,14 @@ export default class PDFBuilder extends LightningElement {
       );
     }
 
+    if (!this.boundWindowResizeHandler) {
+      this.boundWindowResizeHandler =
+        this.handleLiveDemoWindowResize.bind(this);
+      window.addEventListener("resize", this.boundWindowResizeHandler);
+    }
+
+    this.syncLiveDemoPanelLayout();
+
     this.syncEditableText();
     this.syncPropertyControls();
     this.syncRichTextToolbar();
@@ -413,6 +442,162 @@ export default class PDFBuilder extends LightningElement {
     });
   }
 
+  handleLiveDemoWindowResize() {
+    this.syncLiveDemoPanelLayout();
+  }
+
+  syncLiveDemoPanelLayout() {
+    const builder = this.template.querySelector(".builder");
+    const builderWidth = Math.round(
+      builder?.getBoundingClientRect?.().width || builder?.clientWidth || 0
+    );
+
+    if (!builderWidth) {
+      return;
+    }
+
+    const builderTop = Number(
+      builder?.getBoundingClientRect?.().top ?? builder?.offsetTop ?? 0
+    );
+    const viewportHeight = Number(window.innerHeight) || 0;
+    const builderHeight =
+      viewportHeight > 0 && Number.isFinite(builderTop)
+        ? Math.max(320, Math.floor(viewportHeight - builderTop - 12))
+        : null;
+
+    const layout = this.getLiveDemoPanelLayout(builderWidth);
+    const canvasScale = this.getLiveDemoCanvasScale(
+      builderWidth,
+      layout.sidebar,
+      layout.properties
+    );
+
+    if (Math.abs(this.sidebarWidth - layout.sidebar) > 1) {
+      this.sidebarWidth = layout.sidebar;
+    }
+    if (Math.abs(this.propertiesPanelWidth - layout.properties) > 1) {
+      this.propertiesPanelWidth = layout.properties;
+    }
+    if (this.liveDemoSidebarMinWidth !== layout.sidebarMinimum) {
+      this.liveDemoSidebarMinWidth = layout.sidebarMinimum;
+    }
+    if (this.liveDemoPropertiesPanelMinWidth !== layout.propertiesMinimum) {
+      this.liveDemoPropertiesPanelMinWidth = layout.propertiesMinimum;
+    }
+    if (Math.abs(this.liveDemoCanvasScale - canvasScale) > 0.005) {
+      this.liveDemoCanvasScale = canvasScale;
+    }
+    if (builderHeight && this.liveDemoBuilderHeight !== builderHeight) {
+      this.liveDemoBuilderHeight = builderHeight;
+    }
+  }
+
+  getLiveDemoPanelLayout(builderWidth) {
+    const compact = builderWidth < 1200;
+    const narrow = builderWidth < 1000;
+    const sidebarMinimum = narrow ? 200 : compact ? 220 : 240;
+    const propertiesMinimum = narrow ? 230 : compact ? 260 : 280;
+    const canvasReserve = this.getLiveDemoCanvasReserve(builderWidth);
+    const resizeHandleWidth = 16;
+    const combinedMinimum = sidebarMinimum + propertiesMinimum;
+    const combinedMaximum = Math.max(
+      combinedMinimum,
+      builderWidth - canvasReserve - resizeHandleWidth
+    );
+
+    let sidebar = this.clampNumber(
+      Math.round(builderWidth * this.liveDemoSidebarRatio),
+      sidebarMinimum,
+      this.sidebarMaxWidth
+    );
+    let properties = this.clampNumber(
+      Math.round(builderWidth * this.liveDemoPropertiesPanelRatio),
+      propertiesMinimum,
+      this.propertiesPanelMaxWidth
+    );
+
+    const overflow = sidebar + properties - combinedMaximum;
+    if (overflow > 0) {
+      const sidebarCapacity = Math.max(0, sidebar - sidebarMinimum);
+      const propertiesCapacity = Math.max(0, properties - propertiesMinimum);
+      const totalCapacity = sidebarCapacity + propertiesCapacity;
+
+      if (totalCapacity > 0) {
+        const sidebarReduction = Math.min(
+          sidebarCapacity,
+          Math.round(overflow * (sidebarCapacity / totalCapacity))
+        );
+        sidebar -= sidebarReduction;
+        properties -= Math.min(propertiesCapacity, overflow - sidebarReduction);
+      }
+    }
+
+    return {
+      sidebar,
+      properties,
+      sidebarMinimum,
+      propertiesMinimum
+    };
+  }
+
+  getLiveDemoCanvasReserve(builderWidth) {
+    return this.clampNumber(Math.round(builderWidth * 0.46), 420, 760);
+  }
+
+  getLiveDemoCanvasScale(builderWidth, sidebarWidth, propertiesWidth) {
+    const resizeHandleWidth = 16;
+    const availableWidth = Math.max(
+      1,
+      builderWidth - sidebarWidth - propertiesWidth - resizeHandleWidth
+    );
+    const documentWidth = Math.max(1, Number(this.pageWidth) || 1);
+
+    return (
+      Math.round(
+        this.clampNumber((availableWidth - 2) / documentWidth, 0.35, 1) * 1000
+      ) / 1000
+    );
+  }
+
+  getCanvasVisualScale() {
+    return Math.max(0.01, Number(this.liveDemoCanvasScale) || 1);
+  }
+
+  getLiveDemoPanelResizeMaximum(panelName) {
+    const builder = this.template.querySelector(".builder");
+    const builderWidth = Math.round(
+      builder?.getBoundingClientRect?.().width || builder?.clientWidth || 0
+    );
+
+    if (!builderWidth) {
+      return panelName === "sidebar"
+        ? this.sidebarMaxWidth
+        : this.propertiesPanelMaxWidth;
+    }
+
+    const otherPanelSelector =
+      panelName === "sidebar" ? ".properties-panel" : ".sidebar";
+    const otherPanel = this.template.querySelector(otherPanelSelector);
+    const otherPanelWidth = Math.round(
+      otherPanel?.getBoundingClientRect?.().width || 0
+    );
+    const minimum =
+      panelName === "sidebar"
+        ? this.liveDemoSidebarMinWidth
+        : this.liveDemoPropertiesPanelMinWidth;
+    const configuredMaximum =
+      panelName === "sidebar"
+        ? this.sidebarMaxWidth
+        : this.propertiesPanelMaxWidth;
+    const availableWidth =
+      builderWidth -
+      otherPanelWidth -
+      this.getLiveDemoCanvasReserve(builderWidth) -
+      16;
+
+    return Math.max(minimum, Math.min(configuredMaximum, availableWidth));
+  }
+
   forceBlockPositionStylesInDom() {
     const shellElements = this.template.querySelectorAll(
       ".block-shell[data-block-id]"
@@ -487,6 +672,10 @@ export default class PDFBuilder extends LightningElement {
         this.boundNativeBlockDragStartHandler,
         true
       );
+    }
+
+    if (this.boundWindowResizeHandler) {
+      window.removeEventListener("resize", this.boundWindowResizeHandler);
     }
 
     if (this.boundRichToolbarMouseMove) {
@@ -651,6 +840,10 @@ export default class PDFBuilder extends LightningElement {
       `background:${this.documentModel.pageBackground || "#ffffff"}`,
       `--body-min-height:${bodyMinHeight}px`
     ].join(";");
+  }
+
+  get canvasStageStyle() {
+    return `zoom:${this.liveDemoCanvasScale};`;
   }
 
   get pageBackgroundValue() {
@@ -2438,6 +2631,7 @@ export default class PDFBuilder extends LightningElement {
 
     const metrics = this.getRegionContentMetrics(regionId, regionElement);
     const blockRect = blockShellElement.getBoundingClientRect();
+    const canvasScale = this.getCanvasVisualScale();
     const renderedLeft = Number.parseFloat(blockShellElement.style.left);
     const renderedTop = Number.parseFloat(blockShellElement.style.top);
     const offsetLeft = Number.isFinite(blockShellElement.offsetLeft)
@@ -2451,12 +2645,16 @@ export default class PDFBuilder extends LightningElement {
         ? 0
         : Number.isFinite(offsetLeft)
           ? offsetLeft - metrics.paddingLeft
-          : blockRect.left - metrics.rect.left - metrics.paddingLeft;
+          : (blockRect.left - metrics.rect.left) / canvasScale -
+            metrics.paddingLeft;
     const fallbackY = Number.isFinite(offsetTop)
       ? offsetTop - metrics.paddingTop
-      : blockRect.top - metrics.rect.top - metrics.paddingTop;
-    const measuredWidth = Math.max(1, Math.ceil(blockRect.width));
-    const measuredHeight = Math.max(1, Math.ceil(blockRect.height));
+      : (blockRect.top - metrics.rect.top) / canvasScale - metrics.paddingTop;
+    const measuredWidth = Math.max(1, Math.ceil(blockRect.width / canvasScale));
+    const measuredHeight = Math.max(
+      1,
+      Math.ceil(blockRect.height / canvasScale)
+    );
     const maxInitialX = Math.max(0, metrics.availableWidth - measuredWidth);
     const maxInitialY = Math.max(0, metrics.availableHeight - measuredHeight);
     const initialX = this.clampNumber(
@@ -2492,8 +2690,8 @@ export default class PDFBuilder extends LightningElement {
       startY: event.clientY,
       currentX: event.clientX,
       currentY: event.clientY,
-      offsetX: event.clientX - blockRect.left,
-      offsetY: event.clientY - blockRect.top,
+      offsetX: (event.clientX - blockRect.left) / canvasScale,
+      offsetY: (event.clientY - blockRect.top) / canvasScale,
       blockElement: blockShellElement,
       regionElement,
       startedFromRepeatedPage: blockShellElement.dataset.repeated === "true",
@@ -4099,15 +4297,16 @@ export default class PDFBuilder extends LightningElement {
     const shell = this.getBlockShellElement(blockId);
     const metrics = this.getRegionContentMetrics(regionId);
     const shellRect = shell?.getBoundingClientRect?.();
+    const canvasScale = this.getCanvasVisualScale();
     const measuredX = Number.isFinite(shell?.offsetLeft)
       ? shell.offsetLeft - metrics.paddingLeft
-      : this.toNumber(shellRect?.left) -
-        this.toNumber(metrics.rect?.left) -
+      : (this.toNumber(shellRect?.left) - this.toNumber(metrics.rect?.left)) /
+          canvasScale -
         metrics.paddingLeft;
     const measuredY = Number.isFinite(shell?.offsetTop)
       ? shell.offsetTop - metrics.paddingTop
-      : this.toNumber(shellRect?.top) -
-        this.toNumber(metrics.rect?.top) -
+      : (this.toNumber(shellRect?.top) - this.toNumber(metrics.rect?.top)) /
+          canvasScale -
         metrics.paddingTop;
 
     return {
@@ -4823,6 +5022,7 @@ export default class PDFBuilder extends LightningElement {
     blockComponent?.persistTableData?.();
 
     const rect = shellElement.getBoundingClientRect();
+    const canvasScale = this.getCanvasVisualScale();
 
     this.handleBlockResizeStart({
       stopPropagation() {},
@@ -4834,8 +5034,8 @@ export default class PDFBuilder extends LightningElement {
         pageY: event.pageY,
         screenX: event.screenX,
         screenY: event.screenY,
-        startWidth: rect.width,
-        startHeight: rect.height,
+        startWidth: rect.width / canvasScale,
+        startHeight: rect.height / canvasScale,
         imageAspectRatio:
           block.type === "image"
             ? blockComponent?.getImageAspectRatio?.()
@@ -5088,28 +5288,40 @@ export default class PDFBuilder extends LightningElement {
 
     if (this.sidebarResizeState) {
       const delta = event.clientX - this.sidebarResizeState.startX;
+      const minimumWidth = this.liveDemoSidebarMinWidth;
+      const maximumWidth = this.getLiveDemoPanelResizeMaximum("sidebar");
       const nextWidth = Math.max(
-        this.sidebarMinWidth,
-        Math.min(
-          this.sidebarMaxWidth,
-          this.sidebarResizeState.startWidth + delta
-        )
+        minimumWidth,
+        Math.min(maximumWidth, this.sidebarResizeState.startWidth + delta)
       );
 
       this.sidebarWidth = nextWidth;
+      const builderWidth =
+        this.template.querySelector(".builder")?.getBoundingClientRect?.()
+          .width || 0;
+      if (builderWidth) {
+        this.liveDemoSidebarRatio = nextWidth / builderWidth;
+      }
+      this.syncLiveDemoPanelLayout();
       return;
     }
 
     if (this.propertiesResizeState) {
       const delta = this.propertiesResizeState.startX - event.clientX;
+      const minimumWidth = this.liveDemoPropertiesPanelMinWidth;
+      const maximumWidth = this.getLiveDemoPanelResizeMaximum("properties");
       const nextWidth = Math.max(
-        this.propertiesPanelMinWidth,
-        Math.min(
-          this.propertiesPanelMaxWidth,
-          this.propertiesResizeState.startWidth + delta
-        )
+        minimumWidth,
+        Math.min(maximumWidth, this.propertiesResizeState.startWidth + delta)
       );
       this.propertiesPanelWidth = nextWidth;
+      const builderWidth =
+        this.template.querySelector(".builder")?.getBoundingClientRect?.()
+          .width || 0;
+      if (builderWidth) {
+        this.liveDemoPropertiesPanelRatio = nextWidth / builderWidth;
+      }
+      this.syncLiveDemoPanelLayout();
       return;
     }
 
@@ -5185,8 +5397,9 @@ export default class PDFBuilder extends LightningElement {
       const resizeDirection = (
         this.resizeState.resizeDirection || "se"
       ).toLowerCase();
-      const deltaX = currentClientX - this.resizeState.startX;
-      const deltaY = currentClientY - this.resizeState.startY;
+      const canvasScale = this.getCanvasVisualScale();
+      const deltaX = (currentClientX - this.resizeState.startX) / canvasScale;
+      const deltaY = (currentClientY - this.resizeState.startY) / canvasScale;
       const fromWest = resizeDirection.includes("w");
       const fromEast = resizeDirection.includes("e");
       const fromNorth = resizeDirection.includes("n");
@@ -5322,7 +5535,8 @@ export default class PDFBuilder extends LightningElement {
       return;
     }
 
-    const delta = event.clientY - this.resizeState.startY;
+    const delta =
+      (event.clientY - this.resizeState.startY) / this.getCanvasVisualScale();
     const isFooterResize = this.resizeState.regionId === "footer";
     const requestedHeight = isFooterResize
       ? this.resizeState.startHeight - delta
@@ -5538,9 +5752,10 @@ export default class PDFBuilder extends LightningElement {
     event.preventDefault();
     event.stopPropagation();
 
+    const sidebar = this.template.querySelector(".sidebar");
     this.sidebarResizeState = {
       startX: event.clientX,
-      startWidth: this.sidebarWidth
+      startWidth: sidebar?.getBoundingClientRect?.().width || this.sidebarWidth
     };
 
     document.body.style.cursor = "col-resize";
@@ -5572,9 +5787,12 @@ export default class PDFBuilder extends LightningElement {
     event.preventDefault();
     event.stopPropagation();
 
+    const propertiesPanel = this.template.querySelector(".properties-panel");
     this.propertiesResizeState = {
       startX: event.clientX,
-      startWidth: this.propertiesPanelWidth
+      startWidth:
+        propertiesPanel?.getBoundingClientRect?.().width ||
+        this.propertiesPanelWidth
     };
 
     document.body.style.cursor = "col-resize";
@@ -5638,8 +5856,13 @@ export default class PDFBuilder extends LightningElement {
 
     const maxX = Math.max(0, metrics.availableWidth - blockWidth);
     const maxY = Math.max(0, metrics.availableHeight - blockHeight);
-    const rawX = moveState.initialX + (moveState.currentX - moveState.startX);
-    const rawY = moveState.initialY + (moveState.currentY - moveState.startY);
+    const canvasScale = this.getCanvasVisualScale();
+    const rawX =
+      moveState.initialX +
+      (moveState.currentX - moveState.startX) / canvasScale;
+    const rawY =
+      moveState.initialY +
+      (moveState.currentY - moveState.startY) / canvasScale;
 
     return {
       x: this.clampNumber(this.snapToGrid(rawX), 0, maxX),
@@ -5695,8 +5918,9 @@ export default class PDFBuilder extends LightningElement {
     const blockHeight =
       this.toOptionalNumber(block.styles?.height) ||
       this.getEstimatedBlockHeight(block);
-    const rawX = event.clientX - regionRect.left - paddingLeft;
-    const rawY = event.clientY - regionRect.top - paddingTop;
+    const canvasScale = this.getCanvasVisualScale();
+    const rawX = (event.clientX - regionRect.left) / canvasScale - paddingLeft;
+    const rawY = (event.clientY - regionRect.top) / canvasScale - paddingTop;
     const nextX = this.clampNumber(
       this.snapToGrid(rawX - blockWidth / 2),
       0,
@@ -8192,8 +8416,11 @@ export default class PDFBuilder extends LightningElement {
 
     const anchorX = anchorMode === "pointer" ? 0 : blockWidth / 2;
     const anchorY = anchorMode === "pointer" ? 0 : blockHeight / 2;
-    const rawX = event.clientX - regionRect.left - paddingLeft - anchorX;
-    const rawY = event.clientY - regionRect.top - paddingTop - anchorY;
+    const canvasScale = this.getCanvasVisualScale();
+    const rawX =
+      (event.clientX - regionRect.left) / canvasScale - paddingLeft - anchorX;
+    const rawY =
+      (event.clientY - regionRect.top) / canvasScale - paddingTop - anchorY;
     const nextX = this.clampNumber(
       this.snapToGrid(rawX),
       0,
