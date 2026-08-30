@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://app.codacy.com/gh/mpdigitals/pdf-builder-sfdc/dashboard"><img src="https://app.codacy.com/project/badge/Grade/30cd2cc87bc44f6cbc299ffb0e519094" alt="Codacy quality grade"></a>
-  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/github/v/release/mpdigitals/pdf-builder-sfdc?display_name=tag&amp;label=pre-release&amp;sort=semver" alt="Current pre-release"></a>
+  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/github/v/release/mpdigitals/pdf-builder-sfdc?display_name=tag&amp;label=pre-release&amp;sort=semver&amp;cacheSeconds=300" alt="Current pre-release"></a>
 </p>
 
 <p align="center">
