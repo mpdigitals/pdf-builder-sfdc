@@ -66,8 +66,8 @@ installed in production.
 
 | Target            | Installation link                                                                                                 |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Sandbox           | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZFU1IAO)          |
-| Developer Edition | [Install in Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZFU1IAO) |
+| Sandbox           | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZFYrIAO)          |
+| Developer Edition | [Install in Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZFYrIAO) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
@@ -77,7 +77,7 @@ The same version can also be installed with Salesforce CLI:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZFU1IAO \
+  --package 04tQy000000ZFYrIAO \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
