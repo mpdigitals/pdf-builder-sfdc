@@ -88,16 +88,16 @@ export default class PDFBuilder extends LightningElement {
   sidebarWidth = 340;
   sidebarMinWidth = 320;
   sidebarMaxWidth = 560;
-  liveDemoSidebarRatio = 0.21;
-  liveDemoSidebarMinWidth = 240;
+  responsiveSidebarRatio = 0.21;
+  responsiveSidebarMinWidth = 240;
   propertiesResizeState;
   propertiesPanelWidth = 400;
   propertiesPanelMinWidth = 340;
   propertiesPanelMaxWidth = 640;
-  liveDemoPropertiesPanelRatio = 0.23;
-  liveDemoPropertiesPanelMinWidth = 280;
-  liveDemoCanvasScale = 1;
-  liveDemoBuilderHeight;
+  responsivePropertiesPanelRatio = 0.23;
+  responsivePropertiesPanelMinWidth = 280;
+  responsiveCanvasScale = 1;
+  responsiveBuilderHeight;
   boundMouseMoveHandler;
   boundMouseUpHandler;
   boundKeyDownHandler;
@@ -208,8 +208,8 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get builderStyle() {
-    return this.liveDemoBuilderHeight
-      ? `height:${this.liveDemoBuilderHeight}px;min-height:0;`
+    return this.responsiveBuilderHeight
+      ? `height:${this.responsiveBuilderHeight}px;min-height:0;`
       : "";
   }
 
@@ -218,11 +218,11 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get sidebarStyle() {
-    return `width:${this.sidebarWidth}px;min-width:${this.liveDemoSidebarMinWidth}px;`;
+    return `width:${this.sidebarWidth}px;min-width:${this.responsiveSidebarMinWidth}px;`;
   }
 
   get propertiesPanelStyle() {
-    return `width:${this.propertiesPanelWidth}px;min-width:${this.liveDemoPropertiesPanelMinWidth}px;`;
+    return `width:${this.propertiesPanelWidth}px;min-width:${this.responsivePropertiesPanelMinWidth}px;`;
   }
 
   get blockShellDraggable() {
@@ -339,11 +339,11 @@ export default class PDFBuilder extends LightningElement {
 
     if (!this.boundWindowResizeHandler) {
       this.boundWindowResizeHandler =
-        this.handleLiveDemoWindowResize.bind(this);
+        this.handleResponsiveWindowResize.bind(this);
       window.addEventListener("resize", this.boundWindowResizeHandler);
     }
 
-    this.syncLiveDemoPanelLayout();
+    this.syncResponsivePanelLayout();
 
     this.syncEditableText();
     this.syncPropertyControls();
@@ -442,11 +442,11 @@ export default class PDFBuilder extends LightningElement {
     });
   }
 
-  handleLiveDemoWindowResize() {
-    this.syncLiveDemoPanelLayout();
+  handleResponsiveWindowResize() {
+    this.syncResponsivePanelLayout();
   }
 
-  syncLiveDemoPanelLayout() {
+  syncResponsivePanelLayout() {
     const builder = this.template.querySelector(".builder");
     const builderWidth = Math.round(
       builder?.getBoundingClientRect?.().width || builder?.clientWidth || 0
@@ -465,8 +465,8 @@ export default class PDFBuilder extends LightningElement {
         ? Math.max(320, Math.floor(viewportHeight - builderTop - 12))
         : null;
 
-    const layout = this.getLiveDemoPanelLayout(builderWidth);
-    const canvasScale = this.getLiveDemoCanvasScale(
+    const layout = this.getResponsivePanelLayout(builderWidth);
+    const canvasScale = this.getResponsiveCanvasScale(
       builderWidth,
       layout.sidebar,
       layout.properties
@@ -478,26 +478,26 @@ export default class PDFBuilder extends LightningElement {
     if (Math.abs(this.propertiesPanelWidth - layout.properties) > 1) {
       this.propertiesPanelWidth = layout.properties;
     }
-    if (this.liveDemoSidebarMinWidth !== layout.sidebarMinimum) {
-      this.liveDemoSidebarMinWidth = layout.sidebarMinimum;
+    if (this.responsiveSidebarMinWidth !== layout.sidebarMinimum) {
+      this.responsiveSidebarMinWidth = layout.sidebarMinimum;
     }
-    if (this.liveDemoPropertiesPanelMinWidth !== layout.propertiesMinimum) {
-      this.liveDemoPropertiesPanelMinWidth = layout.propertiesMinimum;
+    if (this.responsivePropertiesPanelMinWidth !== layout.propertiesMinimum) {
+      this.responsivePropertiesPanelMinWidth = layout.propertiesMinimum;
     }
-    if (Math.abs(this.liveDemoCanvasScale - canvasScale) > 0.005) {
-      this.liveDemoCanvasScale = canvasScale;
+    if (Math.abs(this.responsiveCanvasScale - canvasScale) > 0.005) {
+      this.responsiveCanvasScale = canvasScale;
     }
-    if (builderHeight && this.liveDemoBuilderHeight !== builderHeight) {
-      this.liveDemoBuilderHeight = builderHeight;
+    if (builderHeight && this.responsiveBuilderHeight !== builderHeight) {
+      this.responsiveBuilderHeight = builderHeight;
     }
   }
 
-  getLiveDemoPanelLayout(builderWidth) {
+  getResponsivePanelLayout(builderWidth) {
     const compact = builderWidth < 1200;
     const narrow = builderWidth < 1000;
     const sidebarMinimum = narrow ? 200 : compact ? 220 : 240;
     const propertiesMinimum = narrow ? 230 : compact ? 260 : 280;
-    const canvasReserve = this.getLiveDemoCanvasReserve(builderWidth);
+    const canvasReserve = this.getResponsiveCanvasReserve(builderWidth);
     const resizeHandleWidth = 16;
     const combinedMinimum = sidebarMinimum + propertiesMinimum;
     const combinedMaximum = Math.max(
@@ -506,12 +506,12 @@ export default class PDFBuilder extends LightningElement {
     );
 
     let sidebar = this.clampNumber(
-      Math.round(builderWidth * this.liveDemoSidebarRatio),
+      Math.round(builderWidth * this.responsiveSidebarRatio),
       sidebarMinimum,
       this.sidebarMaxWidth
     );
     let properties = this.clampNumber(
-      Math.round(builderWidth * this.liveDemoPropertiesPanelRatio),
+      Math.round(builderWidth * this.responsivePropertiesPanelRatio),
       propertiesMinimum,
       this.propertiesPanelMaxWidth
     );
@@ -540,11 +540,11 @@ export default class PDFBuilder extends LightningElement {
     };
   }
 
-  getLiveDemoCanvasReserve(builderWidth) {
+  getResponsiveCanvasReserve(builderWidth) {
     return this.clampNumber(Math.round(builderWidth * 0.46), 420, 760);
   }
 
-  getLiveDemoCanvasScale(builderWidth, sidebarWidth, propertiesWidth) {
+  getResponsiveCanvasScale(builderWidth, sidebarWidth, propertiesWidth) {
     const resizeHandleWidth = 16;
     const availableWidth = Math.max(
       1,
@@ -560,10 +560,10 @@ export default class PDFBuilder extends LightningElement {
   }
 
   getCanvasVisualScale() {
-    return Math.max(0.01, Number(this.liveDemoCanvasScale) || 1);
+    return Math.max(0.01, Number(this.responsiveCanvasScale) || 1);
   }
 
-  getLiveDemoPanelResizeMaximum(panelName) {
+  getResponsivePanelResizeMaximum(panelName) {
     const builder = this.template.querySelector(".builder");
     const builderWidth = Math.round(
       builder?.getBoundingClientRect?.().width || builder?.clientWidth || 0
@@ -583,8 +583,8 @@ export default class PDFBuilder extends LightningElement {
     );
     const minimum =
       panelName === "sidebar"
-        ? this.liveDemoSidebarMinWidth
-        : this.liveDemoPropertiesPanelMinWidth;
+        ? this.responsiveSidebarMinWidth
+        : this.responsivePropertiesPanelMinWidth;
     const configuredMaximum =
       panelName === "sidebar"
         ? this.sidebarMaxWidth
@@ -592,7 +592,7 @@ export default class PDFBuilder extends LightningElement {
     const availableWidth =
       builderWidth -
       otherPanelWidth -
-      this.getLiveDemoCanvasReserve(builderWidth) -
+      this.getResponsiveCanvasReserve(builderWidth) -
       16;
 
     return Math.max(minimum, Math.min(configuredMaximum, availableWidth));
@@ -843,7 +843,7 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get canvasStageStyle() {
-    return `zoom:${this.liveDemoCanvasScale};`;
+    return `zoom:${this.responsiveCanvasScale};`;
   }
 
   get pageBackgroundValue() {
@@ -5288,8 +5288,8 @@ export default class PDFBuilder extends LightningElement {
 
     if (this.sidebarResizeState) {
       const delta = event.clientX - this.sidebarResizeState.startX;
-      const minimumWidth = this.liveDemoSidebarMinWidth;
-      const maximumWidth = this.getLiveDemoPanelResizeMaximum("sidebar");
+      const minimumWidth = this.responsiveSidebarMinWidth;
+      const maximumWidth = this.getResponsivePanelResizeMaximum("sidebar");
       const nextWidth = Math.max(
         minimumWidth,
         Math.min(maximumWidth, this.sidebarResizeState.startWidth + delta)
@@ -5300,16 +5300,16 @@ export default class PDFBuilder extends LightningElement {
         this.template.querySelector(".builder")?.getBoundingClientRect?.()
           .width || 0;
       if (builderWidth) {
-        this.liveDemoSidebarRatio = nextWidth / builderWidth;
+        this.responsiveSidebarRatio = nextWidth / builderWidth;
       }
-      this.syncLiveDemoPanelLayout();
+      this.syncResponsivePanelLayout();
       return;
     }
 
     if (this.propertiesResizeState) {
       const delta = this.propertiesResizeState.startX - event.clientX;
-      const minimumWidth = this.liveDemoPropertiesPanelMinWidth;
-      const maximumWidth = this.getLiveDemoPanelResizeMaximum("properties");
+      const minimumWidth = this.responsivePropertiesPanelMinWidth;
+      const maximumWidth = this.getResponsivePanelResizeMaximum("properties");
       const nextWidth = Math.max(
         minimumWidth,
         Math.min(maximumWidth, this.propertiesResizeState.startWidth + delta)
@@ -5319,9 +5319,9 @@ export default class PDFBuilder extends LightningElement {
         this.template.querySelector(".builder")?.getBoundingClientRect?.()
           .width || 0;
       if (builderWidth) {
-        this.liveDemoPropertiesPanelRatio = nextWidth / builderWidth;
+        this.responsivePropertiesPanelRatio = nextWidth / builderWidth;
       }
-      this.syncLiveDemoPanelLayout();
+      this.syncResponsivePanelLayout();
       return;
     }
 
