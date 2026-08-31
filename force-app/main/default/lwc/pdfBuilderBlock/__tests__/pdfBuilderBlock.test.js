@@ -367,6 +367,45 @@ describe("c-pdf-builder-block", () => {
     expect(element.shadowRoot.querySelector(".table-bottom-border")).toBeNull();
   });
 
+  it("releases table-cell focus when editing is stopped", async () => {
+    const element = createElement("c-pdf-builder-block", {
+      is: PDFBuilderBlock
+    });
+    element.block = {
+      id: "table-1",
+      type: "table",
+      isTable: true,
+      inlineStyle: "",
+      styles: {},
+      tableRows: [
+        {
+          key: "row-0",
+          index: 0,
+          cells: [
+            {
+              key: "0:0",
+              columnIndex: 0,
+              content: "Editable cell",
+              style: "",
+              contentStyle: ""
+            }
+          ]
+        }
+      ]
+    };
+
+    document.body.appendChild(element);
+    await Promise.resolve();
+
+    const cell = element.shadowRoot.querySelector(".table-cell-editable");
+    const blurSpy = jest.spyOn(cell, "blur");
+    cell.focus();
+
+    element.stopTextEditing();
+
+    expect(blurSpy).toHaveBeenCalledTimes(1);
+  });
+
   it("reports the intrinsic image aspect ratio to the builder", async () => {
     const element = createElement("c-pdf-builder-block", {
       is: PDFBuilderBlock

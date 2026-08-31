@@ -4,6 +4,49 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.0.16-beta.2] - 2026-08-31
+
+### Fixed
+
+- Preview now resolves Organization and User merge fields even when no record ID is selected.
+- Turning off a Header or Footer now disables and clears its corresponding repeat option.
+- Copying horizontal and vertical lines preserves their fixed axis, preventing pasted lines from shifting diagonally.
+- Selecting another component now releases table-cell text focus so keyboard deletion applies to the selected component.
+
+## [1.0.16-beta.1] - 2026-08-31
+
+### Changed
+
+- Published the first beta pre-release distribution and clarified unlocked-package installation and optional Quote support.
+
+## [1.0.15] - 2026-08-30
+
+### Changed
+
+- Consolidated responsive layout helpers used by the builder panels and canvas.
+
+## [1.0.14] - 2026-08-30
+
+### Fixed
+
+- Restored responsive PDF Builder panel and canvas layout behavior.
+
+## [1.0.13] - 2026-08-28
+
+### Added
+
+- Salesforce Code Analyzer results are uploaded to GitHub code scanning in CI.
+
+## [1.0.12] - 2026-08-28
+
+### Changed
+
+- Accessible custom objects are available in the object selector regardless of the optional custom-object setting.
+
+### Fixed
+
+- Changing or clearing the selected object or template now clears stale preview state.
+
 ## [1.0.11] - 2026-08-27
 
 ### Security
@@ -44,7 +87,13 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.11...HEAD
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.2...HEAD
+[1.0.16-beta.2]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.1...v1.0.16-beta.2
+[1.0.16-beta.1]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.15...v1.0.16-beta.1
+[1.0.15]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.14...v1.0.15
+[1.0.14]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.13...v1.0.14
+[1.0.13]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.12...v1.0.13
+[1.0.12]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.10...v1.0.11
 [1.0.10]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.9...v1.0.10
 [1.0.9]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.8...v1.0.9

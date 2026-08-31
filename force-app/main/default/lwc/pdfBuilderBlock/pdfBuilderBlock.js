@@ -1938,14 +1938,26 @@ export default class PDFBuilderBlock extends LightningElement {
 
   @api
   stopTextEditing() {
+    const editableElement = this.getActiveEditableElement();
+
     if (this.block?.isTable) {
       this.dispatchTableDataChange();
     } else {
       this.dispatchTextChange(this.getEditableHtml());
     }
+
     this.isEditing = false;
     this.savedSelectionRange = null;
     this.savedNonCollapsedSelectionRange = null;
+
+    // Table cells remain contenteditable so a user can enter a cell directly.
+    // Ending an editing session must therefore explicitly release native DOM
+    // focus; otherwise Backspace/Delete is still handled by the old cell even
+    // after another block has been selected in the builder.
+    if (editableElement && typeof editableElement.blur === "function") {
+      editableElement.blur();
+    }
+    this.activeTableCellKey = undefined;
   }
 
   @api

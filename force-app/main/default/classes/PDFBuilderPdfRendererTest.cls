@@ -381,6 +381,34 @@ private class PDFBuilderPdfRendererTest {
   }
 
   /**
+   * @description Organization variables are available to Preview without a
+   * record because they are global to the running Salesforce org.
+   */
+  @IsTest
+  static void mergesOrganizationFieldsWithoutRecordPreview() {
+    String organizationName = [SELECT Name FROM Organization LIMIT 1].Name;
+
+    Test.startTest();
+    String result = PDFBuilderController.renderGeneratedHtmlForPreview(
+      '<div>{!$Organization.Name}</div><script>alert(1)</script>'
+    );
+    Test.stopTest();
+
+    Assert.isTrue(
+      result.contains(organizationName),
+      'Organization variables must merge without a record context.'
+    );
+    Assert.isFalse(
+      result.contains('{!$Organization.Name}'),
+      'The global variable must not remain unresolved.'
+    );
+    Assert.isFalse(
+      result.contains('<script'),
+      'Preview markup must retain the HTML sanitization boundary.'
+    );
+  }
+
+  /**
    * @description Verifies saved template rendering retains the same facade and validation behavior.
    */
   @IsTest

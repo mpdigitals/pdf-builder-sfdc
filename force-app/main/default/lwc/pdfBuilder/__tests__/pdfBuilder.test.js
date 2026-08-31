@@ -8,6 +8,7 @@ import getRelatedListFields from "@salesforce/apex/PDFBuilderController.getRelat
 import getTemplates from "@salesforce/apex/PDFBuilderController.getTemplates";
 import getTemplate from "@salesforce/apex/PDFBuilderController.getTemplate";
 import saveTemplate from "@salesforce/apex/PDFBuilderController.saveTemplate";
+import renderGeneratedHtmlForPreview from "@salesforce/apex/PDFBuilderController.renderGeneratedHtmlForPreview";
 
 jest.mock(
   "@salesforce/apex/PDFBuilderController.getConfiguration",
@@ -61,6 +62,11 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/PDFBuilderController.getSalesforceImageFiles",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/PDFBuilderController.renderGeneratedHtmlForPreview",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -129,6 +135,9 @@ describe("c-pdf-builder", () => {
       generatedHtml: ""
     });
     saveTemplate.mockResolvedValue("a01000000000003AAA");
+    renderGeneratedHtmlForPreview.mockImplementation(({ generatedHtml }) =>
+      Promise.resolve(generatedHtml)
+    );
   });
 
   afterEach(() => {
@@ -215,6 +224,57 @@ describe("c-pdf-builder", () => {
     expect(page.getAttribute("style")).toContain("padding:48px");
     expect(header.getAttribute("style")).toContain("--region-width:698px");
     expect(footer.getAttribute("style")).toContain("--region-width:698px");
+  });
+
+  it("resolves global fields in preview without a record context", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+
+    document.body.appendChild(element);
+    await flushPromises();
+
+    renderGeneratedHtmlForPreview.mockResolvedValue(
+      '<html><body><div class="pdf-page">Organization preview</div></body></html>'
+    );
+    Array.from(element.shadowRoot.querySelectorAll("button"))
+      .find((button) => button.textContent.trim() === "Preview")
+      .click();
+    await flushPromises();
+
+    expect(renderGeneratedHtmlForPreview).toHaveBeenCalledWith(
+      expect.objectContaining({ generatedHtml: expect.any(String) })
+    );
+    expect(
+      element.shadowRoot.querySelector(".preview-content").textContent
+    ).toContain("Organization preview");
+  });
+
+  it("clears and disables region repetition when its region is hidden", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const headerVisibility = element.shadowRoot.querySelector(
+      'input[data-visibility="showHeader"]'
+    );
+    const headerRepeat = element.shadowRoot.querySelector(
+      'input[data-repeat="repeatHeaderOnEachPage"]'
+    );
+
+    expect(headerRepeat.disabled).toBe(false);
+    headerVisibility.checked = false;
+    headerVisibility.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    const updatedHeaderRepeat = element.shadowRoot.querySelector(
+      'input[data-repeat="repeatHeaderOnEachPage"]'
+    );
+    expect(updatedHeaderRepeat.checked).toBe(false);
+    expect(updatedHeaderRepeat.disabled).toBe(true);
   });
 
   it("requires an object before expanding related-list fields", async () => {
@@ -767,6 +827,159 @@ describe("c-pdf-builder", () => {
     ).block;
     expect(movedBlock.styles.x).toBe(145);
     expect(movedBlock.styles.y).toBe(185);
+  });
+
+  it("keeps copied horizontal and vertical lines aligned on their fixed axis", async () => {
+    const regionStyles = {
+      background: "#ffffff",
+      padding: 8,
+      borderWidth: 0,
+      borderStyle: "none",
+      borderColor: "#c9c9c9",
+      borderRadius: 0
+    };
+    const content = {
+      pagePadding: 32,
+      globalElementPadding: 8,
+      showHeader: true,
+      showBody: true,
+      showFooter: true,
+      repeatHeaderOnEachPage: true,
+      repeatFooterOnEachPage: true,
+      manualPageCount: 0,
+      manualPages: [],
+      header: {
+        id: "header",
+        label: "Header",
+        styles: { ...regionStyles, height: 110 },
+        blocks: []
+      },
+      body: {
+        layout: "one",
+        sections: [
+          {
+            id: "body-1",
+            label: "Body",
+            styles: regionStyles,
+            blocks: [
+              {
+                id: "horizontal-line",
+                type: "divider",
+                content: "",
+                styles: {
+                  x: 120,
+                  y: 160,
+                  lineLength: 300,
+                  height: 1,
+                  lineThickness: 1,
+                  lineStyle: "solid",
+                  lineColor: "#181818"
+                }
+              },
+              {
+                id: "vertical-line",
+                type: "verticalLine",
+                content: "",
+                styles: {
+                  x: 240,
+                  y: 280,
+                  width: 1,
+                  height: 120,
+                  lineThickness: 1,
+                  lineStyle: "solid",
+                  lineColor: "#181818"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      footer: {
+        id: "footer",
+        label: "Footer",
+        styles: { ...regionStyles, height: 80 },
+        blocks: []
+      }
+    };
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Quote proposal",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(content),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    const selectBlock = (blockId) => {
+      element.shadowRoot
+        .querySelector(
+          `[data-region-id="body-1"] [data-block-id="${blockId}"] c-pdf-builder-block`
+        )
+        .dispatchEvent(
+          new CustomEvent("selectblock", {
+            detail: { blockId, regionId: "body-1" },
+            bubbles: true,
+            composed: true
+          })
+        );
+    };
+
+    selectBlock("horizontal-line");
+    await flushPromises();
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "d", ctrlKey: true })
+    );
+    await flushPromises();
+
+    selectBlock("vertical-line");
+    await flushPromises();
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "d", ctrlKey: true })
+    );
+    await flushPromises();
+
+    const blockComponents = Array.from(
+      element.shadowRoot.querySelectorAll(
+        '[data-region-id="body-1"] c-pdf-builder-block'
+      )
+    );
+    const horizontalCopy = blockComponents.find(
+      (component) =>
+        component.block.type === "divider" &&
+        component.block.id !== "horizontal-line"
+    );
+    const verticalCopy = blockComponents.find(
+      (component) =>
+        component.block.type === "verticalLine" &&
+        component.block.id !== "vertical-line"
+    );
+    const sourceHorizontal = blockComponents.find(
+      (component) => component.block.id === "horizontal-line"
+    );
+    const sourceVertical = blockComponents.find(
+      (component) => component.block.id === "vertical-line"
+    );
+
+    expect(horizontalCopy.block.styles.x).toBe(sourceHorizontal.block.styles.x);
+    expect(horizontalCopy.block.styles.y).toBe(
+      sourceHorizontal.block.styles.y + 16
+    );
+    expect(verticalCopy.block.styles.x).toBeGreaterThan(
+      sourceVertical.block.styles.x
+    );
+    expect(verticalCopy.block.styles.y).toBe(sourceVertical.block.styles.y);
   });
 
   it("keeps an image container fitted to its aspect ratio and padding while resizing", async () => {
