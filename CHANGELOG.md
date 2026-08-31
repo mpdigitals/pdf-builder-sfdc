@@ -4,6 +4,22 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.0.16-beta.4] - 2026-09-01
+
+### Added
+
+- `MP Opportunity Service Quotation`, a third optional sample template, with its matching static-resource logo.
+
+### Changed
+
+- The generated HTML dialog now presents formatted, syntax-highlighted markup and provides a copy action.
+- Preview record IDs accept only 15–18 alphanumeric Salesforce IDs and are limited to 18 characters.
+- Removed duplicate page labels from preview overflow pages; the existing header page indicator remains the single source of page numbering.
+
+### Fixed
+
+- An unconfigured related-list placeholder now remains at its configured position in preview output.
+
 ## [1.0.16-beta.3] - 2026-08-31
 
 ### Fixed
@@ -93,7 +109,8 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.3...HEAD
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.4...HEAD
+[1.0.16-beta.4]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.3...v1.0.16-beta.4
 [1.0.16-beta.3]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.2...v1.0.16-beta.3
 [1.0.16-beta.2]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.1...v1.0.16-beta.2
 [1.0.16-beta.1]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.15...v1.0.16-beta.1
