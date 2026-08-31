@@ -6675,7 +6675,7 @@ export default class PDFBuilder extends LightningElement {
     this.generateCurrentPreview();
   }
 
-  generateCurrentPreview() {
+  async generateCurrentPreview() {
     const effectiveRecordId = String(
       this.previewRecordId || this.recordId || this.pageRefRecordId || ""
     ).trim();
@@ -6690,73 +6690,52 @@ export default class PDFBuilder extends LightningElement {
       return;
     }
 
-    if (!hasRecordContext) {
-      this.previewFlow = null;
-      const requestId = ++this.previewGenerationRequestId;
-      this.isPreviewGenerating = true;
-      renderGeneratedHtmlForPreview({
-        generatedHtml: this.getPreviewHtml()
-      })
-        .then((previewHtml) => {
-          if (
-            requestId !== this.previewGenerationRequestId ||
-            !this.isPreviewOpen
-          ) {
-            return;
-          }
-          this.previewHtml = previewHtml;
-        })
-        .catch((error) => {
-          if (requestId !== this.previewGenerationRequestId) {
-            return;
-          }
-          this.showToast(
-            "Preview could not be generated",
-            this.getUserFacingErrorMessage(error),
-            "error"
-          );
-        })
-        .finally(() => {
-          if (requestId === this.previewGenerationRequestId) {
-            this.isPreviewGenerating = false;
-          }
-        });
-      return;
-    }
-
     const requestId = ++this.previewGenerationRequestId;
     this.isPreviewGenerating = true;
-    renderPdfFlowForRecordPreview({
-      objectApiName: this.selectedObjectApiName,
-      recordId: effectiveRecordId,
-      contentJson: JSON.stringify(this.stripRuntimeState(this.documentModel)),
-      generatedHtml: this.getPreviewHtml(true)
-    })
-      .then((previewFlow) => {
-        if (
-          requestId !== this.previewGenerationRequestId ||
-          !this.isPreviewOpen
-        ) {
-          return;
-        }
-        this.previewFlow = previewFlow;
-      })
-      .catch((error) => {
-        if (requestId !== this.previewGenerationRequestId) {
-          return;
-        }
-        this.templateStatus = "";
-        this.showToast(
-          "Preview could not be generated",
-          this.getUserFacingErrorMessage(error),
-          "error"
-        );
-      })
-      .finally(() => {
-        if (requestId === this.previewGenerationRequestId) {
-          this.isPreviewGenerating = false;
-        }
-      });
+
+    try {
+      // Images render immediately as data URLs in the builder. Persist them
+      // before generating preview HTML so Apex never receives a large base64
+      // payload in a long-text request.
+      await this.persistEmbeddedTemplateImages();
+
+      if (
+        requestId !== this.previewGenerationRequestId ||
+        !this.isPreviewOpen
+      ) {
+        return;
+      }
+
+      if (!hasRecordContext) {
+        this.previewFlow = null;
+        this.previewHtml = await renderGeneratedHtmlForPreview({
+          generatedHtml: this.getPreviewHtml()
+        });
+      } else {
+        this.previewFlow = await renderPdfFlowForRecordPreview({
+          objectApiName: this.selectedObjectApiName,
+          recordId: effectiveRecordId,
+          contentJson: JSON.stringify(
+            this.stripRuntimeState(this.documentModel)
+          ),
+          generatedHtml: this.getPreviewHtml(true)
+        });
+      }
+    } catch (error) {
+      if (requestId !== this.previewGenerationRequestId) {
+        return;
+      }
+      this.templateStatus = "";
+      this.showToast(
+        "Preview could not be generated",
+        this.getUserFacingErrorMessage(error),
+        "error"
+      );
+    } finally {
+      if (requestId === this.previewGenerationRequestId) {
+        this.isPreviewGenerating = false;
+      }
+    }
   }
 
   @wire(CurrentPageReference)
