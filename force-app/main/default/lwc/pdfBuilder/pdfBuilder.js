@@ -22,6 +22,7 @@ import saveTemplate from "@salesforce/apex/PDFBuilderController.saveTemplate";
 import deleteTemplate from "@salesforce/apex/PDFBuilderController.deleteTemplate";
 import saveTemplateImage from "@salesforce/apex/PDFBuilderController.saveTemplateImage";
 import getSalesforceImageFiles from "@salesforce/apex/PDFBuilderController.getSalesforceImageFiles";
+import renderGeneratedHtmlForPreview from "@salesforce/apex/PDFBuilderController.renderGeneratedHtmlForPreview";
 import renderPdfFlowForRecordPreview from "@salesforce/apex/PDFBuilderController.renderPdfFlowForRecordPreview";
 
 const BLOCK_RUNTIME_KEYS = new Set([
@@ -876,6 +877,14 @@ export default class PDFBuilder extends LightningElement {
 
   get repeatFooterOnEachPage() {
     return Boolean(this.documentModel.repeatFooterOnEachPage);
+  }
+
+  get isRepeatHeaderDisabled() {
+    return !this.hasHeader;
+  }
+
+  get isRepeatFooterDisabled() {
+    return !this.hasFooter;
   }
 
   get bodySections() {
@@ -2717,6 +2726,14 @@ export default class PDFBuilder extends LightningElement {
       return;
     }
 
+    // A block can be selected from its shell without the child component
+    // emitting selectblock (for example after a pointer interaction). Always
+    // end a previous text/table session before switching selection so its
+    // contenteditable element cannot retain keyboard focus.
+    if (this.editingTextBlockId && this.editingTextBlockId !== blockId) {
+      this.stopTextEditing();
+    }
+
     this.selectedKind = "block";
     this.selectedBlockId = blockId;
     this.selectedRegionId = regionId || null;
@@ -4016,11 +4033,21 @@ export default class PDFBuilder extends LightningElement {
 
   handleRegionVisibilityChange(event) {
     const flagName = event.target.dataset.visibility;
+    const isVisible = event.target.checked;
+    const dependentRepeatFlag =
+      flagName === "showHeader"
+        ? "repeatHeaderOnEachPage"
+        : flagName === "showFooter"
+          ? "repeatFooterOnEachPage"
+          : null;
 
     this.saveHistory();
     this.documentModel = this.decorateDocument({
       ...this.documentModel,
-      [flagName]: event.target.checked
+      [flagName]: isVisible,
+      ...(dependentRepeatFlag && !isVisible
+        ? { [dependentRepeatFlag]: false }
+        : {})
     });
 
     if (
@@ -6544,13 +6571,19 @@ export default class PDFBuilder extends LightningElement {
     const styles = {
       ...(clonedBlock.styles || {})
     };
+    const isHorizontalLine = clonedBlock.type === "divider";
+    const isVerticalLine = clonedBlock.type === "verticalLine";
 
-    if (styles.x !== null && styles.x !== undefined) {
+    // Keep copied lines aligned with the source line. A horizontal line is
+    // inserted below the original; a vertical line is inserted to its right.
+    // Offsetting both axes made pasted lines look like an unintended diagonal
+    // duplicate and broke alignment grids.
+    if (!isHorizontalLine && styles.x !== null && styles.x !== undefined) {
       styles.x = this.toNumber(styles.x) + 16;
       styles.xRatio = null;
     }
 
-    if (styles.y !== null && styles.y !== undefined) {
+    if (!isVerticalLine && styles.y !== null && styles.y !== undefined) {
       styles.y = this.toNumber(styles.y) + 16;
     }
 
@@ -6659,7 +6692,35 @@ export default class PDFBuilder extends LightningElement {
 
     if (!hasRecordContext) {
       this.previewFlow = null;
-      this.previewHtml = this.getPreviewHtml();
+      const requestId = ++this.previewGenerationRequestId;
+      this.isPreviewGenerating = true;
+      renderGeneratedHtmlForPreview({
+        generatedHtml: this.getPreviewHtml()
+      })
+        .then((previewHtml) => {
+          if (
+            requestId !== this.previewGenerationRequestId ||
+            !this.isPreviewOpen
+          ) {
+            return;
+          }
+          this.previewHtml = previewHtml;
+        })
+        .catch((error) => {
+          if (requestId !== this.previewGenerationRequestId) {
+            return;
+          }
+          this.showToast(
+            "Preview could not be generated",
+            this.getUserFacingErrorMessage(error),
+            "error"
+          );
+        })
+        .finally(() => {
+          if (requestId === this.previewGenerationRequestId) {
+            this.isPreviewGenerating = false;
+          }
+        });
       return;
     }
 
@@ -7389,8 +7450,10 @@ export default class PDFBuilder extends LightningElement {
       showHeader: model.showHeader !== false,
       showBody: true,
       showFooter: model.showFooter !== false,
-      repeatHeaderOnEachPage: model.repeatHeaderOnEachPage !== false,
-      repeatFooterOnEachPage: model.repeatFooterOnEachPage !== false,
+      repeatHeaderOnEachPage:
+        model.showHeader !== false && model.repeatHeaderOnEachPage !== false,
+      repeatFooterOnEachPage:
+        model.showFooter !== false && model.repeatFooterOnEachPage !== false,
       manualPageCount,
       manualPages,
       header: this.decorateRegion(

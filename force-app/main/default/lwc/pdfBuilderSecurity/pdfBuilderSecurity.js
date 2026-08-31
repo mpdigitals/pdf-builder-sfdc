@@ -773,17 +773,21 @@ export function sanitizeDocumentModel(source) {
   const manualPageCount = Math.trunc(
     finiteNumber(source.manualPageCount, 0, 100) ?? 0
   );
+  const showHeader = source.showHeader !== false;
+  const showFooter = source.showFooter !== false;
   return {
     lineHeightSchemaVersion:
       finiteNumber(source.lineHeightSchemaVersion, 0, 100) ?? 0,
     pageBackground: normalizeColor(source.pageBackground, "#ffffff"),
     pagePadding: finiteNumber(source.pagePadding, 0, 500),
     globalElementPadding: finiteNumber(source.globalElementPadding, 0, 500),
-    showHeader: source.showHeader !== false,
+    showHeader,
     showBody: true,
-    showFooter: source.showFooter !== false,
-    repeatHeaderOnEachPage: source.repeatHeaderOnEachPage !== false,
-    repeatFooterOnEachPage: source.repeatFooterOnEachPage !== false,
+    showFooter,
+    repeatHeaderOnEachPage:
+      showHeader && source.repeatHeaderOnEachPage !== false,
+    repeatFooterOnEachPage:
+      showFooter && source.repeatFooterOnEachPage !== false,
     manualPageCount,
     manualPages: Array.isArray(source.manualPages)
       ? source.manualPages.slice(0, manualPageCount).map((page, index) => ({

@@ -161,5 +161,20 @@ describe("pdfBuilderSecurity", () => {
         "Safe"
       );
     });
+
+    it("clears repeat flags when their fixed region is hidden", () => {
+      const result = sanitizeDocumentModel({
+        showHeader: false,
+        showFooter: false,
+        repeatHeaderOnEachPage: true,
+        repeatFooterOnEachPage: true,
+        header: { blocks: [], styles: {} },
+        body: { sections: [] },
+        footer: { blocks: [], styles: {} }
+      });
+
+      expect(result.repeatHeaderOnEachPage).toBe(false);
+      expect(result.repeatFooterOnEachPage).toBe(false);
+    });
   });
 });

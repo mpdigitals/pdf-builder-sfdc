@@ -758,6 +758,19 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * Resolves global merge fields for the browser preview when no record has
+   * been selected. Record and related-list fields remain unresolved because
+   * they require a record context, while Organization and User values do not.
+   */
+  @AuraEnabled
+  public static String renderGeneratedHtmlForPreview(String generatedHtml) {
+    validateLongTextSize('Preview HTML', generatedHtml);
+    return PDFBuilderHtmlSanitizer.sanitize(
+      sanitizeLwcRuntimeArtifacts(mergeGlobalFields(generatedHtml))
+    );
+  }
+
   @AuraEnabled
   public static String renderGeneratedHtmlForRecordPreview(
     String objectApiName,
