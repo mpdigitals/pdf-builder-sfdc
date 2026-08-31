@@ -4,6 +4,12 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.0.16-beta.3] - 2026-08-31
+
+### Fixed
+
+- Preview waits for newly selected images to be persisted as Salesforce Files before generating HTML, preventing large embedded image payloads from exceeding the preview request limit.
+
 ## [1.0.16-beta.2] - 2026-08-31
 
 ### Fixed
@@ -87,7 +93,8 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.2...HEAD
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.3...HEAD
+[1.0.16-beta.3]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.2...v1.0.16-beta.3
 [1.0.16-beta.2]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.1...v1.0.16-beta.2
 [1.0.16-beta.1]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.15...v1.0.16-beta.1
 [1.0.15]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.14...v1.0.15
