@@ -4,9 +4,9 @@
       "path": "force-app",
       "default": true,
       "package": "PDF Builder",
-      "versionName": "Version 1.0",
+      "versionName": "Version 1.0.16 Beta 2",
       "versionNumber": "1.0.16.NEXT",
-      "versionDescription": "Native Salesforce visual PDF template builder and document generator",
+      "versionDescription": "Beta 2: Native Salesforce visual PDF template builder and document generator",
       "apexTestAccess": {
         "permissionSets": ["PDFBuilderUser"]
       }

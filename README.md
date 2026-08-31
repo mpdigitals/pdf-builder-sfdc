@@ -52,17 +52,20 @@ The demo is desktop-optimized and read-only. Install PDF Builder to save templat
 
 ## Installation
 
-Salesforce Quotes is not required. Quote support is built in and detected at
-runtime: when Quotes is enabled, Quote templates are available and generated
-documents are saved in the standard **Quote PDFs** related list. When Quotes is
-not enabled, PDF Builder deploys and works normally with the other supported
-objects. No additional package or configuration is needed for Quote support.
+Salesforce Quotes is optional. PDF Builder detects its availability at runtime.
+When a template is configured for the `Quote` object, users can generate a PDF
+from a Quote record. The generated PDF—not the template—is saved in that
+record's standard **Quote PDFs** related list. When Salesforce Quotes is not
+enabled, PDF Builder deploys and works normally with the other supported
+objects. No PDF Builder-specific package or configuration is required for Quote
+support.
 
 ### Recommended: unlocked package
 
-Install the released unlocked package. Sandbox and production use the same
-versioned artifact, so the package tested in a sandbox is exactly the package
-installed in production.
+Install the current beta unlocked package (`v1.0.16-beta.1`). It is an
+unreleased Salesforce package version intended for evaluation. Install it in a
+sandbox or Developer Edition and validate it against your configuration before
+wider use.
 
 | Target            | Installation link                                                                                                 |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------- |
