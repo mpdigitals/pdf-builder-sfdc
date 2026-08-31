@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://app.codacy.com/gh/mpdigitals/pdf-builder-sfdc/dashboard"><img src="https://app.codacy.com/project/badge/Grade/30cd2cc87bc44f6cbc299ffb0e519094" alt="Codacy quality grade"></a>
-  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/badge/pre--release-v1.0.16--beta.3-orange" alt="Current pre-release"></a>
+  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/badge/pre--release-v1.0.16--beta.4-orange" alt="Current pre-release"></a>
 </p>
 
 <p align="center">
@@ -62,15 +62,15 @@ support.
 
 ### Recommended: unlocked package
 
-Install the current beta unlocked package (`v1.0.16-beta.3`). It is an
+Install the current beta unlocked package (`v1.0.16-beta.4`). It is an
 unreleased Salesforce package version intended for evaluation. Install it in a
 sandbox or Developer Edition and validate it against your configuration before
 wider use.
 
 | Target            | Installation link                                                                                                 |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Sandbox           | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZFtpIAG)          |
-| Developer Edition | [Install in Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZFtpIAG) |
+| Sandbox           | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZG8LIAW)          |
+| Developer Edition | [Install in Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZG8LIAW) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
@@ -80,7 +80,7 @@ The same version can also be installed with Salesforce CLI:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZFtpIAG \
+  --package 04tQy000000ZG8LIAW \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
