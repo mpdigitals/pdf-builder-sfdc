@@ -1739,9 +1739,45 @@
 }
 
 .html-output {
+  flex: 1 1 auto;
+  margin: 0;
   padding: 16px;
-  font-family: monospace;
-  resize: none;
+  overflow: auto;
+  background: #0b172a;
+  color: #d8e6ff;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  tab-size: 2;
+  white-space: pre;
+}
+
+.html-copy-button {
+  margin-left: auto;
+  margin-right: 8px;
+  border: 1px solid #0176d3;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #0176d3;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 7px 12px;
+}
+
+.html-copy-button:hover {
+  background: #eef7ff;
+}
+
+.html-token-tag {
+  color: #70b7ff;
+}
+
+.html-token-attribute {
+  color: #d9a6ff;
+}
+
+.html-token-value {
+  color: #92d8a5;
 }
 
 .image-upload-input {

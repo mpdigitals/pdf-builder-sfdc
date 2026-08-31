@@ -125,12 +125,13 @@ other supported record pages. It receives the current record ID automatically.
 
 ### Optional sample templates
 
-[`sample-data/pdf-builder-templates.csv`](sample-data/pdf-builder-templates.csv) contains two optional examples:
+[`sample-data/pdf-builder-templates.csv`](sample-data/pdf-builder-templates.csv) contains three optional examples:
 
 - **MP Digitals Opportunity Proposal** for `Opportunity`.
 - **MPDigitals Quote** for `Quote`.
+- **MP Opportunity Service Quotation** for `Opportunity`.
 
-The Quote example uses the packaged `PDFBuilderSampleMPDigitalsLogo` static resource. The samples are demonstration content and should be rebranded and reviewed before production use.
+The Quote example uses the packaged `PDFBuilderSampleMPDigitalsLogo` static resource. The service quotation uses `PDFBuilderQuotationLogo`. The samples are demonstration content and should be rebranded and reviewed before production use.
 
 You can import the CSV with Salesforce Inspector, Data Loader, or Salesforce CLI:
 
