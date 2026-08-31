@@ -1686,6 +1686,17 @@ export default class PDFBuilder extends LightningElement {
     return !this.selectedTemplateId;
   }
 
+  get isGeneratePreviewDisabled() {
+    const effectiveRecordId = String(
+      this.previewRecordId || this.recordId || this.pageRefRecordId || ""
+    ).trim();
+
+    return (
+      this.isPreviewGenerating ||
+      !/^[a-zA-Z0-9]{15,18}$/.test(effectiveRecordId)
+    );
+  }
+
   async loadPDFBuilderData() {
     this.isMetadataLoading = true;
     this.metadataError = "";
@@ -7054,10 +7065,93 @@ export default class PDFBuilder extends LightningElement {
   }
 
   renderHtmlOutput() {
-    const textarea = this.template.querySelector(".html-output");
+    const htmlOutput = this.template.querySelector(".html-output");
 
-    if (textarea) {
-      textarea.value = this.htmlOutput || this.getGeneratedHtml();
+    if (htmlOutput) {
+      htmlOutput.innerHTML = this.highlightHtmlForDisplay(
+        this.formatHtmlForDisplay(this.htmlOutput || this.getGeneratedHtml())
+      );
+    }
+  }
+
+  formatHtmlForDisplay(html) {
+    const tokens =
+      String(html || "").match(/<!--[\s\S]*?-->|<[^>]+>|[^<]+/g) || [];
+    const voidTags = new Set([
+      "area",
+      "base",
+      "br",
+      "col",
+      "embed",
+      "hr",
+      "img",
+      "input",
+      "link",
+      "meta",
+      "source",
+      "track",
+      "wbr"
+    ]);
+    const lines = [];
+    let indentation = 0;
+
+    for (const token of tokens) {
+      const value = token.trim();
+      if (!value) {
+        continue;
+      }
+
+      const closingTag = /^<\//.test(value);
+      const tagName = value.match(/^<\/?\s*([\w:-]+)/)?.[1]?.toLowerCase();
+      const selfClosing = /\/>$/.test(value) || voidTags.has(tagName);
+
+      if (closingTag) {
+        indentation = Math.max(0, indentation - 1);
+      }
+
+      lines.push(`${"  ".repeat(indentation)}${value}`);
+
+      if (tagName && !closingTag && !selfClosing) {
+        indentation += 1;
+      }
+    }
+
+    return lines.join("\n");
+  }
+
+  highlightHtmlForDisplay(html) {
+    const escapedHtml = this.escapeHtml(html);
+
+    return escapedHtml.replace(
+      /(&lt;\/?)([\w:-]+)([\s\S]*?)(&gt;)/g,
+      (match, opening, tagName, rawAttributes, closing) => {
+        const highlightedAttributes = rawAttributes.replace(
+          /(\s)([\w:-]+)(=)(&quot;.*?&quot;)/g,
+          (attributeMatch, spacing, attributeName, equals, value) =>
+            `${spacing}<span class="html-token-attribute">${attributeName}</span>${equals}<span class="html-token-value">${value}</span>`
+        );
+
+        return `${opening}<span class="html-token-tag">${tagName}</span>${highlightedAttributes}${closing}`;
+      }
+    );
+  }
+
+  async handleCopyGeneratedHtml() {
+    const html = this.htmlOutput || this.getGeneratedHtml();
+
+    try {
+      await navigator.clipboard.writeText(html);
+      this.showToast(
+        "HTML copied",
+        "The generated HTML was copied.",
+        "success"
+      );
+    } catch (error) {
+      this.showToast(
+        "Unable to copy HTML",
+        this.getUserFacingErrorMessage(error),
+        "error"
+      );
     }
   }
 
@@ -9341,8 +9435,7 @@ export default class PDFBuilder extends LightningElement {
           : "";
 
         return `
-                <div class="pdf-page" data-preview-page-kind="${isManualPage ? "manual" : "overflow"}" style="margin-top:24px;position:relative;">
-                    <div data-preview-page-badge style="position:absolute;top:8px;right:12px;padding:2px 8px;border-radius:999px;background:#0176d3;color:#fff;font-size:11px;font-weight:700;">Page ${pageNumber}</div>
+                <div class="pdf-page" data-preview-page-kind="${isManualPage ? "manual" : "overflow"}" style="margin-top:24px;">
                     ${headerHtml}
                     ${bodyHtml}
                     ${footerHtml}
@@ -9591,7 +9684,7 @@ export default class PDFBuilder extends LightningElement {
     const columnLabels = this.getRelatedListColumnLabels(block);
 
     if (!columns.length) {
-      return '<div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;">Configure related list</div>';
+      return `<div style="${blockStyle};display:flex;align-items:center;justify-content:center;overflow:hidden;"><div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;width:100%;">Configure related list</div></div>`;
     }
 
     const previewRows = this.getRelatedListPreviewRows(block);

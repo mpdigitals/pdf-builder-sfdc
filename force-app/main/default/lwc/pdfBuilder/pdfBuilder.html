@@ -2071,6 +2071,13 @@
             <div class="modal-header">
               <h2>Generated HTML</h2>
               <button
+                class="html-copy-button"
+                type="button"
+                onclick={handleCopyGeneratedHtml}
+              >
+                Copy HTML
+              </button>
+              <button
                 class="modal-close-button"
                 type="button"
                 onclick={closeHtml}
@@ -2083,7 +2090,7 @@
                 </svg>
               </button>
             </div>
-            <textarea class="html-output" readonly></textarea>
+            <pre class="html-output" lwc:dom="manual"></pre>
           </div>
         </section>
       </template>
@@ -2113,13 +2120,14 @@
                 class="toolbar-input preview-record-id"
                 type="text"
                 value={previewRecordId}
+                maxlength="18"
                 placeholder="Salesforce Record ID (optional)"
-                onchange={handlePreviewRecordIdChange}
+                oninput={handlePreviewRecordIdChange}
               />
               <button
                 class="toolbar-button"
                 type="button"
-                disabled={isPreviewGenerating}
+                disabled={isGeneratePreviewDisabled}
                 onclick={handleGeneratePreview}
               >
                 Generate Preview
