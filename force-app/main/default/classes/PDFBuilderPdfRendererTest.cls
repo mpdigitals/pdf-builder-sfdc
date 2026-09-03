@@ -213,6 +213,14 @@ private class PDFBuilderPdfRendererTest {
       'Divider style must be preserved.'
     );
     Assert.isTrue(
+      rendered.contains('left:32px;top:89px;width:340px;'),
+      'Divider must be vertically centered in its configured container.'
+    );
+    Assert.isTrue(
+      rendered.contains('width:2px;height:120px;background-color:#00A1A1;'),
+      'Vertical line geometry and color must be preserved.'
+    );
+    Assert.isTrue(
       rendered.contains('src="https://example.com/logo.png"'),
       'Supported image sources must be preserved.'
     );
@@ -628,6 +636,21 @@ private class PDFBuilderPdfRendererTest {
     dividerStyles.put('lineStyle', 'dashed');
     dividerStyles.put('lineColor', '#005FB2');
 
+    Map<String, Object> verticalLine = createDocumentBlock(
+      'verticalLine',
+      '',
+      110,
+      290,
+      12,
+      120
+    );
+    Map<String, Object> verticalLineStyles = (Map<String, Object>) verticalLine.get(
+      'styles'
+    );
+    verticalLineStyles.put('lineThickness', 2);
+    verticalLineStyles.put('lineStyle', 'solid');
+    verticalLineStyles.put('lineColor', '#00A1A1');
+
     Map<String, Object> image = createDocumentBlock('image', '', 0, 0, 300, 90);
     image.put('imageSrc', 'https://example.com/logo.png');
 
@@ -654,7 +677,8 @@ private class PDFBuilderPdfRendererTest {
             820,
             new List<Object>{
               createDocumentBlock('text', 'Left body', 0, 0, 340, 70),
-              divider
+              divider,
+              verticalLine
             }
           ),
           createDocumentRegion(

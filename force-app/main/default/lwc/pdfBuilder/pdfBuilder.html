@@ -2,92 +2,129 @@
   <div class={builderClass} style={builderStyle}>
     <template lwc:if={isConfigurationReady}>
       <div class="top-toolbar">
-        <button
-          class="toolbar-button icon-button"
-          onclick={undo}
-          disabled={isUndoDisabled}
-          title="Undo"
-          aria-label="Undo"
-        >
-          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 7H4V2" />
-            <path
-              d="M4 7c2.1-2.8 5.4-4 8.7-3.2 4.1 1 6.8 4.8 6.2 9-.6 4.2-4.3 7.2-8.5 7.2-2.4 0-4.7-1-6.3-2.7"
-            />
-          </svg>
-        </button>
+        <div class="toolbar-actions">
+          <button
+            class="toolbar-button icon-button"
+            onclick={undo}
+            disabled={isUndoDisabled}
+            title="Undo"
+            aria-label="Undo"
+          >
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 7H4V2" />
+              <path
+                d="M4 7c2.1-2.8 5.4-4 8.7-3.2 4.1 1 6.8 4.8 6.2 9-.6 4.2-4.3 7.2-8.5 7.2-2.4 0-4.7-1-6.3-2.7"
+              />
+            </svg>
+          </button>
 
-        <button
-          class="toolbar-button icon-button"
-          onclick={redo}
-          disabled={isRedoDisabled}
-          title="Redo"
-          aria-label="Redo"
-        >
-          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15 7h5V2" />
-            <path
-              d="M20 7c-2.1-2.8-5.4-4-8.7-3.2-4.1 1-6.8 4.8-6.2 9 .6 4.2 4.3 7.2 8.5 7.2 2.4 0 4.7-1 6.3-2.7"
-            />
-          </svg>
-        </button>
+          <button
+            class="toolbar-button icon-button"
+            onclick={redo}
+            disabled={isRedoDisabled}
+            title="Redo"
+            aria-label="Redo"
+          >
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 7h5V2" />
+              <path
+                d="M20 7c-2.1-2.8-5.4-4-8.7-3.2-4.1 1-6.8 4.8-6.2 9 .6 4.2 4.3 7.2 8.5 7.2 2.4 0 4.7-1 6.3-2.7"
+              />
+            </svg>
+          </button>
 
-        <button class="toolbar-button" onclick={showHtml}>HTML</button>
+          <button class="toolbar-button" onclick={showHtml}>HTML</button>
 
-        <button class="toolbar-button" onclick={openPreview}>Preview</button>
+          <button class="toolbar-button" onclick={openPreview}>Preview</button>
+        </div>
 
         <div class="toolbar-template">
-          <select
-            class="toolbar-input toolbar-object-select"
-            data-role="object-select"
-            onchange={handleObjectChange}
-          >
-            <option value="">Select object</option>
+          <div class="toolbar-template-context">
+            <select
+              class="toolbar-input toolbar-object-select"
+              data-role="object-select"
+              onchange={handleObjectChange}
+            >
+              <option value="">Select object</option>
 
-            <template for:each={objectOptions} for:item="objectOption">
-              <option key={objectOption.apiName} value={objectOption.apiName}>
-                {objectOption.label}
-              </option>
-            </template>
-          </select>
+              <template for:each={objectOptions} for:item="objectOption">
+                <option key={objectOption.apiName} value={objectOption.apiName}>
+                  {objectOption.label}
+                </option>
+              </template>
+            </select>
 
-          <input
-            class="toolbar-input"
-            type="text"
-            placeholder="Template name"
-            value={templateName}
-            onchange={handleTemplateNameChange}
-          />
+            <div class="toolbar-template-settings">
+              <select
+                class="toolbar-input toolbar-record-type-select"
+                data-role="template-record-type-scope-select"
+                aria-label="Record type scope"
+                title="Limits this template to records with this record type. Choose All record types to make it available to every record."
+                onchange={handleTemplateRecordTypeScopeChange}
+                disabled={isTemplateScopeDisabled}
+              >
+                <template for:each={recordTypeOptions} for:item="recordType">
+                  <option key={recordType.value} value={recordType.value}>
+                    {recordType.label}
+                  </option>
+                </template>
+              </select>
 
-          <select
-            class="toolbar-input"
-            data-role="template-select"
-            onchange={handleTemplateSelect}
-          >
-            <option value="">Select template</option>
+              <label
+                class="toolbar-default-toggle"
+                title="Automatically selects this template for the chosen object and record type."
+              >
+                <input
+                  type="checkbox"
+                  checked={isTemplateDefault}
+                  disabled={isTemplateScopeDisabled}
+                  onchange={handleTemplateDefaultChange}
+                />
+                <span>Default</span>
+              </label>
+            </div>
+          </div>
 
-            <template for:each={templateOptions} for:item="template">
-              <option key={template.id} value={template.id}>
-                {template.displayName}
-              </option>
-            </template>
-          </select>
+          <div class="toolbar-template-save-group">
+            <input
+              class="toolbar-input"
+              type="text"
+              placeholder="Template name"
+              value={templateName}
+              onchange={handleTemplateNameChange}
+            />
 
-          <button
-            class="toolbar-button"
-            onclick={handleSaveTemplate}
-            disabled={isSaveTemplateDisabled}
-          >
-            Save
-          </button>
+            <select
+              class="toolbar-input"
+              data-role="template-select"
+              title="Load an existing template to edit, preview, or delete it."
+              onchange={handleTemplateSelect}
+            >
+              <option value="">Select template</option>
 
-          <button
-            class="toolbar-button toolbar-button-danger"
-            onclick={handleDeleteTemplate}
-            disabled={isDeleteTemplateDisabled}
-          >
-            Delete
-          </button>
+              <template for:each={templateOptions} for:item="template">
+                <option key={template.id} value={template.id}>
+                  {template.displayName}
+                </option>
+              </template>
+            </select>
+
+            <button
+              class="toolbar-button"
+              onclick={handleSaveTemplate}
+              disabled={isSaveTemplateDisabled}
+            >
+              Save
+            </button>
+
+            <button
+              class="toolbar-button toolbar-button-danger"
+              onclick={handleDeleteTemplate}
+              disabled={isDeleteTemplateDisabled}
+            >
+              Delete
+            </button>
+          </div>
         </div>
 
         <template lwc:if={templateStatus}>

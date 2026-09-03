@@ -48,7 +48,8 @@ describe("c-pdf-builder-generator", () => {
       {
         id: "a01000000000001AAA",
         name: "Account proposal",
-        objectApiName: "Account"
+        objectApiName: "Account",
+        isDefault: true
       }
     ]);
     generatePdf.mockResolvedValue({
@@ -58,6 +59,7 @@ describe("c-pdf-builder-generator", () => {
     });
     generatePdfToFiles.mockResolvedValue({
       fileName: "Account proposal.pdf",
+      base64Data: "JVBERi0xLjQ=",
       contentVersionId: "068000000000001AAA",
       contentDocumentId: "069000000000001AAA",
       warning: null
@@ -84,12 +86,14 @@ describe("c-pdf-builder-generator", () => {
     await flushPromises();
 
     expect(getTemplatesForObject).toHaveBeenCalledWith({
-      objectApiName: "Account"
+      objectApiName: "Account",
+      recordId: "001000000000001AAA"
     });
     const combobox = element.shadowRoot.querySelector("lightning-combobox");
     expect(combobox.options).toEqual([
       { label: "Account proposal", value: "a01000000000001AAA" }
     ]);
+    expect(combobox.value).toBe("a01000000000001AAA");
     expect(combobox.disabled).toBe(false);
   });
 
@@ -183,5 +187,49 @@ describe("c-pdf-builder-generator", () => {
     expect(
       element.shadowRoot.querySelectorAll("lightning-button")
     ).toHaveLength(2);
+  });
+
+  it("opens a saved PDF in the browser's native viewer", async () => {
+    const viewerWindow = {
+      close: jest.fn(),
+      location: { replace: jest.fn() },
+      opener: window
+    };
+    const openSpy = jest.spyOn(window, "open").mockReturnValue(viewerWindow);
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: jest.fn()
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: jest.fn()
+    });
+    const createObjectUrlSpy = jest
+      .spyOn(URL, "createObjectURL")
+      .mockReturnValue("blob:pdf-preview");
+    jest.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+
+    const element = createElement("c-pdf-builder-generator", {
+      is: PDFBuilderGenerator
+    });
+    element.recordId = "001000000000001AAA";
+    element.objectApiName = "Account";
+    document.body.appendChild(element);
+    await flushPromises();
+    await flushPromises();
+
+    element.shadowRoot.querySelector('[data-value="files"]').click();
+    element.shadowRoot.querySelector("lightning-button").click();
+    await flushPromises();
+    await flushPromises();
+
+    element.shadowRoot.querySelectorAll("lightning-button")[1].click();
+
+    expect(openSpy).toHaveBeenCalledWith("", "_blank");
+    expect(viewerWindow.opener).toBeNull();
+    expect(createObjectUrlSpy).toHaveBeenCalled();
+    expect(viewerWindow.location.replace).toHaveBeenCalledWith(
+      "blob:pdf-preview"
+    );
   });
 });

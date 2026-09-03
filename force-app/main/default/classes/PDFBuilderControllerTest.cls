@@ -210,7 +210,8 @@ private class PDFBuilderControllerTest {
     Test.startTest();
     List<PDFBuilderController.TemplateSummary> allTemplates = PDFBuilderController.getTemplates();
     List<PDFBuilderController.TemplateSummary> accountTemplates = PDFBuilderController.getTemplatesForObject(
-      'Account'
+      'Account',
+      null
     );
     PDFBuilderController.TemplateDetail detail = PDFBuilderController.getTemplate(
       accountTemplates[0].id
@@ -265,7 +266,9 @@ private class PDFBuilderControllerTest {
       'Service Proposal',
       'Account',
       '{"pagePadding":40}',
-      '<main>Service proposal</main>'
+      '<main>Service proposal</main>',
+      'ALL',
+      false
     );
 
     PDFBuilderController.saveTemplate(
@@ -273,7 +276,9 @@ private class PDFBuilderControllerTest {
       'Updated Service Proposal',
       'Account',
       '{"pagePadding":48}',
-      '<main>Updated service proposal</main>'
+      '<main>Updated service proposal</main>',
+      'ALL',
+      false
     );
 
     PDFBuilderController.TemplateDetail detail = PDFBuilderController.getTemplate(
@@ -488,7 +493,8 @@ private class PDFBuilderControllerTest {
     assertMissingImageDataFails();
     assertMissingPdfIdsFail();
     List<PDFBuilderController.TemplateSummary> noTemplates = PDFBuilderController.getTemplatesForObject(
-      ''
+      '',
+      null
     );
     Test.stopTest();
 
@@ -615,7 +621,9 @@ private class PDFBuilderControllerTest {
         name,
         objectApiName,
         '{}',
-        '<p>x</p>'
+        '<p>x</p>',
+        'ALL',
+        false
       );
       Assert.fail('Expected failure for ' + scenario);
     } catch (AuraHandledException expected) {

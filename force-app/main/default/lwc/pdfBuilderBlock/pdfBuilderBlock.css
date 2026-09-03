@@ -166,6 +166,30 @@
   outline: none;
 }
 
+.pdf-block.related-list-block {
+  padding: 0 !important;
+}
+
+.related-list-content thead,
+.related-list-content tbody {
+  height: 50%;
+}
+
+.related-list-content thead tr,
+.related-list-content tbody tr {
+  height: 100%;
+}
+
+.related-list-content th,
+.related-list-content td {
+  padding: 0 8px !important;
+  overflow: hidden;
+  vertical-align: middle;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .table-bottom-border {
   position: absolute;
   right: var(--block-padding, 0);

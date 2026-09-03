@@ -6,6 +6,7 @@
  */
 public with sharing class PDFBuilderController {
   private static final PDFBuilderConfiguration.Settings SETTINGS = PDFBuilderConfiguration.getSettings();
+  private static final String ALL_RECORD_TYPES_SCOPE = 'ALL';
   private static final Integer PDF_SOURCE_REGION_GAP = 0;
   // The builder and the Visualforce page use the same CSS-pixel coordinate
   // system. Scaling font sizes again creates false page breaks.
@@ -100,6 +101,18 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  public class RecordTypeOption {
+    @AuraEnabled
+    public String label;
+    @AuraEnabled
+    public String value;
+
+    public RecordTypeOption(String label, String value) {
+      this.label = label;
+      this.value = value;
+    }
+  }
+
   public class RelatedListOption {
     @AuraEnabled
     public String label;
@@ -126,11 +139,19 @@ public with sharing class PDFBuilderController {
     public String name;
     @AuraEnabled
     public String objectApiName;
+    @AuraEnabled
+    public String recordTypeScope;
+    @AuraEnabled
+    public Boolean isDefault;
 
     public TemplateSummary(PDFBuilderTemplate__c template) {
       this.id = template.Id;
       this.name = template.Name;
       this.objectApiName = template.ObjectApiName__c;
+      this.recordTypeScope = normalizeRecordTypeScope(
+        template.RecordTypeScope__c
+      );
+      this.isDefault = template.IsDefault__c;
     }
   }
 
@@ -145,6 +166,10 @@ public with sharing class PDFBuilderController {
     public String contentJson;
     @AuraEnabled
     public String generatedHtml;
+    @AuraEnabled
+    public String recordTypeScope;
+    @AuraEnabled
+    public Boolean isDefault;
 
     public TemplateDetail(PDFBuilderTemplate__c template) {
       this.id = template.Id;
@@ -152,6 +177,10 @@ public with sharing class PDFBuilderController {
       this.objectApiName = template.ObjectApiName__c;
       this.contentJson = template.ContentJson__c;
       this.generatedHtml = template.GeneratedHtml__c;
+      this.recordTypeScope = normalizeRecordTypeScope(
+        template.RecordTypeScope__c
+      );
+      this.isDefault = template.IsDefault__c;
     }
   }
 
@@ -173,6 +202,8 @@ public with sharing class PDFBuilderController {
   public class PdfFileResult {
     @AuraEnabled
     public String fileName;
+    @AuraEnabled
+    public String base64Data;
     @AuraEnabled
     public Id contentVersionId;
     @AuraEnabled
@@ -378,24 +409,56 @@ public with sharing class PDFBuilderController {
 
   @AuraEnabled
   public static List<TemplateSummary> getTemplatesForObject(
-    String objectApiName
+    String objectApiName,
+    Id recordId
   ) {
     if (String.isBlank(objectApiName)) {
       return new List<TemplateSummary>();
     }
 
+    String recordTypeScope = getRecordTypeScopeForRecord(
+      objectApiName,
+      recordId
+    );
     List<TemplateSummary> templates = new List<TemplateSummary>();
+    List<PDFBuilderTemplate__c> matchingTemplates = PDFBuilderTemplateRepository.getForObjectAndScopes(
+      objectApiName,
+      new Set<String>{ ALL_RECORD_TYPES_SCOPE, recordTypeScope },
+      SETTINGS.templateQueryLimit
+    );
+    Id defaultTemplateId = getDefaultTemplateId(
+      matchingTemplates,
+      recordTypeScope
+    );
 
-    for (
-      PDFBuilderTemplate__c template : PDFBuilderTemplateRepository.getForObject(
-        objectApiName,
-        SETTINGS.templateQueryLimit
-      )
-    ) {
-      templates.add(new TemplateSummary(template));
+    for (PDFBuilderTemplate__c template : matchingTemplates) {
+      TemplateSummary summary = new TemplateSummary(template);
+      summary.isDefault = template.Id == defaultTemplateId;
+      templates.add(summary);
     }
 
     return templates;
+  }
+
+  @AuraEnabled(cacheable=true)
+  public static List<RecordTypeOption> getRecordTypeOptions(
+    String objectApiName
+  ) {
+    validateTemplateObject(objectApiName);
+
+    List<RecordTypeOption> options = new List<RecordTypeOption>{
+      new RecordTypeOption('All record types', ALL_RECORD_TYPES_SCOPE)
+    };
+
+    for (RecordType recordType : getActiveRecordTypes(objectApiName)) {
+      if (recordType.DeveloperName != 'Master') {
+        options.add(
+          new RecordTypeOption(recordType.Name, recordType.DeveloperName)
+        );
+      }
+    }
+
+    return options;
   }
 
   @AuraEnabled
@@ -415,7 +478,9 @@ public with sharing class PDFBuilderController {
     String name,
     String objectApiName,
     String contentJson,
-    String generatedHtml
+    String generatedHtml,
+    String recordTypeScope,
+    Boolean isDefault
   ) {
     if (String.isBlank(name)) {
       throw new AuraHandledException('Template name is required.');
@@ -426,19 +491,8 @@ public with sharing class PDFBuilderController {
     }
 
     objectApiName = objectApiName.trim();
-
-    Map<String, Schema.SObjectType> objectMap = Schema.getGlobalDescribe();
-    if (
-      !objectMap.containsKey(objectApiName) ||
-      !isObjectAvailable(
-        objectMap.get(objectApiName)
-          .getDescribe(SObjectDescribeOptions.DEFERRED)
-      )
-    ) {
-      throw new AuraHandledException(
-        'Template object is not available: ' + objectApiName
-      );
-    }
+    validateTemplateObject(objectApiName);
+    recordTypeScope = validateRecordTypeScope(objectApiName, recordTypeScope);
 
     if (name.trim().length() > 80) {
       throw new AuraHandledException(
@@ -458,6 +512,23 @@ public with sharing class PDFBuilderController {
     template.ObjectApiName__c = objectApiName;
     template.ContentJson__c = contentJson;
     template.GeneratedHtml__c = generatedHtml;
+    template.RecordTypeScope__c = recordTypeScope;
+    template.IsDefault__c = isDefault == true;
+
+    if (template.IsDefault__c) {
+      PDFBuilderTemplate__c existingDefault = PDFBuilderTemplateRepository.findDefaultForScope(
+        objectApiName,
+        recordTypeScope,
+        templateId
+      );
+      if (existingDefault != null) {
+        throw new AuraHandledException(
+          'A default template already exists for this object and record type scope: ' +
+            existingDefault.Name +
+            '. Clear its default setting first.'
+        );
+      }
+    }
 
     try {
       PDFBuilderTemplateRepository.save(template);
@@ -637,7 +708,8 @@ public with sharing class PDFBuilderController {
     }
 
     PdfResult pdfResult = generatePdf(templateId, recordId);
-    Blob pdfData = EncodingUtil.base64Decode(pdfResult.base64Data);
+    String base64Data = pdfResult.base64Data;
+    Blob pdfData = EncodingUtil.base64Decode(base64Data);
     pdfResult.base64Data = null;
     String title = getRecordNameForPdf(recordId);
     if (String.isBlank(title)) {
@@ -663,12 +735,15 @@ public with sharing class PDFBuilderController {
     }
     fileName = fileVersion.PathOnClient;
 
-    return new PdfFileResult(
+    PdfFileResult savedPdf = new PdfFileResult(
       fileName,
       fileVersion.Id,
       fileVersion.ContentDocumentId,
       pdfResult.warning
     );
+    savedPdf.base64Data = base64Data;
+
+    return savedPdf;
   }
 
   /**
@@ -1244,6 +1319,155 @@ public with sharing class PDFBuilderController {
     Schema.DescribeSObjectResult describe
   ) {
     return PDFBuilderDescribeService.isObjectAvailable(describe);
+  }
+
+  private static void validateTemplateObject(String objectApiName) {
+    String normalizedObjectApiName = String.isBlank(objectApiName)
+      ? ''
+      : objectApiName.trim();
+    Map<String, Schema.SObjectType> objectMap = Schema.getGlobalDescribe();
+
+    if (
+      !objectMap.containsKey(normalizedObjectApiName) ||
+      !isObjectAvailable(
+        objectMap.get(normalizedObjectApiName)
+          .getDescribe(SObjectDescribeOptions.DEFERRED)
+      )
+    ) {
+      throw new AuraHandledException(
+        'Template object is not available: ' + normalizedObjectApiName
+      );
+    }
+  }
+
+  private static List<RecordType> getActiveRecordTypes(String objectApiName) {
+    return [
+      SELECT DeveloperName, Name
+      FROM RecordType
+      WHERE SObjectType = :objectApiName AND IsActive = TRUE
+      WITH USER_MODE
+      ORDER BY Name
+    ];
+  }
+
+  private static Set<String> getActiveRecordTypeDeveloperNames(
+    String objectApiName
+  ) {
+    Set<String> developerNames = new Set<String>();
+    for (RecordType recordType : getActiveRecordTypes(objectApiName)) {
+      if (recordType.DeveloperName != 'Master') {
+        developerNames.add(recordType.DeveloperName);
+      }
+    }
+    return developerNames;
+  }
+
+  private static String normalizeRecordTypeScope(String recordTypeScope) {
+    return String.isBlank(recordTypeScope)
+      ? ALL_RECORD_TYPES_SCOPE
+      : recordTypeScope.trim();
+  }
+
+  private static String validateRecordTypeScope(
+    String objectApiName,
+    String recordTypeScope
+  ) {
+    if (String.isBlank(recordTypeScope)) {
+      throw new AuraHandledException('Record type scope is required.');
+    }
+
+    String normalizedScope = recordTypeScope.trim();
+    if (normalizedScope == ALL_RECORD_TYPES_SCOPE) {
+      return normalizedScope;
+    }
+
+    if (
+      !getActiveRecordTypeDeveloperNames(objectApiName)
+        .contains(normalizedScope)
+    ) {
+      throw new AuraHandledException(
+        'Record type scope is not active for ' + objectApiName + '.'
+      );
+    }
+
+    return normalizedScope;
+  }
+
+  private static String getRecordTypeScopeForRecord(
+    String objectApiName,
+    Id recordId
+  ) {
+    validateTemplateObject(objectApiName);
+    if (recordId == null) {
+      return ALL_RECORD_TYPES_SCOPE;
+    }
+
+    String recordObjectApiName = recordId
+      .getSObjectType()
+      .getDescribe(SObjectDescribeOptions.DEFERRED)
+      .getName();
+    if (recordObjectApiName != objectApiName) {
+      throw new AuraHandledException(
+        'Record ID does not belong to the selected template object.'
+      );
+    }
+
+    Schema.DescribeSObjectResult objectDescribe = Schema.getGlobalDescribe()
+      .get(objectApiName)
+      .getDescribe(SObjectDescribeOptions.DEFERRED);
+    if (!objectDescribe.fields.getMap().containsKey('RecordTypeId')) {
+      return ALL_RECORD_TYPES_SCOPE;
+    }
+
+    SObject record = Database.query(
+      'SELECT RecordTypeId FROM ' +
+        objectApiName +
+        ' WHERE Id = :recordId WITH USER_MODE LIMIT 1'
+    );
+    Id recordTypeId = (Id) record.get('RecordTypeId');
+    if (recordTypeId == null) {
+      return ALL_RECORD_TYPES_SCOPE;
+    }
+
+    List<RecordType> recordTypes = [
+      SELECT DeveloperName
+      FROM RecordType
+      WHERE Id = :recordTypeId
+      WITH USER_MODE
+      LIMIT 1
+    ];
+    String developerName = recordTypes.isEmpty()
+      ? null
+      : recordTypes[0].DeveloperName;
+
+    return getActiveRecordTypeDeveloperNames(objectApiName)
+        .contains(developerName)
+      ? developerName
+      : ALL_RECORD_TYPES_SCOPE;
+  }
+
+  private static Id getDefaultTemplateId(
+    List<PDFBuilderTemplate__c> templates,
+    String recordTypeScope
+  ) {
+    Id allRecordTypesDefaultId;
+    for (PDFBuilderTemplate__c template : templates) {
+      if (template.IsDefault__c != true) {
+        continue;
+      }
+
+      String templateScope = normalizeRecordTypeScope(
+        template.RecordTypeScope__c
+      );
+      if (templateScope == recordTypeScope) {
+        return template.Id;
+      }
+      if (templateScope == ALL_RECORD_TYPES_SCOPE) {
+        allRecordTypesDefaultId = template.Id;
+      }
+    }
+
+    return allRecordTypesDefaultId;
   }
 
   private static void validateLongTextSize(String label, String value) {
@@ -2789,6 +3013,19 @@ public with sharing class PDFBuilderController {
         1,
         getIntegerStyleValue(styles, 'lineThickness', 1)
       );
+      // Do not rely on flex, margins or table vertical alignment here. Salesforce's
+      // Flying Saucer PDF renderer can place those at the block's top edge when
+      // the containing region is absolutely positioned. Emit the line at its
+      // resolved final coordinate instead, matching the builder's centered line.
+      // Absolute line coordinates are resolved by Flying Saucer from the
+      // printable page edge, not from the body canvas. Restore the builder's
+      // body origin so a divider at x=0 starts after the page padding.
+      Integer lineX = pagePadding + x + blockPadding + blockBorderWidth;
+      Integer lineY =
+        y +
+        blockPadding +
+        blockBorderWidth +
+        Math.max(0, (innerHeight - lineThickness) / 2);
       String lineColor = normalizePdfStyleValue(
         getStyleValue(styles, 'lineColor'),
         '#181818'
@@ -2806,10 +3043,50 @@ public with sharing class PDFBuilderController {
           ' ' +
           lineColor +
           ';';
+      return '<div style="position:absolute;left:' +
+        lineX +
+        'px;top:' +
+        lineY +
+        'px;width:' +
+        innerWidth +
+        'px;margin:0;padding:0;border:0;font-size:0;line-height:0;' +
+        renderedLine +
+        '"></div>';
+    }
+    if (type == 'verticalLine') {
+      Integer lineThickness = Math.max(
+        1,
+        getIntegerStyleValue(styles, 'lineThickness', 1)
+      );
+      String lineColor = normalizePdfStyleValue(
+        getStyleValue(styles, 'lineColor'),
+        '#181818'
+      );
+      String lineStyle = normalizePdfStyleValue(
+        getStyleValue(styles, 'lineStyle'),
+        'solid'
+      );
+      String renderedLine = lineStyle == 'solid'
+        ? 'width:' +
+          lineThickness +
+          'px;height:' +
+          innerHeight +
+          'px;background-color:' +
+          lineColor +
+          ';'
+        : 'width:0;height:' +
+          innerHeight +
+          'px;border-left:' +
+          lineThickness +
+          'px ' +
+          lineStyle +
+          ' ' +
+          lineColor +
+          ';';
       return '<div style="' +
         blockStyle +
         '">' +
-        '<div style="display:block;width:100%;margin:0;font-size:0;line-height:0;' +
+        '<div style="display:block;margin:0 auto;font-size:0;line-height:0;' +
         renderedLine +
         '"></div>' +
         '</div>';

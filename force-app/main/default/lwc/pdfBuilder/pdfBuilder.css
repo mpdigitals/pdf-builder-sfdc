@@ -1,4 +1,5 @@
 .builder {
+  --toolbar-height: 56px;
   position: relative;
   display: flex;
   height: calc(100dvh - 77px);
@@ -227,8 +228,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 56px;
-  padding: 8px 16px;
+  height: var(--toolbar-height);
+  padding: 8px 64px 8px 16px;
   border-bottom: 1px solid #d8dde6;
   background: #ffffff;
   box-sizing: border-box;
@@ -239,11 +240,55 @@
   right: 16px;
 }
 
+.toolbar-actions,
 .toolbar-template {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.toolbar-actions {
+  flex: 0 0 auto;
+}
+
+.toolbar-template {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: center;
   margin-left: 8px;
+  padding-left: 18px;
+  border-left: 1px solid #aeb8c3;
+}
+
+.toolbar-template-settings {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-template-context,
+.toolbar-template-save-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-template-save-group {
+  position: relative;
+  margin-left: 10px;
+  padding-left: 18px;
+  border-left: 1px solid #aeb8c3;
+}
+
+.toolbar-template-save-group [data-role="template-select"] {
+  border-color: #9fc8eb;
+  background: #edf6ff;
+}
+
+.toolbar-template-save-group [data-role="template-select"]:focus {
+  border-color: #0176d3;
+  outline: 0;
+  box-shadow: 0 0 0 2px rgba(1, 118, 211, 0.18);
 }
 
 .toolbar-input {
@@ -258,6 +303,32 @@
 
 .toolbar-object-select {
   width: 190px;
+}
+
+.toolbar-record-type-select {
+  width: 168px;
+}
+
+.toolbar-default-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #c9c9c9;
+  border-radius: 4px;
+  color: #181818;
+  background: #ffffff;
+  box-sizing: border-box;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.toolbar-default-toggle input {
+  margin: 0;
+  cursor: pointer;
 }
 
 .toolbar-status {
@@ -320,6 +391,58 @@
   background: #ffffff;
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+@media (max-width: 1450px) {
+  .builder {
+    --toolbar-height: 104px;
+  }
+
+  .top-toolbar {
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: 6px;
+  }
+
+  .toolbar-template {
+    margin-left: 8px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .builder {
+    --toolbar-height: 152px;
+  }
+
+  .toolbar-actions {
+    flex-basis: 100%;
+    justify-content: center;
+  }
+
+  .toolbar-template {
+    flex-basis: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .toolbar-template-context,
+  .toolbar-template-save-group {
+    max-width: 100%;
+  }
+
+  .toolbar-input {
+    width: 142px;
+  }
+
+  .toolbar-object-select {
+    width: 168px;
+  }
+
+  .toolbar-record-type-select {
+    width: 150px;
+  }
 }
 
 .rich-text-toolbar {
@@ -491,7 +614,7 @@
 
 .sidebar,
 .properties-panel {
-  margin-top: 56px;
+  margin-top: var(--toolbar-height);
   padding: 16px;
   background: #ffffff;
   box-sizing: border-box;
@@ -505,7 +628,7 @@
 
 .sidebar-resize-handle {
   flex: 0 0 8px;
-  margin-top: 56px;
+  margin-top: var(--toolbar-height);
   cursor: col-resize;
   position: relative;
   background: transparent;
@@ -533,7 +656,7 @@
 
 .properties-resize-handle {
   flex: 0 0 8px;
-  margin-top: 56px;
+  margin-top: var(--toolbar-height);
   cursor: col-resize;
   position: relative;
   background: transparent;
@@ -1124,7 +1247,7 @@
 
 .canvas-wrapper {
   flex: 1 1 auto;
-  margin-top: 56px;
+  margin-top: var(--toolbar-height);
   padding: 24px;
   overflow: auto;
   box-sizing: border-box;
@@ -1408,6 +1531,13 @@
   padding: 0;
   border-radius: 3px;
   box-sizing: border-box;
+}
+
+.property-help {
+  margin: -6px 0 0;
+  color: #706e6b;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .checkbox-text {

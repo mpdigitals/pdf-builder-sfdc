@@ -17,17 +17,25 @@ PDF Builder is a Salesforce-native application for visually designing reusable P
 
 The authoring and rendering flow runs entirely in Salesforce using Lightning Web Components, Apex, Custom Metadata, custom objects, Salesforce Files, and Salesforce's native PDF conversion.
 
-## Live demo
+<p align="center">
+  <img src="docs/images/quote-template-editor.png" alt="PDF Builder visual template editor for a Salesforce Quote" width="96%">
+</p>
+
+The visual Builder is the heart of the application: compose headers, body and footer regions on a canvas; add rich text, images, tables, related lists and dividers; then preview the document with Salesforce data before generating it.
+
+Templates can be scoped to **all record types** or to a specific record type, with one default template per scope. The generator automatically offers the templates that apply to the current record and selects the most specific default.
+
+## Try the Live Demo
 
 Try the complete PDF Builder workflow in the public Salesforce Experience Cloud demo:
 
 <p align="center">
-  <a href="https://pdfbuild-dev-ed.trailblaze.my.site.com/"><strong>Open the PDF Builder live demo</strong></a>
+  <a href="https://pdfbuild-dev-ed.trailblaze.my.site.com/"><img src="https://img.shields.io/badge/Launch-Live%20Demo-0176D3?style=for-the-badge&logo=salesforce&logoColor=white" alt="Launch the PDF Builder live demo"></a>
 </p>
 
-Design and preview sample Opportunity and Quote templates, then generate PDFs from the demo record pages.
+Explore polished Opportunity and Quote examples, edit their layouts, inspect generated HTML, and preview the result directly in the browser. It is the quickest way to see the Builder, record-aware templates, related lists, and PDF generation working together.
 
-The demo is desktop-optimized and read-only. Install PDF Builder to save template changes and use the complete functionality.
+The demo is desktop-optimized and read-only. Install PDF Builder to save template changes, manage template defaults and record-type assignments, and use the complete functionality.
 
 ## Why PDF Builder?
 
@@ -127,8 +135,8 @@ other supported record pages. It receives the current record ID automatically.
 
 [`sample-data/pdf-builder-templates.csv`](sample-data/pdf-builder-templates.csv) contains three optional examples:
 
-- **MP Digitals Opportunity Proposal** for `Opportunity`.
-- **MPDigitals Quote** for `Quote`.
+- **MP Opportunity Proposal** for `Opportunity`.
+- **MP Quote** for `Quote`.
 - **MP Opportunity Service Quotation** for `Opportunity`.
 
 The Quote example uses the packaged `PDFBuilderSampleMPDigitalsLogo` static resource. The service quotation uses `PDFBuilderQuotationLogo`. The samples are demonstration content and should be rebranded and reviewed before production use.
@@ -149,21 +157,21 @@ The CSV does not contain source-org record IDs. Imported templates receive new I
 
 Design professional templates visually with drag & drop layout, live preview, reusable document structure, and record-aware data.
 
-<table>
-  <tr>
-    <td align="center"><img src="docs/images/quote-template-editor.png" alt="PDF Builder visual Quote template editor in Salesforce" width="92%"></td>
-  </tr>
-</table>
-
 ### Template design
 
 The `PDF Builder` Lightning tab opens the authoring workspace. Its three-column layout keeps the element palette, document canvas, and contextual properties visible while editing.
 
-The toolbar provides undo and redo history, generated HTML inspection, record-aware preview, object and template selection, save and delete actions, and fullscreen editing.
+The responsive toolbar groups undo/redo, HTML and preview actions, template context, and template management so the authoring controls stay usable in narrow Lightning workspaces. It provides generated HTML inspection, record-aware preview, object and template selection, save and delete actions, and fullscreen editing.
 
 <p align="center">
   <img src="docs/images/template-toolbar.png" alt="PDF Builder template toolbar" width="92%">
 </p>
+
+### Template availability and defaults
+
+Choose **All record types** to make a template available for every record of the selected object, or assign it to one active record type. A template can be marked as the default for its scope; PDF Builder enforces one default per object and scope.
+
+On a record page, the generator shows only templates assigned to the record's object and record type, plus those assigned to all record types. It selects the record-type default when one exists, otherwise the all-record-types default. Users can still choose any other available template.
 
 ### Elements
 
@@ -248,14 +256,14 @@ The field browser groups organization, current-object, and parent-object fields.
 
 <p align="center"><strong>Select template</strong> → <strong>Preview</strong> → <strong>Generate</strong> → <strong>Download or save to Salesforce Files</strong></p>
 
-Add the exposed `PDF Builder PDF Generator` LWC to any supported Lightning record page. At runtime it lists only templates associated with that page's object.
+Add the exposed `PDF Builder PDF Generator` LWC to any supported Lightning record page. At runtime it lists templates associated with that page's object and current record type, including templates scoped to all record types.
 
 Users can choose one of two destinations:
 
 1. **Download to computer** — generates the PDF and downloads it through the browser.
 2. **Save to Salesforce Files** — saves and links the PDF to the current record, then provides an action to open the saved file.
 
-The builder also provides a preview modal. Enter a record ID from the template's configured object to inspect merged fields and related-list rows before saving the template or generating a final document.
+The builder also provides a preview modal. Enter a 15–18 character Salesforce record ID from the template's configured object to inspect merged fields and related-list rows before saving the template or generating a final document. Without a record ID, it still resolves Organization and current-user merge fields so authors can validate the layout early.
 
 <table>
   <tr>
@@ -263,7 +271,7 @@ The builder also provides a preview modal. Enter a record ID from the template's
   </tr>
 </table>
 
-On a Lightning record page, users select an available template and choose whether to download the result or save it to Salesforce Files. A saved document can be opened directly from the component.
+On a Lightning record page, users select an available template and choose whether to download the result or save it to Salesforce Files. A saved document can be opened directly from the component in the browser's native PDF viewer.
 
 <p align="center">
   <img src="docs/images/record-page-pdf-generator.png" alt="PDF generator on a Lightning record page" width="56%">
@@ -314,12 +322,14 @@ and Apex.
 
 #### `PDFBuilderTemplate__c`
 
-| Field              | Purpose                                                    | Limit              |
-| ------------------ | ---------------------------------------------------------- | ------------------ |
-| `Name`             | Human-readable template name.                              | 80 characters      |
-| `ObjectApiName__c` | API name of the Salesforce object used by the template.    | 255 characters     |
-| `ContentJson__c`   | Canonical editable document model.                         | 131,072 characters |
-| `GeneratedHtml__c` | Generated browser-preview HTML retained with the template. | 131,072 characters |
+| Field                | Purpose                                                                                  | Limit              |
+| -------------------- | ---------------------------------------------------------------------------------------- | ------------------ |
+| `Name`               | Human-readable template name.                                                            | 80 characters      |
+| `ObjectApiName__c`   | API name of the Salesforce object used by the template.                                  | 255 characters     |
+| `ContentJson__c`     | Canonical editable document model.                                                       | 131,072 characters |
+| `GeneratedHtml__c`   | Generated browser-preview HTML retained with the template.                               | 131,072 characters |
+| `RecordTypeScope__c` | `ALL` or the Developer Name of the active record type to which the template is assigned. | 255 characters     |
+| `IsDefault__c`       | Whether the template is the default for its object and record-type scope.                | Checkbox           |
 
 ### Configuration
 

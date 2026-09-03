@@ -4,6 +4,24 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.0.16-beta.5] - 2026-09-03
+
+### Added
+
+- Templates can be assigned to all record types or to one active record type, with one default template per object and scope.
+- The record-page generator now selects the most specific applicable default template automatically.
+- Saved PDFs can be opened directly in the browser's native PDF viewer.
+
+### Changed
+
+- The Builder toolbar is grouped and responsive, with clearer separation between authoring, template context, and save/delete controls.
+- Related-list placeholders in the Builder now use a compact header-and-sample-row representation.
+- The README now introduces the visual Builder first, highlights the Live Demo, and documents record-type template availability.
+
+### Fixed
+
+- Horizontal and vertical dividers are rendered in server-generated PDFs with their configured geometry, style, and page offset.
+
 ## [1.0.16-beta.4] - 2026-09-01
 
 ### Added
@@ -109,7 +127,8 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.4...HEAD
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.5...HEAD
+[1.0.16-beta.5]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.4...v1.0.16-beta.5
 [1.0.16-beta.4]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.3...v1.0.16-beta.4
 [1.0.16-beta.3]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.2...v1.0.16-beta.3
 [1.0.16-beta.2]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.1...v1.0.16-beta.2

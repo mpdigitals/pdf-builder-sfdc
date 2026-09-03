@@ -4,9 +4,9 @@
       "path": "force-app",
       "default": true,
       "package": "PDF Builder",
-      "versionName": "Version 1.0.16 Beta 4",
+      "versionName": "Version 1.0.16 Beta 5",
       "versionNumber": "1.0.16.NEXT",
-      "versionDescription": "Beta 4: Add service quotation sample and refine previews",
+      "versionDescription": "Beta 5: Add record-type template defaults and refine the Builder and PDF output",
       "apexTestAccess": {
         "permissionSets": ["PDFBuilderUser"]
       }
