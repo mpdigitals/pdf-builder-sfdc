@@ -158,7 +158,9 @@ private class PDFBuilderHtmlSanitizerTest {
       'Sanitized Proposal',
       'Account',
       '{}',
-      '<main><p onmouseover="alert(1)">Proposal</p><script>alert(2)</script></main>'
+      '<main><p onmouseover="alert(1)">Proposal</p><script>alert(2)</script></main>',
+      'ALL',
+      false
     );
     Test.stopTest();
 

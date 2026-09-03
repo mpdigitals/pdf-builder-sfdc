@@ -21,7 +21,16 @@ export default class PDFBuilderGenerator extends NavigationMixin(
   }
 
   set recordId(value) {
+    if (this._recordId === value) {
+      return;
+    }
+
     this._recordId = value;
+
+    if (this.isConnected && this._objectApiName) {
+      this._loadedObjectApiName = null;
+      this.initialize();
+    }
   }
 
   @api
@@ -49,6 +58,7 @@ export default class PDFBuilderGenerator extends NavigationMixin(
   statusMessage = "";
   destination = "local";
   savedContentDocumentId = "";
+  savedPdfBase64Data = "";
 
   connectedCallback() {
     this.initialize();
@@ -141,7 +151,7 @@ export default class PDFBuilderGenerator extends NavigationMixin(
   }
 
   get hasSavedFile() {
-    return Boolean(this.savedContentDocumentId);
+    return Boolean(this.savedPdfBase64Data || this.savedContentDocumentId);
   }
 
   async loadTemplates() {
@@ -155,10 +165,13 @@ export default class PDFBuilderGenerator extends NavigationMixin(
 
     try {
       const result = await getTemplatesForObject({
-        objectApiName: this._objectApiName
+        objectApiName: this._objectApiName,
+        recordId: this._recordId
       });
 
       this.templates = result || [];
+      this.selectedTemplateId =
+        this.templates.find((template) => template.isDefault)?.id || "";
 
       if (this.templates.length === 0) {
         this.statusMessage = "No templates found for this object.";
@@ -181,6 +194,7 @@ export default class PDFBuilderGenerator extends NavigationMixin(
     this.statusMessage = "";
     this.errorMessage = "";
     this.savedContentDocumentId = "";
+    this.savedPdfBase64Data = "";
   }
 
   handleDestinationChange(event) {
@@ -188,6 +202,7 @@ export default class PDFBuilderGenerator extends NavigationMixin(
     this.statusMessage = "";
     this.errorMessage = "";
     this.savedContentDocumentId = "";
+    this.savedPdfBase64Data = "";
   }
 
   handleDestinationClick(event) {
@@ -205,6 +220,7 @@ export default class PDFBuilderGenerator extends NavigationMixin(
     this.errorMessage = "";
     this.statusMessage = "";
     this.savedContentDocumentId = "";
+    this.savedPdfBase64Data = "";
 
     try {
       if (this.destination === "files") {
@@ -214,6 +230,7 @@ export default class PDFBuilderGenerator extends NavigationMixin(
         });
 
         this.savedContentDocumentId = savedPdf.contentDocumentId;
+        this.savedPdfBase64Data = savedPdf.base64Data || "";
 
         this.statusMessage =
           `${savedPdf.fileName} was saved to Salesforce Files.` +
@@ -258,6 +275,11 @@ export default class PDFBuilderGenerator extends NavigationMixin(
   }
 
   handleOpenSavedFile() {
+    if (this.savedPdfBase64Data) {
+      this.openPdfInBrowser(this.savedPdfBase64Data);
+      return;
+    }
+
     if (!this.savedContentDocumentId) {
       return;
     }
@@ -271,6 +293,46 @@ export default class PDFBuilderGenerator extends NavigationMixin(
         selectedRecordId: this.savedContentDocumentId
       }
     });
+  }
+
+  openPdfInBrowser(base64Data) {
+    const viewerWindow = window.open("", "_blank");
+
+    if (!viewerWindow) {
+      this.showErrorToast(
+        "PDF could not be opened",
+        "Allow pop-ups for Salesforce and try again."
+      );
+      return;
+    }
+
+    try {
+      viewerWindow.opener = null;
+      const pdfUrl = URL.createObjectURL(this.createPdfBlob(base64Data));
+
+      viewerWindow.location.replace(pdfUrl);
+    } catch (error) {
+      viewerWindow.close();
+      this.showErrorToast(
+        "PDF could not be opened",
+        this.getErrorMessage(error)
+      );
+    }
+  }
+
+  createPdfBlob(base64Data) {
+    const binaryPdf = window.atob(base64Data);
+    const chunkSize = 1024;
+    const byteArrays = [];
+
+    for (let offset = 0; offset < binaryPdf.length; offset += chunkSize) {
+      const chunk = binaryPdf.slice(offset, offset + chunkSize);
+      byteArrays.push(
+        Uint8Array.from(chunk, (character) => character.charCodeAt(0))
+      );
+    }
+
+    return new Blob(byteArrays, { type: "application/pdf" });
   }
 
   async refreshRecordPage() {

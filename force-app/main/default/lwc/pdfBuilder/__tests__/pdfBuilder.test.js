@@ -5,6 +5,7 @@ import getObjects from "@salesforce/apex/PDFBuilderController.getObjects";
 import getFields from "@salesforce/apex/PDFBuilderController.getFields";
 import getRelatedLists from "@salesforce/apex/PDFBuilderController.getRelatedLists";
 import getRelatedListFields from "@salesforce/apex/PDFBuilderController.getRelatedListFields";
+import getRecordTypeOptions from "@salesforce/apex/PDFBuilderController.getRecordTypeOptions";
 import getTemplates from "@salesforce/apex/PDFBuilderController.getTemplates";
 import getTemplate from "@salesforce/apex/PDFBuilderController.getTemplate";
 import saveTemplate from "@salesforce/apex/PDFBuilderController.saveTemplate";
@@ -32,6 +33,11 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/PDFBuilderController.getRelatedListFields",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/PDFBuilderController.getRecordTypeOptions",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -115,6 +121,9 @@ describe("c-pdf-builder", () => {
     getFields.mockResolvedValue([]);
     getRelatedLists.mockResolvedValue([]);
     getRelatedListFields.mockResolvedValue([]);
+    getRecordTypeOptions.mockResolvedValue([
+      { label: "All record types", value: "ALL" }
+    ]);
     getTemplates.mockResolvedValue([
       {
         id: "a01000000000001AAA",

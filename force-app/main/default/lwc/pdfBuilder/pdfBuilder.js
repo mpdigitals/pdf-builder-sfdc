@@ -16,6 +16,7 @@ import getObjects from "@salesforce/apex/PDFBuilderController.getObjects";
 import getFields from "@salesforce/apex/PDFBuilderController.getFields";
 import getRelatedLists from "@salesforce/apex/PDFBuilderController.getRelatedLists";
 import getRelatedListFields from "@salesforce/apex/PDFBuilderController.getRelatedListFields";
+import getRecordTypeOptions from "@salesforce/apex/PDFBuilderController.getRecordTypeOptions";
 import getTemplates from "@salesforce/apex/PDFBuilderController.getTemplates";
 import getTemplate from "@salesforce/apex/PDFBuilderController.getTemplate";
 import saveTemplate from "@salesforce/apex/PDFBuilderController.saveTemplate";
@@ -51,6 +52,7 @@ const BLOCK_RUNTIME_KEYS = new Set([
 
 const REGION_RUNTIME_KEYS = new Set(["className", "inlineStyle", "isEmpty"]);
 const DEFAULT_TABLE_HEIGHT = 120;
+const DEFAULT_RELATED_LIST_HEIGHT = 50;
 
 export default class PDFBuilder extends LightningElement {
   @api recordId;
@@ -119,6 +121,7 @@ export default class PDFBuilder extends LightningElement {
   previewGenerationRequestId = 0;
   templateLoadRequestId = 0;
   relatedListFieldsRequestId = 0;
+  recordTypeOptionsRequestId = 0;
 
   selectedBlockId;
   selectedRegionId = "body-1";
@@ -144,6 +147,9 @@ export default class PDFBuilder extends LightningElement {
   selectedTemplateId;
   templateName = "";
   loadedTemplateName = "";
+  templateRecordTypeScope = "ALL";
+  recordTypeOptions = [{ label: "All record types", value: "ALL" }];
+  isTemplateDefault = false;
   metadataError = "";
   templateStatus = "";
   isMetadataLoading = true;
@@ -431,7 +437,8 @@ export default class PDFBuilder extends LightningElement {
     const selectValues = [
       ["field-insert-mode-select", this.fieldInsertMode],
       ["parent-relationship-select", this.parentRelationshipSelectValue],
-      ["body-layout-select", this.bodyLayoutValue]
+      ["body-layout-select", this.bodyLayoutValue],
+      ["template-record-type-scope-select", this.templateRecordTypeScope]
     ];
 
     selectValues.forEach(([role, value]) => {
@@ -1686,6 +1693,10 @@ export default class PDFBuilder extends LightningElement {
     return !this.selectedTemplateId;
   }
 
+  get isTemplateScopeDisabled() {
+    return this.isTemplateBusy || !this.selectedObjectApiName;
+  }
+
   get isGeneratePreviewDisabled() {
     const effectiveRecordId = String(
       this.previewRecordId || this.recordId || this.pageRefRecordId || ""
@@ -1789,6 +1800,32 @@ export default class PDFBuilder extends LightningElement {
     }
   }
 
+  async loadRecordTypeOptionsForSelectedObject() {
+    const requestId = ++this.recordTypeOptionsRequestId;
+    const objectApiName = this.selectedObjectApiName;
+    if (!objectApiName) {
+      this.recordTypeOptions = [{ label: "All record types", value: "ALL" }];
+      this.templateRecordTypeScope = "ALL";
+      return;
+    }
+
+    const options = await getRecordTypeOptions({ objectApiName });
+    if (
+      requestId === this.recordTypeOptionsRequestId &&
+      this.selectedObjectApiName === objectApiName
+    ) {
+      this.recordTypeOptions = options || [
+        { label: "All record types", value: "ALL" }
+      ];
+      const hasSelectedScope = this.recordTypeOptions.some(
+        (option) => option.value === this.templateRecordTypeScope
+      );
+      if (!hasSelectedScope) {
+        this.templateRecordTypeScope = "ALL";
+      }
+    }
+  }
+
   async loadRelatedListFieldsForChildObject(childObjectApiName) {
     const requestId = ++this.relatedListFieldsRequestId;
     if (!childObjectApiName) {
@@ -1810,6 +1847,7 @@ export default class PDFBuilder extends LightningElement {
     const objectChanged = this.selectedObjectApiName !== nextObjectApiName;
 
     this.selectedObjectApiName = nextObjectApiName;
+    this.templateRecordTypeScope = "ALL";
     this.fieldSearchTerm = "";
     this.selectedParentRelationshipKey = "";
 
@@ -1819,7 +1857,8 @@ export default class PDFBuilder extends LightningElement {
 
     Promise.all([
       this.loadFieldsForSelectedObject(),
-      this.loadRelatedListsForSelectedObject()
+      this.loadRelatedListsForSelectedObject(),
+      this.loadRecordTypeOptionsForSelectedObject()
     ]).catch((error) => {
       this.metadataError = "";
       this.showToast(
@@ -1846,6 +1885,14 @@ export default class PDFBuilder extends LightningElement {
 
   handleTemplateNameChange(event) {
     this.templateName = event.target.value;
+  }
+
+  handleTemplateRecordTypeScopeChange(event) {
+    this.templateRecordTypeScope = event.target.value || "ALL";
+  }
+
+  handleTemplateDefaultChange(event) {
+    this.isTemplateDefault = Boolean(event.target.checked);
   }
 
   handleTemplateSelect(event) {
@@ -1960,6 +2007,8 @@ export default class PDFBuilder extends LightningElement {
     this.resetSelectedObjectContext();
     this.templateName = "";
     this.loadedTemplateName = "";
+    this.templateRecordTypeScope = "ALL";
+    this.isTemplateDefault = false;
     this.templateStatus = "";
     this.htmlOutput = "";
     this.previewHtml = "";
@@ -1980,6 +2029,9 @@ export default class PDFBuilder extends LightningElement {
     this.relatedListOptions = [];
     this.relatedListFieldOptions = [];
     this.relatedListFieldsRequestId += 1;
+    this.recordTypeOptionsRequestId += 1;
+    this.recordTypeOptions = [{ label: "All record types", value: "ALL" }];
+    this.templateRecordTypeScope = "ALL";
   }
 
   async handleSaveTemplate() {
@@ -2042,7 +2094,9 @@ export default class PDFBuilder extends LightningElement {
         name: normalizedTemplateName,
         objectApiName,
         contentJson,
-        generatedHtml
+        generatedHtml,
+        recordTypeScope: this.templateRecordTypeScope,
+        isDefault: this.isTemplateDefault
       });
 
       this.selectedTemplateId = templateId;
@@ -2094,7 +2148,6 @@ export default class PDFBuilder extends LightningElement {
 
   async handleConfirmDeleteTemplate() {
     const templateId = this.pendingDeleteTemplateId;
-    const templateLabel = this.pendingDeleteTemplateLabel;
     if (!templateId || this.isTemplateBusy) {
       return;
     }
@@ -2109,11 +2162,6 @@ export default class PDFBuilder extends LightningElement {
       this.resetTemplateEditor();
       this.templateOptions = formatTemplateOptions(await getTemplates());
       this.templateStatus = "Template deleted";
-      this.showToast(
-        "Template deleted",
-        `“${templateLabel}” was deleted.`,
-        "success"
-      );
     } catch (error) {
       this.templateStatus = "";
       this.showToast(
@@ -2161,11 +2209,14 @@ export default class PDFBuilder extends LightningElement {
       this.loadedTemplateName = template.name || "";
       this.selectedObjectApiName =
         template.objectApiName || this.selectedObjectApiName;
+      this.templateRecordTypeScope = template.recordTypeScope || "ALL";
+      this.isTemplateDefault = Boolean(template.isDefault);
       this.documentModel = this.decorateDocument(this.restoreDocument(content));
       this.clearSelection();
       await Promise.all([
         this.loadFieldsForSelectedObject(),
-        this.loadRelatedListsForSelectedObject()
+        this.loadRelatedListsForSelectedObject(),
+        this.loadRecordTypeOptionsForSelectedObject()
       ]);
       if (
         requestId !== this.templateLoadRequestId ||
@@ -2207,6 +2258,8 @@ export default class PDFBuilder extends LightningElement {
     return JSON.stringify({
       templateName: String(this.templateName || ""),
       objectApiName: String(this.selectedObjectApiName || ""),
+      recordTypeScope: String(this.templateRecordTypeScope || "ALL"),
+      isDefault: Boolean(this.isTemplateDefault),
       documentModel: this.stripRuntimeState(this.documentModel)
     });
   }
@@ -7372,7 +7425,7 @@ export default class PDFBuilder extends LightningElement {
             : type === "verticalLine"
               ? 120
               : type === "relatedList"
-                ? 100
+                ? DEFAULT_RELATED_LIST_HEIGHT
                 : type === "table"
                   ? DEFAULT_TABLE_HEIGHT
                   : null,
@@ -7849,7 +7902,7 @@ export default class PDFBuilder extends LightningElement {
               this.toOptionalNumber(block.styles?.height) || 12
             )
           : block.type === "relatedList"
-            ? 100
+            ? DEFAULT_RELATED_LIST_HEIGHT
             : block.type === "table"
               ? this.toOptionalNumber(block.styles?.height) ||
                 DEFAULT_TABLE_HEIGHT
@@ -7943,6 +7996,15 @@ export default class PDFBuilder extends LightningElement {
     const columns = Array.isArray(block.relatedListColumns)
       ? block.relatedListColumns
       : [];
+    if (!columns.length) {
+      return Array.from({ length: 3 }, (_, index) => ({
+        key: `rl-placeholder-col-${index}`,
+        label: `Column ${index + 1}`,
+        apiName: `placeholder-${index}`,
+        dataType: ""
+      }));
+    }
+
     return columns.map((columnApiName, index) => {
       const option = (this.relatedListFieldOptions || []).find(
         (field) => field.apiName === columnApiName
@@ -7958,12 +8020,6 @@ export default class PDFBuilder extends LightningElement {
 
   getRelatedListPreviewRows(block) {
     const columns = this.getRelatedListColumnLabels(block);
-    const previewColumns = columns.length
-      ? columns
-      : Array.from({ length: 3 }, (_, index) => ({
-          apiName: `placeholder-${index}`,
-          dataType: ""
-        }));
     return Array.from({ length: 1 }, (_, rowIndex) => {
       const textColor =
         rowIndex % 2 === 0
@@ -7982,9 +8038,9 @@ export default class PDFBuilder extends LightningElement {
             ? block.relatedListOddRowColor || "#ffffff"
             : block.relatedListEvenRowColor || "#ffffff"
         };`,
-        cells: previewColumns.map((column, cellIndex) => ({
+        cells: columns.map((column, cellIndex) => ({
           key: `preview-cell-${rowIndex}-${cellIndex}`,
-          value: rowIndex === 0 ? "..." : "",
+          value: rowIndex === 0 ? "Sample value" : "",
           style: this.buildRelatedListCellStyle(
             block,
             textColor,
@@ -8078,7 +8134,7 @@ export default class PDFBuilder extends LightningElement {
     }
 
     if (type === "relatedList") {
-      className += " table-block";
+      className += " table-block related-list-block";
     }
 
     if (type === "verticalLine") {
@@ -8714,7 +8770,7 @@ export default class PDFBuilder extends LightningElement {
     }
 
     if (block.type === "relatedList") {
-      return 100;
+      return DEFAULT_RELATED_LIST_HEIGHT;
     }
 
     if (block.type === "verticalLine") {
