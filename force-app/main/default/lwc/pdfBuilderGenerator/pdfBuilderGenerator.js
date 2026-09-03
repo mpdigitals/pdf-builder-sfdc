@@ -311,9 +311,6 @@ export default class PDFBuilderGenerator extends NavigationMixin(
       const pdfUrl = URL.createObjectURL(this.createPdfBlob(base64Data));
 
       viewerWindow.location.replace(pdfUrl);
-      // The viewer needs the Blob URL for its lifetime; revoke it afterwards.
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
     } catch (error) {
       viewerWindow.close();
       this.showErrorToast(
@@ -330,13 +327,9 @@ export default class PDFBuilderGenerator extends NavigationMixin(
 
     for (let offset = 0; offset < binaryPdf.length; offset += chunkSize) {
       const chunk = binaryPdf.slice(offset, offset + chunkSize);
-      const bytes = new Uint8Array(chunk.length);
-
-      for (let index = 0; index < chunk.length; index += 1) {
-        bytes[index] = chunk.charCodeAt(index);
-      }
-
-      byteArrays.push(bytes);
+      byteArrays.push(
+        Uint8Array.from(chunk, (character) => character.charCodeAt(0))
+      );
     }
 
     return new Blob(byteArrays, { type: "application/pdf" });
