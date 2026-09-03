@@ -18,7 +18,7 @@ PDF Builder is a Salesforce-native application for visually designing reusable P
 The authoring and rendering flow runs entirely in Salesforce using Lightning Web Components, Apex, Custom Metadata, custom objects, Salesforce Files, and Salesforce's native PDF conversion.
 
 <p align="center">
-  <img src="docs/images/quote-template-editor.png" alt="PDF Builder visual template editor for a Salesforce Quote" width="96%">
+  <img src="docs/images/quote-template-editor.png" alt="PDF Builder visual template editor for a Salesforce Quote" width="96%" style="border: 1px solid #d0d7de; border-radius: 4px;">
 </p>
 
 The visual Builder is the heart of the application: compose headers, body and footer regions on a canvas; add rich text, images, tables, related lists and dividers; then preview the document with Salesforce data before generating it.
