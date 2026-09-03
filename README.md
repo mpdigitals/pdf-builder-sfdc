@@ -17,9 +17,11 @@ PDF Builder is a Salesforce-native application for visually designing reusable P
 
 The authoring and rendering flow runs entirely in Salesforce using Lightning Web Components, Apex, Custom Metadata, custom objects, Salesforce Files, and Salesforce's native PDF conversion.
 
-<p align="center">
-  <img src="docs/images/quote-template-editor.png" alt="PDF Builder visual template editor for a Salesforce Quote" width="96%" style="border: 1px solid #d0d7de; border-radius: 4px;">
-</p>
+<table align="center" border="1" cellpadding="0" cellspacing="0">
+  <tr>
+    <td><img src="docs/images/quote-template-editor.png" alt="PDF Builder visual template editor for a Salesforce Quote" width="96%"></td>
+  </tr>
+</table>
 
 The visual Builder is the heart of the application: compose headers, body and footer regions on a canvas; add rich text, images, tables, related lists and dividers; then preview the document with Salesforce data before generating it.
 
@@ -163,9 +165,11 @@ The `PDF Builder` Lightning tab opens the authoring workspace. Its three-column 
 
 The responsive toolbar groups undo/redo, HTML and preview actions, template context, and template management so the authoring controls stay usable in narrow Lightning workspaces. It provides generated HTML inspection, record-aware preview, object and template selection, save and delete actions, and fullscreen editing.
 
-<p align="center">
-  <img src="docs/images/template-toolbar.png" alt="PDF Builder template toolbar" width="92%">
-</p>
+<table align="center" border="1" cellpadding="0" cellspacing="0">
+  <tr>
+    <td><img src="docs/images/template-toolbar.png" alt="PDF Builder template toolbar" width="92%"></td>
+  </tr>
+</table>
 
 ### Template availability and defaults
 
