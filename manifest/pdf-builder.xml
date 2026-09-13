@@ -7,6 +7,8 @@
         <members>PDFBuilderDescribeService</members>
         <members>PDFBuilderFileService</members>
         <members>PDFBuilderFileServiceTest</members>
+        <members>PDFBuilderHtmlSanitizer</members>
+        <members>PDFBuilderHtmlSanitizerTest</members>
         <members>PDFBuilderPdfLineHeightTest</members>
         <members>PDFBuilderPdfFallbackTest</members>
         <members>PDFBuilderPdfPageController</members>
@@ -41,6 +43,7 @@
         <members>pdfBuilder</members>
         <members>pdfBuilderBlock</members>
         <members>pdfBuilderRichTextCommands</members>
+        <members>pdfBuilderSecurity</members>
         <members>pdfBuilderUtils</members>
         <members>pdfBuilderGenerator</members>
         <name>LightningComponentBundle</name>
@@ -56,6 +59,7 @@
     <types>
         <members>PDFBuilderBrandLogo</members>
         <members>PDFBuilderSampleMPDigitalsLogo</members>
+        <members>PDFBuilderQuotationLogo</members>
         <name>StaticResource</name>
     </types>
     <version>67.0</version>
