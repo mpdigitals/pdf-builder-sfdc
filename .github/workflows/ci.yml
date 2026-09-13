@@ -57,6 +57,12 @@ jobs:
         with:
           node-version: 22
 
+      # Code Analyzer loads the project's ESLint configuration. Install the
+      # locked dependencies so every configured engine can initialize and the
+      # uploaded SARIF represents a complete analysis.
+      - name: Install project dependencies
+        run: npm ci
+
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
