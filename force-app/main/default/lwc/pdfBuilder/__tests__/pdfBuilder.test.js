@@ -365,6 +365,13 @@ describe("c-pdf-builder", () => {
     );
     await flushPromises();
 
+    expect(
+      element.shadowRoot.querySelector('input[data-style="background"]')
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('input[data-style="padding"]')
+    ).toBeNull();
+
     const relatedListSection = element.shadowRoot.querySelector(
       'details[data-section="related-list"]'
     );

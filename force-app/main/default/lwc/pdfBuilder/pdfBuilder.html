@@ -843,6 +843,7 @@
               placeholder="Search fields"
               value={fieldSearchTerm}
               oninput={handleFieldSearchChange}
+              onkeydown={handlePropertiesPanelKeyDown}
             />
           </div>
 
@@ -1614,14 +1615,16 @@
           >
             <summary>Appearance</summary>
 
-            <div class="property-group">
-              <label>Background</label>
-              <input
-                type="color"
-                data-style="background"
-                oninput={handleStyleChange}
-              />
-            </div>
+            <template lwc:if={showElementBackgroundProperty}>
+              <div class="property-group">
+                <label>Background</label>
+                <input
+                  type="color"
+                  data-style="background"
+                  oninput={handleStyleChange}
+                />
+              </div>
+            </template>
 
             <template lwc:if={showElementPaddingProperty}>
               <div class="property-group">
