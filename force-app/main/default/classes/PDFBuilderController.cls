@@ -5258,6 +5258,9 @@ public with sharing class PDFBuilderController {
         column.toLowerCase()
       );
       String headerLabel = fieldDescribe.getLabel();
+      String headerTextAlign = getRelatedListValueTextAlign(
+        fieldDescribe.getType()
+      );
       String headerCellStyle =
         getRelatedListCellBorderStyle(borderMode, true, columnIndex == 0) +
         cellPaddingStyle +
@@ -5271,7 +5274,9 @@ public with sharing class PDFBuilderController {
       tableHtml +=
         '<th bgcolor="' +
         escapeHtml(normalizedHeaderColor) +
-        '" style="text-align:center;' +
+        '" style="text-align:' +
+        headerTextAlign +
+        ';' +
         headerCellStyle +
         '">' +
         escapeHtml(headerLabel) +
@@ -5320,18 +5325,9 @@ public with sharing class PDFBuilderController {
         Schema.DescribeFieldResult fieldDescribe = childFieldsByNormalizedApiName.get(
           column.toLowerCase()
         );
-        Schema.DisplayType fieldType = fieldDescribe.getType();
-        String valueTextAlign = 'left';
-        if (fieldType == Schema.DisplayType.Currency) {
-          valueTextAlign = 'right';
-        } else if (
-          fieldType == Schema.DisplayType.Double ||
-          fieldType == Schema.DisplayType.Percent ||
-          fieldType == Schema.DisplayType.Integer ||
-          fieldType == Schema.DisplayType.Long
-        ) {
-          valueTextAlign = 'center';
-        }
+        String valueTextAlign = getRelatedListValueTextAlign(
+          fieldDescribe.getType()
+        );
         rowCellStyle += 'text-align:' + valueTextAlign + ';';
         tableHtml +=
           '<td bgcolor="' +
@@ -5370,6 +5366,29 @@ public with sharing class PDFBuilderController {
 
     tableHtml += '</tbody></table>';
     return tableHtml;
+  }
+
+  @TestVisible
+  private static String getRelatedListValueTextAlign(
+    Schema.DisplayType fieldType
+  ) {
+    if (
+      fieldType == Schema.DisplayType.Currency ||
+      fieldType == Schema.DisplayType.Double ||
+      fieldType == Schema.DisplayType.Percent ||
+      fieldType == Schema.DisplayType.Integer ||
+      fieldType == Schema.DisplayType.Long
+    ) {
+      return 'right';
+    }
+    if (
+      fieldType == Schema.DisplayType.Boolean ||
+      fieldType == Schema.DisplayType.Date ||
+      fieldType == Schema.DisplayType.DateTime
+    ) {
+      return 'center';
+    }
+    return 'left';
   }
 
   private static String getRelatedListCellBorderStyle(

@@ -8240,7 +8240,8 @@ export default class PDFBuilder extends LightningElement {
         key: `rl-placeholder-col-${index}`,
         label: `Column ${index + 1}`,
         apiName: `placeholder-${index}`,
-        dataType: ""
+        dataType: "",
+        style: this.getRelatedListHeaderCellStyle(block, "")
       }));
     }
 
@@ -8254,9 +8255,20 @@ export default class PDFBuilder extends LightningElement {
         key: `rl-col-${index}-${columnApiName}`,
         label: option?.label || columnApiName,
         apiName: columnApiName,
-        dataType: option?.dataType || ""
+        dataType: option?.dataType || "",
+        style: this.getRelatedListHeaderCellStyle(block, option?.dataType || "")
       };
     });
+  }
+
+  getRelatedListHeaderCellStyle(block, dataType) {
+    return this.buildRelatedListCellStyle(
+      block,
+      block.relatedListTextColor ||
+        block.styles?.relatedListTextColor ||
+        "#181818",
+      this.getRelatedListValueTextAlign(dataType)
+    );
   }
 
   getRelatedListPreviewRows(block) {
@@ -8295,11 +8307,15 @@ export default class PDFBuilder extends LightningElement {
   getRelatedListValueTextAlign(dataType) {
     const normalizedType = String(dataType || "").toLowerCase();
 
-    if (normalizedType === "currency") {
+    if (
+      ["currency", "double", "percent", "integer", "long"].includes(
+        normalizedType
+      )
+    ) {
       return "right";
     }
 
-    if (["double", "percent", "integer", "long"].includes(normalizedType)) {
+    if (["boolean", "date", "datetime"].includes(normalizedType)) {
       return "center";
     }
 
@@ -10015,7 +10031,9 @@ export default class PDFBuilder extends LightningElement {
     const headerCells = (columnLabels.length ? columnLabels : columns)
       .map((column) => {
         const label = typeof column === "string" ? column : column?.label || "";
-        return `<th style="${headerCellStyle}text-align:center;">${this.escapeHtml(label)}</th>`;
+        const dataType = typeof column === "string" ? "" : column?.dataType;
+        const textAlign = this.getRelatedListValueTextAlign(dataType);
+        return `<th style="${headerCellStyle}text-align:${textAlign};">${this.escapeHtml(label)}</th>`;
       })
       .join("");
     const bodyRows = previewRows
