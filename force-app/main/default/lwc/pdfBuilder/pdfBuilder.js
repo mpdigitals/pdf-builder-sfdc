@@ -53,6 +53,7 @@ const BLOCK_RUNTIME_KEYS = new Set([
 const REGION_RUNTIME_KEYS = new Set(["className", "inlineStyle", "isEmpty"]);
 const DEFAULT_TABLE_HEIGHT = 120;
 const DEFAULT_RELATED_LIST_HEIGHT = 50;
+const BUILDER_THEME_STORAGE_KEY = "pdfbuilder.builder-theme";
 
 export default class PDFBuilder extends LightningElement {
   @api recordId;
@@ -117,6 +118,82 @@ export default class PDFBuilder extends LightningElement {
   imageFilePickerBlockId;
   imageFileSearchTimer;
   propertyFontSizeTimer;
+  isObjectSelectionGuidanceActive = false;
+  isInsertTargetGuidanceActive = false;
+  guidanceFeedbackTimer;
+
+  get objectSelectorClass() {
+    return `toolbar-input toolbar-object-select${
+      this.isObjectSelectionGuidanceActive ? " guidance-object-required" : ""
+    }`;
+  }
+
+  get textToolClass() {
+    return `tool${
+      this.isInsertTargetGuidanceActive ? " guidance-insert-target" : ""
+    }`;
+  }
+
+  get tableToolClass() {
+    return `tool${
+      this.isInsertTargetGuidanceActive ? " guidance-insert-target" : ""
+    }`;
+  }
+
+  clearGuidanceFeedback() {
+    if (this.guidanceFeedbackTimer) {
+      window.clearTimeout(this.guidanceFeedbackTimer);
+      this.guidanceFeedbackTimer = null;
+    }
+
+    this.isObjectSelectionGuidanceActive = false;
+    this.isInsertTargetGuidanceActive = false;
+  }
+
+  showObjectSelectionGuidance() {
+    this.clearGuidanceFeedback();
+    this.isObjectSelectionGuidanceActive = true;
+
+    requestAnimationFrame(() => {
+      const objectSelector = this.template.querySelector(
+        '[data-guidance="object-selector"]'
+      );
+      objectSelector?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center"
+      });
+      objectSelector?.focus?.();
+    });
+
+    this.scheduleGuidanceFeedbackClear();
+  }
+
+  showInsertTargetGuidance() {
+    this.clearGuidanceFeedback();
+    this.isInsertTargetGuidanceActive = true;
+
+    requestAnimationFrame(() => {
+      const textTool = this.template.querySelector(
+        '[data-guidance="text-tool"]'
+      );
+      textTool?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest"
+      });
+    });
+
+    this.scheduleGuidanceFeedbackClear();
+  }
+
+  scheduleGuidanceFeedbackClear() {
+    this.guidanceFeedbackTimer = window.setTimeout(() => {
+      this.guidanceFeedbackTimer = null;
+      this.isObjectSelectionGuidanceActive = false;
+      this.isInsertTargetGuidanceActive = false;
+    }, 4000);
+  }
   previewPaginationTimer;
   previewGenerationRequestId = 0;
   templateLoadRequestId = 0;
@@ -135,6 +212,7 @@ export default class PDFBuilder extends LightningElement {
   isHtmlOpen = false;
   isPreviewOpen = false;
   isFullscreen = false;
+  isDarkTheme = false;
   objectOptions = [];
   fieldOptions = [];
   templateOptions = [];
@@ -201,7 +279,32 @@ export default class PDFBuilder extends LightningElement {
   }
 
   connectedCallback() {
+    this.restoreThemePreference();
     this.loadPDFBuilderData();
+  }
+
+  restoreThemePreference() {
+    try {
+      this.isDarkTheme =
+        window.localStorage.getItem(BUILDER_THEME_STORAGE_KEY) === "dark";
+    } catch {
+      // Private browsing or strict storage policies should not prevent the
+      // Builder from loading; in those cases it simply starts in light mode.
+      this.isDarkTheme = false;
+    }
+  }
+
+  handleThemeChange(event) {
+    this.isDarkTheme = event.target.checked;
+    try {
+      window.localStorage.setItem(
+        BUILDER_THEME_STORAGE_KEY,
+        this.isDarkTheme ? "dark" : "light"
+      );
+    } catch {
+      // The current selection remains active for the page even if it cannot
+      // be persisted by the browser.
+    }
   }
 
   get builderClass() {
@@ -655,6 +758,11 @@ export default class PDFBuilder extends LightningElement {
   }
 
   disconnectedCallback() {
+    if (this.guidanceFeedbackTimer) {
+      window.clearTimeout(this.guidanceFeedbackTimer);
+      this.guidanceFeedbackTimer = null;
+    }
+
     if (this.boundKeyDownHandler) {
       window.removeEventListener("keydown", this.boundKeyDownHandler);
     }
@@ -1354,7 +1462,9 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get selectedRelatedListColumns() {
-    return this.selectedBlock?.relatedListColumns || [];
+    return this.normalizeRelatedListColumnApiNames(
+      this.selectedBlock?.relatedListColumns || []
+    );
   }
 
   get hasSalesforceImageFiles() {
@@ -1369,10 +1479,86 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get relatedListFieldOptionItems() {
-    return (this.relatedListFieldOptions || []).map((field) => ({
+    const options = (this.relatedListFieldOptions || []).map((field) => ({
       label: field.label,
       value: field.apiName
     }));
+    const optionValues = new Set(
+      options.map((option) => String(option.value || "").toLowerCase())
+    );
+
+    this.selectedRelatedListColumns.forEach((column) => {
+      const normalizedColumn = String(column || "").toLowerCase();
+      if (!normalizedColumn || optionValues.has(normalizedColumn)) {
+        return;
+      }
+
+      options.push({
+        label: this.getRelatedListColumnFallbackLabel(column),
+        value: column
+      });
+      optionValues.add(normalizedColumn);
+    });
+
+    return options;
+  }
+
+  getRelatedListColumnFallbackLabel(columnApiName) {
+    return String(columnApiName || "")
+      .replace(/__/g, " ")
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/\b\w/g, (character) => character.toUpperCase());
+  }
+
+  normalizeRelatedListColumnApiNames(
+    columns,
+    fields = this.relatedListFieldOptions
+  ) {
+    if (!Array.isArray(columns) || !Array.isArray(fields) || !fields.length) {
+      return Array.isArray(columns) ? columns : [];
+    }
+
+    const fieldApiNamesByNormalizedValue = new Map(
+      fields.map((field) => [
+        String(field.apiName || "").toLowerCase(),
+        field.apiName
+      ])
+    );
+
+    return columns.map(
+      (column) =>
+        fieldApiNamesByNormalizedValue.get(
+          String(column || "").toLowerCase()
+        ) || column
+    );
+  }
+
+  normalizeSelectedRelatedListColumns(fields) {
+    const selectedBlockId = this.selectedBlockId;
+    if (!selectedBlockId) {
+      return;
+    }
+
+    this.documentModel = this.decorateDocument(
+      this.updateBlocks(this.documentModel, (block) => {
+        if (block.id !== selectedBlockId || block.type !== "relatedList") {
+          return block;
+        }
+
+        const relatedListColumns = this.normalizeRelatedListColumnApiNames(
+          block.relatedListColumns,
+          fields
+        );
+        const changed = relatedListColumns.some(
+          (column, index) => column !== block.relatedListColumns?.[index]
+        );
+        if (!changed) {
+          return block;
+        }
+
+        return { ...block, relatedListColumns };
+      })
+    );
   }
 
   get showLineProperties() {
@@ -1839,6 +2025,7 @@ export default class PDFBuilder extends LightningElement {
     });
     if (requestId === this.relatedListFieldsRequestId) {
       this.relatedListFieldOptions = fields || [];
+      this.normalizeSelectedRelatedListColumns(this.relatedListFieldOptions);
     }
   }
 
@@ -1846,6 +2033,7 @@ export default class PDFBuilder extends LightningElement {
     const nextObjectApiName = event.target.value;
     const objectChanged = this.selectedObjectApiName !== nextObjectApiName;
 
+    this.clearGuidanceFeedback();
     this.selectedObjectApiName = nextObjectApiName;
     this.templateRecordTypeScope = "ALL";
     this.fieldSearchTerm = "";
@@ -2552,6 +2740,7 @@ export default class PDFBuilder extends LightningElement {
 
     const selectedBlockType = this.selectedBlock?.type;
     if (!["text", "field", "table"].includes(selectedBlockType)) {
+      this.showInsertTargetGuidance();
       this.showToast(
         "Variable not inserted",
         "Select a text or table block before inserting a variable.",
@@ -2562,6 +2751,7 @@ export default class PDFBuilder extends LightningElement {
 
     const blockComponent = this.getSelectedBlockComponent();
     if (!blockComponent) {
+      this.showInsertTargetGuidance();
       this.showToast(
         "Variable not inserted",
         "Select a text or table block before inserting a variable.",
@@ -2699,6 +2889,10 @@ export default class PDFBuilder extends LightningElement {
       return;
     }
 
+    // Pointer selection prevents the browser from transferring focus on its
+    // own. Release a property input explicitly so Delete/Backspace belongs
+    // to the selected block, whatever its type.
+    this.blurPropertiesPanelControl();
     event.preventDefault();
     event.stopPropagation();
 
@@ -2789,6 +2983,11 @@ export default class PDFBuilder extends LightningElement {
     if (!blockId || !this.findBlockById(blockId)) {
       return;
     }
+
+    // Native click selection follows the same rule as pointer selection.
+    // Without this, a property input can retain focus after any block is
+    // selected from its shell.
+    this.blurPropertiesPanelControl();
 
     // A block can be selected from its shell without the child component
     // emitting selectblock (for example after a pointer interaction). Always
@@ -4241,14 +4440,29 @@ export default class PDFBuilder extends LightningElement {
       styleName === "lineLength" ||
       styleName === "lineThickness"
     ) {
-      value = this.toNumber(value);
+      const rawNumericValue = String(value ?? "").trim();
+
+      // An empty field is an editing state, not zero. Do not redraw the
+      // selected block from its defaults while the user is replacing a
+      // number. A literal "0" remains a valid value for controls that allow
+      // it (Position, Size, padding, borders, and table spacing).
+      if (rawNumericValue === "") {
+        return;
+      }
+
+      const parsedNumericValue = Number(rawNumericValue);
+      if (!Number.isFinite(parsedNumericValue)) {
+        return;
+      }
+
+      value = parsedNumericValue;
     }
 
     if (styleName === "tableRows" || styleName === "tableColumns") {
       value = Math.max(1, Math.min(12, value));
     }
     if (styleName === "fontSize") {
-      value = Math.max(1, Math.min(72, value || 14));
+      value = Math.max(1, Math.min(72, value));
     }
 
     this.saveHistory();
@@ -4521,6 +4735,7 @@ export default class PDFBuilder extends LightningElement {
       !String(this.selectedObjectApiName || "").trim()
     ) {
       openedSection.open = false;
+      this.showObjectSelectionGuidance();
       this.showToast(
         "Object required",
         "Select an object before configuring related-list fields.",
@@ -5157,6 +5372,11 @@ export default class PDFBuilder extends LightningElement {
     if (!block) {
       return;
     }
+
+    // A resize also selects the block. Release any property editor first so
+    // keyboard shortcuts cannot keep editing the control from the prior
+    // selection.
+    this.blurPropertiesPanelControl();
 
     // Keep focus/selection anchored to the same block while resizing.
     this.selectedKind = "block";
@@ -5934,10 +6154,10 @@ export default class PDFBuilder extends LightningElement {
     );
     const block = this.findBlockById(moveState.blockId);
     let blockWidth =
-      this.toOptionalNumber(block?.styles?.width) ||
+      this.toOptionalNumber(block?.styles?.width) ??
       this.getEstimatedBlockWidth(block);
     const blockHeight =
-      this.toOptionalNumber(block?.styles?.height) ||
+      this.toOptionalNumber(block?.styles?.height) ??
       this.getEstimatedBlockHeight(block);
     blockWidth = this.getNormalizedMovableBlockWidth(
       block,
@@ -5977,6 +6197,29 @@ export default class PDFBuilder extends LightningElement {
     return Math.round(value / gridSize) * gridSize;
   }
 
+  getDropRegionMetrics(regionElement) {
+    const regionRect = regionElement.getBoundingClientRect();
+    const computedStyle = window.getComputedStyle(regionElement);
+    const paddingLeft = this.toCssNumber(computedStyle.paddingLeft);
+    const paddingTop = this.toCssNumber(computedStyle.paddingTop);
+    const paddingRight = this.toCssNumber(computedStyle.paddingRight);
+    const paddingBottom = this.toCssNumber(computedStyle.paddingBottom);
+
+    return {
+      regionRect,
+      paddingLeft,
+      paddingTop,
+      availableWidth: Math.max(
+        32,
+        regionElement.clientWidth - paddingLeft - paddingRight
+      ),
+      availableHeight: Math.max(
+        24,
+        regionElement.clientHeight - paddingTop - paddingBottom
+      )
+    };
+  }
+
   updateNewBlockDropGuides(regionId, event) {
     const regionElement = this.getRegionElementById(regionId);
 
@@ -5989,25 +6232,18 @@ export default class PDFBuilder extends LightningElement {
     }
 
     const block = this.createBlock(this.draggedType, this.draggedField);
-    const regionRect = regionElement.getBoundingClientRect();
-    const computedStyle = window.getComputedStyle(regionElement);
-    const paddingLeft = this.toCssNumber(computedStyle.paddingLeft);
-    const paddingTop = this.toCssNumber(computedStyle.paddingTop);
-    const paddingRight = this.toCssNumber(computedStyle.paddingRight);
-    const paddingBottom = this.toCssNumber(computedStyle.paddingBottom);
-    const availableWidth = Math.max(
-      32,
-      regionElement.clientWidth - paddingLeft - paddingRight
-    );
-    const availableHeight = Math.max(
-      24,
-      regionElement.clientHeight - paddingTop - paddingBottom
-    );
+    const {
+      regionRect,
+      paddingLeft,
+      paddingTop,
+      availableWidth,
+      availableHeight
+    } = this.getDropRegionMetrics(regionElement);
     const blockWidth =
-      this.toOptionalNumber(block.styles?.width) ||
+      this.toOptionalNumber(block.styles?.width) ??
       this.getEstimatedBlockWidth(block);
     const blockHeight =
-      this.toOptionalNumber(block.styles?.height) ||
+      this.toOptionalNumber(block.styles?.height) ??
       this.getEstimatedBlockHeight(block);
     const canvasScale = this.getCanvasVisualScale();
     const rawX = (event.clientX - regionRect.left) / canvasScale - paddingLeft;
@@ -6048,10 +6284,10 @@ export default class PDFBuilder extends LightningElement {
     );
 
     const width =
-      this.toOptionalNumber(positioned?.styles?.width) ||
+      this.toOptionalNumber(positioned?.styles?.width) ??
       this.getEstimatedBlockWidth(positioned);
     const height =
-      this.toOptionalNumber(positioned?.styles?.height) ||
+      this.toOptionalNumber(positioned?.styles?.height) ??
       this.getEstimatedBlockHeight(positioned);
     const x = this.toOptionalCoordinate(positioned?.styles?.x) ?? 0;
     const y = this.toOptionalCoordinate(positioned?.styles?.y) ?? 0;
@@ -6355,15 +6591,15 @@ export default class PDFBuilder extends LightningElement {
       styles.width = nextWidth;
     }
 
-    if (styles.height) {
+    if (Number.isFinite(this.toOptionalNumber(styles.height))) {
       styles.height = Math.min(this.toNumber(styles.height), bounds.maxHeight);
     }
 
     const blockWidth =
-      this.toOptionalNumber(styles.width) ||
+      this.toOptionalNumber(styles.width) ??
       this.getEstimatedBlockWidth({ ...block, styles });
     const blockHeight =
-      this.toOptionalNumber(styles.height) ||
+      this.toOptionalNumber(styles.height) ??
       this.getEstimatedBlockHeight({ ...block, styles });
 
     if (Number.isFinite(styles.x)) {
@@ -6884,8 +7120,9 @@ export default class PDFBuilder extends LightningElement {
     );
     const pageBackground = this.documentModel.pageBackground || "#ffffff";
     const contentWidth = Math.max(1, this.pageWidth - pagePadding * 2);
-    const headerBodyGap =
-      this.hasHeader && this.documentModel.repeatHeaderOnEachPage ? 10 : 0;
+    // Header and Body share a boundary in the Builder. Keep the preview
+    // continuous too, instead of inserting an artificial separation.
+    const headerBodyGap = 0;
     // Dynamic Visualforce pages reserve the repeated header/footer as page
     // margins. Only the horizontal document padding remains; subtracting the
     // vertical padding here made the browser sheet 64px shorter than the PDF
@@ -7889,23 +8126,18 @@ export default class PDFBuilder extends LightningElement {
       lineColor: block.styles?.lineColor || "#181818",
       width:
         block.type === "verticalLine"
-          ? Math.max(
-              lineThickness,
-              this.toOptionalNumber(block.styles?.width) || 12
-            )
+          ? (this.toOptionalNumber(block.styles?.width) ?? 12)
           : normalizedWidth,
       widthRatio: horizontalGeometry.widthRatio,
       height:
         block.type === "divider"
-          ? Math.max(
-              lineThickness,
-              this.toOptionalNumber(block.styles?.height) || 12
-            )
+          ? (this.toOptionalNumber(block.styles?.height) ?? 12)
           : block.type === "relatedList"
-            ? DEFAULT_RELATED_LIST_HEIGHT
+            ? (this.toOptionalNumber(block.styles?.height) ??
+              DEFAULT_RELATED_LIST_HEIGHT)
             : block.type === "table"
-              ? this.toOptionalNumber(block.styles?.height) ||
-                DEFAULT_TABLE_HEIGHT
+              ? (this.toOptionalNumber(block.styles?.height) ??
+                DEFAULT_TABLE_HEIGHT)
               : this.toOptionalNumber(block.styles?.height),
       heightManuallyResized: block.styles?.heightManuallyResized === true,
       x: horizontalGeometry.x,
@@ -8007,7 +8239,9 @@ export default class PDFBuilder extends LightningElement {
 
     return columns.map((columnApiName, index) => {
       const option = (this.relatedListFieldOptions || []).find(
-        (field) => field.apiName === columnApiName
+        (field) =>
+          String(field.apiName || "").toLowerCase() ===
+          String(columnApiName || "").toLowerCase()
       );
       return {
         key: `rl-col-${index}-${columnApiName}`,
@@ -8176,10 +8410,10 @@ export default class PDFBuilder extends LightningElement {
       `--region-border-radius:${this.toNumber(styles.borderRadius)}px`
     ];
 
-    if (styles.height) {
+    if (Number.isFinite(this.toOptionalNumber(styles.height))) {
       values.push(`--region-height:${this.toNumber(styles.height)}px`);
     }
-    if (styles.width) {
+    if (Number.isFinite(this.toOptionalNumber(styles.width))) {
       values.push(`--region-width:${this.toNumber(styles.width)}px`);
     }
 
@@ -8190,8 +8424,10 @@ export default class PDFBuilder extends LightningElement {
     const borderStyle = styles.borderStyle || "none";
     const borderWidth =
       borderStyle === "none" ? 0 : this.toNumber(styles.borderWidth);
-    const widthValue = styles.width
-      ? `${styles.width}px`
+    const configuredWidth = this.toOptionalNumber(styles.width);
+    const configuredHeight = this.toOptionalNumber(styles.height);
+    const widthValue = Number.isFinite(configuredWidth)
+      ? `${configuredWidth}px`
       : type === "divider"
         ? "100%"
         : "auto";
@@ -8212,7 +8448,7 @@ export default class PDFBuilder extends LightningElement {
       `--block-text-align:${styles.textAlign || "left"}`,
       `--block-vertical-align:${verticalAlign}`,
       `--block-width:${widthValue}`,
-      `--block-height:${styles.height ? `${styles.height}px` : "auto"}`
+      `--block-height:${Number.isFinite(configuredHeight) ? `${configuredHeight}px` : "auto"}`
     ].join(";");
   }
 
@@ -8510,10 +8746,10 @@ export default class PDFBuilder extends LightningElement {
     }
 
     const blockWidth =
-      this.toOptionalNumber(styles.width) ||
+      this.toOptionalNumber(styles.width) ??
       this.getEstimatedBlockWidth({ ...block, styles });
     const blockHeight =
-      this.toOptionalNumber(styles.height) ||
+      this.toOptionalNumber(styles.height) ??
       this.getEstimatedBlockHeight({ ...block, styles });
     const maxX = Math.max(0, availableWidth - blockWidth);
     const maxY = Math.max(0, availableHeight - blockHeight);
@@ -8551,25 +8787,18 @@ export default class PDFBuilder extends LightningElement {
       return this.positionBlockAtRegionCenter(block, regionId);
     }
 
-    const regionRect = regionElement.getBoundingClientRect();
-    const computedStyle = window.getComputedStyle(regionElement);
-    const paddingLeft = this.toCssNumber(computedStyle.paddingLeft);
-    const paddingTop = this.toCssNumber(computedStyle.paddingTop);
-    const paddingRight = this.toCssNumber(computedStyle.paddingRight);
-    const paddingBottom = this.toCssNumber(computedStyle.paddingBottom);
-    const availableWidth = Math.max(
-      32,
-      regionElement.clientWidth - paddingLeft - paddingRight
-    );
-    const availableHeight = Math.max(
-      24,
-      regionElement.clientHeight - paddingTop - paddingBottom
-    );
+    const {
+      regionRect,
+      paddingLeft,
+      paddingTop,
+      availableWidth,
+      availableHeight
+    } = this.getDropRegionMetrics(regionElement);
     let blockWidth =
-      this.toOptionalNumber(block.styles?.width) ||
+      this.toOptionalNumber(block.styles?.width) ??
       this.getEstimatedBlockWidth(block);
     const blockHeight =
-      this.toOptionalNumber(block.styles?.height) ||
+      this.toOptionalNumber(block.styles?.height) ??
       this.getEstimatedBlockHeight(block);
     let normalizedWidth = this.toOptionalNumber(block.styles?.width);
 
@@ -8584,7 +8813,7 @@ export default class PDFBuilder extends LightningElement {
         block.type,
         block.content || ""
       );
-      blockWidth = normalizedWidth || blockWidth;
+      blockWidth = normalizedWidth ?? blockWidth;
     }
 
     // If a text/field block ends up as wide as the full region, horizontal
@@ -8661,9 +8890,9 @@ export default class PDFBuilder extends LightningElement {
       normalizedWidth = this.getPreferredTextFieldWidth(block, availableWidth);
     }
 
-    const blockWidth = normalizedWidth || this.getEstimatedBlockWidth(block);
+    const blockWidth = normalizedWidth ?? this.getEstimatedBlockWidth(block);
     const blockHeight =
-      this.toOptionalNumber(block.styles?.height) ||
+      this.toOptionalNumber(block.styles?.height) ??
       this.getEstimatedBlockHeight(block);
     const x = this.clampNumber(
       this.snapToGrid((availableWidth - blockWidth) / 2),
@@ -8781,7 +9010,7 @@ export default class PDFBuilder extends LightningElement {
       return 12;
     }
 
-    return this.toOptionalNumber(block.styles?.height) || 48;
+    return this.toOptionalNumber(block.styles?.height) ?? 48;
   }
 
   autoSizeBlockForRegion(block, regionId) {
@@ -9213,7 +9442,7 @@ export default class PDFBuilder extends LightningElement {
     const borderWidth = this.toNumber(block?.styles?.borderWidth ?? 0) * 2;
     const contentWidth = Math.max(
       80,
-      (this.toOptionalNumber(block?.styles?.width) ||
+      (this.toOptionalNumber(block?.styles?.width) ??
         this.getEstimatedBlockWidth(block)) -
         horizontalPadding -
         borderWidth
@@ -9513,7 +9742,7 @@ export default class PDFBuilder extends LightningElement {
       "overflow:hidden"
     ];
 
-    if (styles.height) {
+    if (Number.isFinite(this.toOptionalNumber(styles.height))) {
       values.push(`height:${this.toNumber(styles.height)}px`);
     }
     const configuredWidth = options.ignoreConfiguredWidth
@@ -9559,6 +9788,10 @@ export default class PDFBuilder extends LightningElement {
       Number.isFinite(blockX) && Number.isFinite(blockY);
     const configuredHeight = this.toOptionalNumber(block.styles?.height);
     const hasFixedHeight = Number.isFinite(configuredHeight);
+    // A static Related List preview must grow enough to show its sample row.
+    // Other blocks retain their configured fixed-height clipping.
+    const allowsRelatedListPreviewGrowth =
+      isPreview && block.type === "relatedList";
     const blockStyle = [
       `background:${block.styles?.background || "transparent"}`,
       `padding:${this.toNumber(block.styles?.padding)}px`,
@@ -9566,9 +9799,13 @@ export default class PDFBuilder extends LightningElement {
       `border-radius:${this.toNumber(block.styles?.borderRadius)}px`,
       `text-align:${block.styles?.textAlign || "left"}`,
       `box-sizing:border-box`,
-      `overflow:hidden`,
+      allowsRelatedListPreviewGrowth ? "overflow:visible" : "overflow:hidden",
       Number.isFinite(blockWidth) ? `width:${this.toNumber(blockWidth)}px` : "",
-      hasFixedHeight ? `height:${this.toNumber(configuredHeight)}px` : "",
+      allowsRelatedListPreviewGrowth && hasFixedHeight
+        ? `min-height:${this.toNumber(configuredHeight)}px;height:auto`
+        : hasFixedHeight
+          ? `height:${this.toNumber(configuredHeight)}px`
+          : "",
       hasExplicitAbsolutePosition
         ? `position:absolute;left:${this.toNumber(blockX) + regionPadding}px;top:${this.toNumber(blockY) + regionPadding}px`
         : ""
@@ -9788,7 +10025,7 @@ export default class PDFBuilder extends LightningElement {
       })
       .join("");
 
-    return `<div style="${blockStyle};display:block;overflow:hidden;">
+    return `<div style="${blockStyle};display:block;overflow:visible;">
             <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
                 <thead><tr style="background-color:${this.escapeHtml(headerColor)};">${headerCells}</tr></thead>
                 <tbody>${bodyRows}</tbody>

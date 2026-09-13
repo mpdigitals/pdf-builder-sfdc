@@ -1,4 +1,6 @@
 /**
+ * Unit tests for PDF Builder Visualforce page state.
+ *
  * @author mpdigitals
  * @date August 2026
  *

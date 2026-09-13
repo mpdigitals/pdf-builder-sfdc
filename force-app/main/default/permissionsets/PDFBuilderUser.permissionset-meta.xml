@@ -37,6 +37,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>PDFBuilderTemplate__c.DefaultScopeKey__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>PDFBuilderTemplate__c.GeneratedHtml__c</field>
         <readable>true</readable>
     </fieldPermissions>

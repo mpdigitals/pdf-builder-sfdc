@@ -1,10 +1,15 @@
 /**
+ * PDF Builder's Aura-enabled facade and PDF orchestration service.
+ *
  * @author mpdigitals
  * @date August 2026
  *
  * @description Provides the stable LWC facade and PDF orchestration for PDF Builder.
  */
 public with sharing class PDFBuilderController {
+  // TODO(v2): Split this controller into focused services for template
+  // management, preview generation, PDF rendering, and related-list processing.
+  // It remains unified in v1 to preserve the current tested behavior.
   private static final PDFBuilderConfiguration.Settings SETTINGS = PDFBuilderConfiguration.getSettings();
   private static final String ALL_RECORD_TYPES_SCOPE = 'ALL';
   private static final Integer PDF_SOURCE_REGION_GAP = 0;
@@ -63,6 +68,9 @@ public with sharing class PDFBuilderController {
     );
   }
 
+  /**
+   * @description Describes an object available in the builder selector.
+   */
   public class ObjectOption {
     @AuraEnabled
     public String label;
@@ -71,6 +79,12 @@ public with sharing class PDFBuilderController {
     @AuraEnabled
     public Boolean custom;
 
+    /**
+     * @description Creates an object selector option.
+     * @param label Display label.
+     * @param apiName Object API name.
+     * @param custom Whether the object is custom.
+     */
     public ObjectOption(String label, String apiName, Boolean custom) {
       this.label = label;
       this.apiName = apiName;
@@ -78,6 +92,9 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * @description Describes a merge field available in the builder.
+   */
   public class FieldOption {
     @AuraEnabled
     public String label;
@@ -88,6 +105,13 @@ public with sharing class PDFBuilderController {
     @AuraEnabled
     public String placeholder;
 
+    /**
+     * @description Creates a field selector option and its merge placeholder.
+     * @param label Display label.
+     * @param apiName Field API name.
+     * @param dataType Salesforce field type.
+     * @param objectApiName Parent object API name.
+     */
     public FieldOption(
       String label,
       String apiName,
@@ -101,18 +125,29 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * @description Describes a template record-type scope.
+   */
   public class RecordTypeOption {
     @AuraEnabled
     public String label;
     @AuraEnabled
     public String value;
 
+    /**
+     * @description Creates a record-type selector option.
+     * @param label Display label.
+     * @param value Record Type DeveloperName or ALL.
+     */
     public RecordTypeOption(String label, String value) {
       this.label = label;
       this.value = value;
     }
   }
 
+  /**
+   * @description Describes a child relationship available to a related-list block.
+   */
   public class RelatedListOption {
     @AuraEnabled
     public String label;
@@ -121,6 +156,12 @@ public with sharing class PDFBuilderController {
     @AuraEnabled
     public String childObjectApiName;
 
+    /**
+     * @description Creates a related-list selector option.
+     * @param label Display label.
+     * @param relationshipName Child relationship API name.
+     * @param childObjectApiName Child object API name.
+     */
     public RelatedListOption(
       String label,
       String relationshipName,
@@ -132,6 +173,9 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * @description Provides lightweight template data to the builder selector.
+   */
   public class TemplateSummary {
     @AuraEnabled
     public Id id;
@@ -144,6 +188,10 @@ public with sharing class PDFBuilderController {
     @AuraEnabled
     public Boolean isDefault;
 
+    /**
+     * @description Creates a template summary from its persisted record.
+     * @param template Persisted PDF Builder template.
+     */
     public TemplateSummary(PDFBuilderTemplate__c template) {
       this.id = template.Id;
       this.name = template.Name;
@@ -155,6 +203,9 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * @description Provides the complete editable template payload.
+   */
   public class TemplateDetail {
     @AuraEnabled
     public Id id;
@@ -171,6 +222,10 @@ public with sharing class PDFBuilderController {
     @AuraEnabled
     public Boolean isDefault;
 
+    /**
+     * @description Creates a template detail payload from its persisted record.
+     * @param template Persisted PDF Builder template.
+     */
     public TemplateDetail(PDFBuilderTemplate__c template) {
       this.id = template.Id;
       this.name = template.Name;
@@ -184,6 +239,9 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * @description Represents a generated PDF returned to the client.
+   */
   public class PdfResult {
     @AuraEnabled
     public String fileName;
@@ -192,6 +250,12 @@ public with sharing class PDFBuilderController {
     @AuraEnabled
     public String warning;
 
+    /**
+     * @description Creates a generated PDF response.
+     * @param fileName Download file name.
+     * @param base64Data Encoded PDF data.
+     * @param warning Optional fallback warning.
+     */
     public PdfResult(String fileName, String base64Data, String warning) {
       this.fileName = fileName;
       this.base64Data = base64Data;
@@ -199,6 +263,9 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * @description Represents a generated PDF saved as a Salesforce File.
+   */
   public class PdfFileResult {
     @AuraEnabled
     public String fileName;
@@ -211,6 +278,13 @@ public with sharing class PDFBuilderController {
     @AuraEnabled
     public String warning;
 
+    /**
+     * @description Creates a saved Salesforce File PDF response.
+     * @param fileName Download file name.
+     * @param contentVersionId Saved ContentVersion identifier.
+     * @param contentDocumentId Saved ContentDocument identifier.
+     * @param warning Optional fallback warning.
+     */
     public PdfFileResult(
       String fileName,
       Id contentVersionId,
@@ -224,6 +298,9 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * @description Describes a Salesforce File image selectable by the builder.
+   */
   public class SalesforceImageFileOption {
     @AuraEnabled
     public Id contentVersionId;
@@ -242,6 +319,10 @@ public with sharing class PDFBuilderController {
     @AuraEnabled
     public String downloadUrl;
 
+    /**
+     * @description Creates an image option from a ContentVersion.
+     * @param version Latest image version.
+     */
     public SalesforceImageFileOption(ContentVersion version) {
       this.contentVersionId = version.Id;
       this.contentDocumentId = version.ContentDocumentId;
@@ -264,6 +345,9 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * @description Provides the preview HTML separated into page regions.
+   */
   public class PreviewFlowResult {
     @AuraEnabled
     public String headerHtml;
@@ -272,6 +356,12 @@ public with sharing class PDFBuilderController {
     @AuraEnabled
     public String footerHtml;
 
+    /**
+     * @description Creates a browser preview flow response.
+     * @param headerHtml Resolved header markup.
+     * @param bodyHtml Resolved body markup.
+     * @param footerHtml Resolved footer markup.
+     */
     public PreviewFlowResult(
       String headerHtml,
       String bodyHtml,
@@ -284,7 +374,7 @@ public with sharing class PDFBuilderController {
   }
 
   /**
-   * Returns the resolved configuration shared by Apex and the builder LWC.
+   * @description Returns the resolved configuration shared by Apex and the builder LWC.
    *
    * @return Current PDF Builder settings.
    */
@@ -293,6 +383,10 @@ public with sharing class PDFBuilderController {
     return SETTINGS;
   }
 
+  /**
+   * @description Returns source objects available to the PDF Builder.
+   * @return Object selector options.
+   */
   @AuraEnabled(cacheable=true)
   public static List<ObjectOption> getObjects() {
     List<ObjectOption> options = new List<ObjectOption>();
@@ -313,6 +407,12 @@ public with sharing class PDFBuilderController {
     return options;
   }
 
+  /**
+   * @description Returns accessible fields for the selected source object.
+   * @param objectApiName Source object API name.
+   * @param searchTerm Optional field search term.
+   * @return Matching field selector options.
+   */
   @AuraEnabled(cacheable=true)
   public static List<FieldOption> getFields(
     String objectApiName,
@@ -341,6 +441,11 @@ public with sharing class PDFBuilderController {
     return fields;
   }
 
+  /**
+   * @description Returns configured child relationships for a source object.
+   * @param objectApiName Source object API name.
+   * @return Related-list selector options.
+   */
   @AuraEnabled(cacheable=true)
   public static List<RelatedListOption> getRelatedLists(String objectApiName) {
     if (String.isBlank(objectApiName)) {
@@ -364,6 +469,12 @@ public with sharing class PDFBuilderController {
     return options;
   }
 
+  /**
+   * @description Returns accessible fields for a related-list child object.
+   * @param childObjectApiName Child object API name.
+   * @param searchTerm Optional field search term.
+   * @return Matching field selector options.
+   */
   @AuraEnabled(cacheable=true)
   public static List<FieldOption> getRelatedListFields(
     String childObjectApiName,
@@ -392,6 +503,10 @@ public with sharing class PDFBuilderController {
     return fields;
   }
 
+  /**
+   * @description Returns recently modified templates across all source objects.
+   * @return Template summaries.
+   */
   @AuraEnabled
   public static List<TemplateSummary> getTemplates() {
     List<TemplateSummary> templates = new List<TemplateSummary>();
@@ -407,6 +522,12 @@ public with sharing class PDFBuilderController {
     return templates;
   }
 
+  /**
+   * @description Returns templates available to a source object and record scope.
+   * @param objectApiName Source object API name.
+   * @param recordId Optional source record used to resolve Record Type scope.
+   * @return Available template summaries with the resolved default marked.
+   */
   @AuraEnabled
   public static List<TemplateSummary> getTemplatesForObject(
     String objectApiName,
@@ -440,6 +561,11 @@ public with sharing class PDFBuilderController {
     return templates;
   }
 
+  /**
+   * @description Returns active Record Type scopes for an available source object.
+   * @param objectApiName Source object API name.
+   * @return Record Type selector options including ALL.
+   */
   @AuraEnabled(cacheable=true)
   public static List<RecordTypeOption> getRecordTypeOptions(
     String objectApiName
@@ -461,6 +587,11 @@ public with sharing class PDFBuilderController {
     return options;
   }
 
+  /**
+   * @description Returns the complete persisted template payload.
+   * @param templateId Template identifier.
+   * @return Template detail.
+   */
   @AuraEnabled
   public static TemplateDetail getTemplate(Id templateId) {
     if (templateId == null) {
@@ -472,6 +603,17 @@ public with sharing class PDFBuilderController {
     );
   }
 
+  /**
+   * @description Creates or updates a sanitized PDF Builder template.
+   * @param templateId Existing template identifier, or null to create one.
+   * @param name Template name.
+   * @param objectApiName Source object API name.
+   * @param contentJson Serialized builder document model.
+   * @param generatedHtml Generated template HTML.
+   * @param recordTypeScope Record Type DeveloperName or ALL.
+   * @param isDefault Whether this is the default for its scope.
+   * @return Persisted template identifier.
+   */
   @AuraEnabled
   public static Id saveTemplate(
     Id templateId,
@@ -514,6 +656,9 @@ public with sharing class PDFBuilderController {
     template.GeneratedHtml__c = generatedHtml;
     template.RecordTypeScope__c = recordTypeScope;
     template.IsDefault__c = isDefault == true;
+    template.DefaultScopeKey__c = template.IsDefault__c
+      ? buildDefaultScopeKey(objectApiName, recordTypeScope)
+      : null;
 
     if (template.IsDefault__c) {
       PDFBuilderTemplate__c existingDefault = PDFBuilderTemplateRepository.findDefaultForScope(
@@ -533,12 +678,24 @@ public with sharing class PDFBuilderController {
     try {
       PDFBuilderTemplateRepository.save(template);
     } catch (DmlException error) {
+      if (
+        template.IsDefault__c &&
+        error.getDmlStatusCode(0) == StatusCode.DUPLICATE_VALUE.name()
+      ) {
+        throw new AuraHandledException(
+          'A default template already exists for this object and record type scope.'
+        );
+      }
       throw new AuraHandledException(error.getDmlMessage(0));
     }
 
     return template.Id;
   }
 
+  /**
+   * @description Deletes a template selected by the builder.
+   * @param templateId Template identifier.
+   */
   @AuraEnabled
   public static void deleteTemplate(Id templateId) {
     if (templateId == null) {
@@ -572,6 +729,13 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * @description Saves a builder image as a Salesforce File.
+   * @param fileName Requested file name.
+   * @param base64Data Encoded image binary data.
+   * @param contentType Image MIME type.
+   * @return Usable Salesforce Files URL.
+   */
   @AuraEnabled
   public static String saveTemplateImage(
     String fileName,
@@ -643,6 +807,11 @@ public with sharing class PDFBuilderController {
     return imageUrl;
   }
 
+  /**
+   * @description Searches accessible Salesforce File images for the builder.
+   * @param searchTerm Optional image title search term.
+   * @return Image selector options.
+   */
   @AuraEnabled(cacheable=true)
   public static List<SalesforceImageFileOption> getSalesforceImageFiles(
     String searchTerm
@@ -672,6 +841,12 @@ public with sharing class PDFBuilderController {
     return files;
   }
 
+  /**
+   * @description Generates a PDF for a template and source record.
+   * @param templateId Template identifier.
+   * @param recordId Source record identifier.
+   * @return Encoded generated PDF.
+   */
   @AuraEnabled
   public static PdfResult generatePdf(Id templateId, Id recordId) {
     if (templateId == null || recordId == null) {
@@ -696,6 +871,12 @@ public with sharing class PDFBuilderController {
     return pdfResult;
   }
 
+  /**
+   * @description Generates a PDF and saves it as a Salesforce File.
+   * @param templateId Template identifier.
+   * @param recordId Source record identifier.
+   * @return Generated PDF and saved file identifiers.
+   */
   @AuraEnabled
   public static PdfFileResult generatePdfToFiles(Id templateId, Id recordId) {
     if (
@@ -747,7 +928,9 @@ public with sharing class PDFBuilderController {
   }
 
   /**
-   * Returns the source record Name used as the Salesforce Files PDF title.
+   * @description Returns the source record Name used as the Salesforce Files PDF title.
+   * @param recordId Source record identifier.
+   * @return Accessible record name, or null.
    */
   @TestVisible
   private static String getRecordNameForPdf(Id recordId) {
@@ -776,7 +959,10 @@ public with sharing class PDFBuilderController {
   }
 
   /**
-   * Returns a safe PDF file name based on the source record Name.
+   * @description Returns a safe PDF file name based on the source record Name.
+   * @param recordId Source record identifier.
+   * @param fallbackName Name used when the record has no accessible Name field.
+   * @return Sanitized PDF file name.
    */
   @TestVisible
   private static String buildPdfFileName(Id recordId, String fallbackName) {
@@ -791,6 +977,12 @@ public with sharing class PDFBuilderController {
     return (String.isBlank(sanitized) ? 'document' : sanitized) + '.pdf';
   }
 
+  /**
+   * @description Renders a persisted template body with values from its source record.
+   * @param templateId Template identifier.
+   * @param recordId Source record identifier.
+   * @return Resolved template body HTML.
+   */
   public static String renderTemplateBodyForRecord(Id templateId, Id recordId) {
     PDFBuilderTemplate__c template = PDFBuilderTemplateRepository.getRequired(
       templateId
@@ -799,6 +991,12 @@ public with sharing class PDFBuilderController {
     return renderTemplateBodyForRecord(template, recordId);
   }
 
+  /**
+   * @description Prepares a persisted template body for Visualforce PDF rendering.
+   * @param templateId Template identifier.
+   * @param recordId Source record identifier.
+   * @return Sanitized PDF-ready body HTML.
+   */
   public static String renderTemplateBodyHtmlForPdf(
     Id templateId,
     Id recordId
@@ -816,6 +1014,12 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  /**
+   * @description Prepares generated template HTML for a record-free PDF preview.
+   * @param contentJson Serialized builder document model.
+   * @param generatedHtml Generated template HTML.
+   * @return Sanitized PDF-ready preview HTML.
+   */
   @AuraEnabled
   public static String renderTemplateBodyHtmlForPreview(
     String contentJson,
@@ -834,9 +1038,11 @@ public with sharing class PDFBuilderController {
   }
 
   /**
-   * Resolves global merge fields for the browser preview when no record has
+   * @description Resolves global merge fields for the browser preview when no record has
    * been selected. Record and related-list fields remain unresolved because
    * they require a record context, while Organization and User values do not.
+   * @param generatedHtml Generated template HTML.
+   * @return Sanitized browser preview HTML.
    */
   @AuraEnabled
   public static String renderGeneratedHtmlForPreview(String generatedHtml) {
@@ -846,6 +1052,14 @@ public with sharing class PDFBuilderController {
     );
   }
 
+  /**
+   * @description Resolves a browser preview for a source record.
+   * @param objectApiName Source object API name.
+   * @param recordId Source record identifier.
+   * @param contentJson Serialized builder document model.
+   * @param generatedHtml Generated template HTML.
+   * @return Sanitized browser preview HTML.
+   */
   @AuraEnabled
   public static String renderGeneratedHtmlForRecordPreview(
     String objectApiName,
@@ -853,26 +1067,7 @@ public with sharing class PDFBuilderController {
     String contentJson,
     String generatedHtml
   ) {
-    if (recordId == null) {
-      throw new AuraHandledException('Record is required for preview.');
-    }
-    if (String.isBlank(objectApiName)) {
-      throw new AuraHandledException('Object is required for preview.');
-    }
-
-    objectApiName = objectApiName.trim();
-    String recordObjectApiName = recordId.getSObjectType()
-      .getDescribe(SObjectDescribeOptions.DEFERRED)
-      .getName();
-    if (objectApiName != recordObjectApiName) {
-      throw new AuraHandledException(
-        'The Record ID belongs to ' +
-          recordObjectApiName +
-          ', not ' +
-          objectApiName +
-          '.'
-      );
-    }
+    objectApiName = validatePreviewRecordContext(objectApiName, recordId);
 
     validateLongTextSize('Preview content', contentJson);
     validateLongTextSize('Preview HTML', generatedHtml);
@@ -893,6 +1088,12 @@ public with sharing class PDFBuilderController {
     );
   }
 
+  /**
+   * @description Generates a PDF preview without a source record.
+   * @param contentJson Serialized builder document model.
+   * @param generatedHtml Generated template HTML.
+   * @return Encoded preview PDF.
+   */
   @AuraEnabled
   public static PdfResult generatePreviewPdf(
     String contentJson,
@@ -901,36 +1102,17 @@ public with sharing class PDFBuilderController {
     String bodyHtml = buildTemplateBodyHtml(contentJson, generatedHtml);
 
     ensureContentDistributionsForHtml(bodyHtml);
-
-    List<String> attempts = new List<String>{
-      preparePdfBodyHtml(bodyHtml, true),
-      preparePdfBodyHtml(bodyHtml, false),
-      preparePdfBodyHtml(stripHtmlToText(bodyHtml), false)
-    };
-    List<String> warnings = new List<String>{
-      null,
-      'Generated without images because the Visualforce PDF renderer rejected one or more image sources.',
-      'Generated as text-only because the Visualforce PDF renderer rejected the template HTML.'
-    };
-
-    for (Integer index = 0; index < attempts.size(); index += 1) {
-      try {
-        Blob pdf = renderVisualforcePdfForPreview(attempts[index]);
-        return new PdfResult(
-          'preview.pdf',
-          EncodingUtil.base64Encode(pdf),
-          warnings[index]
-        );
-      } catch (Exception error) {
-        logPdfRenderFailure(index, error);
-      }
-    }
-
-    throw new AuraHandledException(
-      'The Visualforce PDF could not be generated even as text-only content.'
-    );
+    return renderPreviewPdfWithFallback(bodyHtml);
   }
 
+  /**
+   * @description Generates a PDF preview merged with a source record.
+   * @param objectApiName Source object API name.
+   * @param recordId Source record identifier.
+   * @param contentJson Serialized builder document model.
+   * @param generatedHtml Generated template HTML.
+   * @return Encoded preview PDF.
+   */
   @AuraEnabled
   public static PdfResult generatePreviewPdfForRecord(
     String objectApiName,
@@ -951,7 +1133,10 @@ public with sharing class PDFBuilderController {
     bodyHtml = mergeRelatedListTables(bodyHtml, recordId, objectApiName.trim());
 
     ensureContentDistributionsForHtml(bodyHtml);
+    return renderPreviewPdfWithFallback(bodyHtml);
+  }
 
+  private static PdfResult renderPreviewPdfWithFallback(String bodyHtml) {
     List<String> attempts = new List<String>{
       preparePdfBodyHtml(bodyHtml, true),
       preparePdfBodyHtml(bodyHtml, false),
@@ -981,6 +1166,14 @@ public with sharing class PDFBuilderController {
     );
   }
 
+  /**
+   * @description Produces browser preview HTML split into header, body and footer regions.
+   * @param objectApiName Source object API name.
+   * @param recordId Source record identifier.
+   * @param contentJson Serialized builder document model.
+   * @param generatedHtml Generated template HTML.
+   * @return Resolved preview flow markup.
+   */
   @AuraEnabled
   public static PreviewFlowResult renderPdfFlowForRecordPreview(
     String objectApiName,
@@ -988,26 +1181,7 @@ public with sharing class PDFBuilderController {
     String contentJson,
     String generatedHtml
   ) {
-    if (recordId == null) {
-      throw new AuraHandledException('Record is required for preview.');
-    }
-    if (String.isBlank(objectApiName)) {
-      throw new AuraHandledException('Object is required for preview.');
-    }
-
-    objectApiName = objectApiName.trim();
-    String recordObjectApiName = recordId.getSObjectType()
-      .getDescribe(SObjectDescribeOptions.DEFERRED)
-      .getName();
-    if (objectApiName != recordObjectApiName) {
-      throw new AuraHandledException(
-        'The Record ID belongs to ' +
-          recordObjectApiName +
-          ', not ' +
-          objectApiName +
-          '.'
-      );
-    }
+    objectApiName = validatePreviewRecordContext(objectApiName, recordId);
 
     validateLongTextSize('Preview content', contentJson);
     validateLongTextSize('Preview HTML', generatedHtml);
@@ -1340,6 +1514,34 @@ public with sharing class PDFBuilderController {
     }
   }
 
+  private static String validatePreviewRecordContext(
+    String objectApiName,
+    Id recordId
+  ) {
+    if (recordId == null) {
+      throw new AuraHandledException('Record is required for preview.');
+    }
+    if (String.isBlank(objectApiName)) {
+      throw new AuraHandledException('Object is required for preview.');
+    }
+
+    String normalizedObjectApiName = objectApiName.trim();
+    String recordObjectApiName = recordId.getSObjectType()
+      .getDescribe(SObjectDescribeOptions.DEFERRED)
+      .getName();
+    if (normalizedObjectApiName != recordObjectApiName) {
+      throw new AuraHandledException(
+        'The Record ID belongs to ' +
+          recordObjectApiName +
+          ', not ' +
+          normalizedObjectApiName +
+          '.'
+      );
+    }
+
+    return normalizedObjectApiName;
+  }
+
   private static List<RecordType> getActiveRecordTypes(String objectApiName) {
     return [
       SELECT DeveloperName, Name
@@ -1393,6 +1595,15 @@ public with sharing class PDFBuilderController {
     return normalizedScope;
   }
 
+  /**
+   * @description Resolves the effective template scope for a source record.
+   * The dynamic object identifier is safe: validateTemplateObject restricts it
+   * to Schema.getGlobalDescribe and the Record ID must match that same object.
+   * @param objectApiName Validated source object API name.
+   * @param recordId Optional source record identifier.
+   * @return Record Type DeveloperName or ALL.
+   */
+  @SuppressWarnings('PMD.ApexSOQLInjection')
   private static String getRecordTypeScopeForRecord(
     String objectApiName,
     Id recordId
@@ -1446,6 +1657,7 @@ public with sharing class PDFBuilderController {
       : ALL_RECORD_TYPES_SCOPE;
   }
 
+  @TestVisible
   private static Id getDefaultTemplateId(
     List<PDFBuilderTemplate__c> templates,
     String recordTypeScope
@@ -1468,6 +1680,14 @@ public with sharing class PDFBuilderController {
     }
 
     return allRecordTypesDefaultId;
+  }
+
+  @TestVisible
+  private static String buildDefaultScopeKey(
+    String objectApiName,
+    String recordTypeScope
+  ) {
+    return objectApiName + '|' + normalizeRecordTypeScope(recordTypeScope);
   }
 
   private static void validateLongTextSize(String label, String value) {
@@ -2010,9 +2230,12 @@ public with sharing class PDFBuilderController {
   /**
    * @description Records a failed Visualforce PDF rendering attempt before the
    * renderer advances to its next compatibility fallback.
+   * The log is intentionally limited to exceptional fallback attempts and is
+   * retained for support diagnostics; it is not executed on successful PDFs.
    * @param attemptIndex Zero-based index of the failed rendering attempt.
    * @param error Exception raised by the Visualforce PDF renderer.
    */
+  @SuppressWarnings('PMD.AvoidDebugStatements')
   private static void logPdfRenderFailure(
     Integer attemptIndex,
     Exception error
@@ -2085,19 +2308,12 @@ public with sharing class PDFBuilderController {
       return html;
     }
 
-    Pattern tokenPattern = Pattern.compile('\\[\\[DBRL\\|([^\\]]*)\\]\\]');
-    Matcher matcher = tokenPattern.matcher(html);
     String transformed = html;
-    Set<String> processedTokens = new Set<String>();
-
-    while (matcher.find()) {
-      String token = matcher.group(0);
-      if (processedTokens.contains(token)) {
-        continue;
-      }
-      processedTokens.add(token);
-
-      List<String> tokenParts = parseRelatedListTokenParts(matcher.group(1));
+    Map<String, String> tokenPayloads = getRelatedListTokenPayloads(html);
+    for (String token : tokenPayloads.keySet()) {
+      List<String> tokenParts = parseRelatedListTokenParts(
+        tokenPayloads.get(token)
+      );
       String relationshipName = tokenParts.isEmpty() ? '' : tokenParts[0];
       String placeholder =
         '<div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;">' +
@@ -2109,6 +2325,20 @@ public with sharing class PDFBuilderController {
     }
 
     return transformed;
+  }
+
+  private static Map<String, String> getRelatedListTokenPayloads(String html) {
+    Map<String, String> tokenPayloads = new Map<String, String>();
+    if (String.isBlank(html)) {
+      return tokenPayloads;
+    }
+
+    Pattern tokenPattern = Pattern.compile('\\[\\[DBRL\\|([^\\]]*)\\]\\]');
+    Matcher matcher = tokenPattern.matcher(html);
+    while (matcher.find()) {
+      tokenPayloads.put(matcher.group(0), matcher.group(1));
+    }
+    return tokenPayloads;
   }
 
   private static Boolean hasRenderablePdfContent(String html) {
@@ -4491,40 +4721,7 @@ public with sharing class PDFBuilderController {
 
   private static String buildPdfTextStyle(Map<String, Object> styles) {
     List<String> declarations = getPdfBlockDeclarations(styles);
-    addDeclaration(
-      declarations,
-      'font-size',
-      getPdfFontSizeCss(getIntegerStyleValue(styles, 'fontSize', 14))
-    );
-    addDeclaration(
-      declarations,
-      'font-family',
-      normalizePdfFontFamily(getStyleValue(styles, 'fontFamily'))
-    );
-    addDeclaration(
-      declarations,
-      'font-weight',
-      getStyleValue(styles, 'fontWeight')
-    );
-    addDeclaration(
-      declarations,
-      'font-style',
-      getStyleValue(styles, 'fontStyle')
-    );
-    addDeclaration(
-      declarations,
-      'text-decoration',
-      getStyleValue(styles, 'textDecoration')
-    );
-    String textColor = getStyleValue(styles, 'color');
-    if (String.isBlank(textColor)) {
-      // Backward compatibility with older payloads.
-      textColor = getStyleValue(styles, 'textColor');
-    }
-    addDeclaration(declarations, 'color', textColor);
-    declarations.add('line-height:1.35');
-    declarations.add('white-space:pre-wrap');
-    declarations.add('margin:0');
+    addPdfTypographyDeclarations(declarations, styles);
     return String.join(declarations, ';') + ';';
   }
 
@@ -4561,6 +4758,14 @@ public with sharing class PDFBuilderController {
   private static String buildPdfFieldStyle(Map<String, Object> styles) {
     List<String> declarations = getPdfBlockDeclarations(styles);
     declarations.add('display:block');
+    addPdfTypographyDeclarations(declarations, styles);
+    return String.join(declarations, ';') + ';';
+  }
+
+  private static void addPdfTypographyDeclarations(
+    List<String> declarations,
+    Map<String, Object> styles
+  ) {
     addDeclaration(
       declarations,
       'font-size',
@@ -4588,13 +4793,13 @@ public with sharing class PDFBuilderController {
     );
     String textColor = getStyleValue(styles, 'color');
     if (String.isBlank(textColor)) {
+      // Backward compatibility with older payloads.
       textColor = getStyleValue(styles, 'textColor');
     }
     addDeclaration(declarations, 'color', textColor);
     declarations.add('line-height:1.35');
     declarations.add('white-space:pre-wrap');
     declarations.add('margin:0');
-    return String.join(declarations, ';') + ';';
   }
 
   private static String buildPdfCellStyle(Map<String, Object> styles) {
@@ -4793,19 +4998,12 @@ public with sharing class PDFBuilderController {
       return html;
     }
 
-    Pattern tokenPattern = Pattern.compile('\\[\\[DBRL\\|([^\\]]*)\\]\\]');
-    Matcher matcher = tokenPattern.matcher(html);
     String transformed = html;
-    Set<String> processedTokens = new Set<String>();
-
-    while (matcher.find()) {
-      String token = matcher.group(0);
-      if (processedTokens.contains(token)) {
-        continue;
-      }
-      processedTokens.add(token);
-
-      List<String> tokenParts = parseRelatedListTokenParts(matcher.group(1));
+    Map<String, String> tokenPayloads = getRelatedListTokenPayloads(html);
+    for (String token : tokenPayloads.keySet()) {
+      List<String> tokenParts = parseRelatedListTokenParts(
+        tokenPayloads.get(token)
+      );
       if (tokenParts.size() < 6) {
         continue;
       }
@@ -4954,19 +5152,32 @@ public with sharing class PDFBuilderController {
     Schema.DescribeSObjectResult childDescribe = matchedRelationship.getChildSObject()
       .getDescribe(SObjectDescribeOptions.DEFERRED);
     Map<String, Schema.SObjectField> childFieldMap = childDescribe.fields.getMap();
+    Map<String, Schema.DescribeFieldResult> childFieldsByNormalizedApiName = new Map<String, Schema.DescribeFieldResult>();
+    for (String fieldMapKey : childFieldMap.keySet()) {
+      Schema.DescribeFieldResult fieldDescribe = childFieldMap.get(fieldMapKey)
+        .getDescribe();
+      childFieldsByNormalizedApiName.put(
+        fieldDescribe.getName().toLowerCase(),
+        fieldDescribe
+      );
+    }
 
     List<String> requestedColumns = new List<String>();
     for (String rawColumn : columnCsv.split(',')) {
       String column = rawColumn == null ? '' : rawColumn.trim();
-      if (String.isBlank(column) || !childFieldMap.containsKey(column)) {
+      if (String.isBlank(column)) {
         continue;
       }
-      Schema.DescribeFieldResult fieldDescribe = childFieldMap.get(column)
-        .getDescribe();
+      Schema.DescribeFieldResult fieldDescribe = childFieldsByNormalizedApiName.get(
+        column.toLowerCase()
+      );
+      if (fieldDescribe == null) {
+        continue;
+      }
       if (!fieldDescribe.isAccessible()) {
         continue;
       }
-      requestedColumns.add(column);
+      requestedColumns.add(fieldDescribe.getName());
     }
 
     if (requestedColumns.isEmpty()) {
@@ -4974,8 +5185,8 @@ public with sharing class PDFBuilderController {
     }
 
     Boolean childHasCurrencyIsoCode =
-      childFieldMap.containsKey('CurrencyIsoCode') &&
-      childFieldMap.get('CurrencyIsoCode').getDescribe().isAccessible();
+      childFieldsByNormalizedApiName.containsKey('currencyisocode') &&
+      childFieldsByNormalizedApiName.get('currencyisocode').isAccessible();
     List<String> queryColumns = new List<String>(requestedColumns);
     if (childHasCurrencyIsoCode && !queryColumns.contains('CurrencyIsoCode')) {
       queryColumns.add('CurrencyIsoCode');
@@ -5043,7 +5254,10 @@ public with sharing class PDFBuilderController {
       columnIndex += 1
     ) {
       String column = requestedColumns[columnIndex];
-      String headerLabel = childFieldMap.get(column).getDescribe().getLabel();
+      Schema.DescribeFieldResult fieldDescribe = childFieldsByNormalizedApiName.get(
+        column.toLowerCase()
+      );
+      String headerLabel = fieldDescribe.getLabel();
       String headerCellStyle =
         getRelatedListCellBorderStyle(borderMode, true, columnIndex == 0) +
         cellPaddingStyle +
@@ -5103,8 +5317,9 @@ public with sharing class PDFBuilderController {
           escapeHtml(rowColor) +
           ' !important;';
         Object value = row.get(column);
-        Schema.DescribeFieldResult fieldDescribe = childFieldMap.get(column)
-          .getDescribe();
+        Schema.DescribeFieldResult fieldDescribe = childFieldsByNormalizedApiName.get(
+          column.toLowerCase()
+        );
         Schema.DisplayType fieldType = fieldDescribe.getType();
         String valueTextAlign = 'left';
         if (fieldType == Schema.DisplayType.Currency) {

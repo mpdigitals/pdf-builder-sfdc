@@ -383,6 +383,114 @@ describe("c-pdf-builder", () => {
     );
   });
 
+  it("restores every saved related-list column when legacy API-name casing differs", async () => {
+    getTemplate.mockResolvedValueOnce({
+      id: "a01000000000002AAA",
+      name: "Opportunity proposal",
+      objectApiName: "Opportunity",
+      contentJson: JSON.stringify({
+        pagePadding: 32,
+        globalElementPadding: 8,
+        showHeader: true,
+        showBody: true,
+        showFooter: true,
+        repeatHeaderOnEachPage: true,
+        repeatFooterOnEachPage: true,
+        manualPageCount: 0,
+        manualPages: [],
+        header: {
+          id: "header",
+          label: "Header",
+          styles: { height: 110 },
+          blocks: []
+        },
+        body: {
+          layout: "one",
+          sections: [
+            {
+              id: "body-1",
+              label: "Body",
+              styles: {},
+              blocks: [
+                {
+                  id: "related-list-1",
+                  type: "relatedList",
+                  content: "",
+                  styles: { width: 600, x: 0, y: 0 },
+                  relatedListRelationshipName: "OpportunityLineItems",
+                  relatedListChildObjectApiName: "OpportunityLineItem",
+                  relatedListColumns: [
+                    "description",
+                    "Quantity",
+                    "UnitPrice",
+                    "Discount",
+                    "TotalPrice"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        footer: {
+          id: "footer",
+          label: "Footer",
+          styles: { height: 80 },
+          blocks: []
+        }
+      }),
+      generatedHtml: ""
+    });
+    getRelatedLists.mockResolvedValue([
+      {
+        label: "Opportunity Products (OpportunityLineItems)",
+        relationshipName: "OpportunityLineItems",
+        childObjectApiName: "OpportunityLineItem"
+      }
+    ]);
+    getRelatedListFields.mockResolvedValue([
+      { label: "Line Description", apiName: "description" },
+      { label: "Quantity", apiName: "quantity" },
+      { label: "Sales Price", apiName: "unitprice" },
+      { label: "Total Price", apiName: "totalprice" }
+    ]);
+
+    const element = createElement("c-pdf-builder", { is: PDFBuilder });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+    await flushPromises();
+
+    const relatedListBlock = Array.from(
+      element.shadowRoot.querySelectorAll("c-pdf-builder-block")
+    ).find((blockComponent) => blockComponent.block.type === "relatedList");
+    relatedListBlock.dispatchEvent(
+      new CustomEvent("selectblock", {
+        detail: { blockId: "related-list-1", regionId: "body-1" },
+        bubbles: true,
+        composed: true
+      })
+    );
+    await flushPromises();
+    await flushPromises();
+
+    const normalizedBlock = Array.from(
+      element.shadowRoot.querySelectorAll("c-pdf-builder-block")
+    ).find((blockComponent) => blockComponent.block.id === "related-list-1");
+    expect(normalizedBlock.block.relatedListColumns).toEqual([
+      "description",
+      "quantity",
+      "unitprice",
+      "Discount",
+      "totalprice"
+    ]);
+  });
+
   it("loads the selected template and its object without changing the template contract", async () => {
     const element = createElement("c-pdf-builder", {
       is: PDFBuilder

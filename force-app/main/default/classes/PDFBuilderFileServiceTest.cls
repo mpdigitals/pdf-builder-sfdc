@@ -1,4 +1,6 @@
 /**
+ * Unit tests for PDF Builder Salesforce Files integration.
+ *
  * @author mpdigitals
  * @date August 2026
  *

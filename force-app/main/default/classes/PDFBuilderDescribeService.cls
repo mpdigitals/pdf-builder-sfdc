@@ -1,4 +1,6 @@
 /**
+ * Metadata discovery service for PDF Builder objects and fields.
+ *
  * @author mpdigitals
  * @date August 2026
  *
@@ -8,7 +10,7 @@ public inherited sharing class PDFBuilderDescribeService {
   private static final String INTERNAL_TEMPLATE_OBJECT_API_NAME = 'PDFBuilderTemplate__c';
 
   /**
-   * Describes an object option shown by PDF Builder.
+   * @description Describes an object option shown by PDF Builder.
    *
    * @author mpdigitals
    */
@@ -18,7 +20,7 @@ public inherited sharing class PDFBuilderDescribeService {
     public Boolean custom;
 
     /**
-     * Creates an object descriptor.
+     * @description Creates an object descriptor.
      *
      * @param label Object label.
      * @param apiName Object API name.
@@ -31,7 +33,7 @@ public inherited sharing class PDFBuilderDescribeService {
     }
 
     /**
-     * Sorts descriptors by localized label.
+     * @description Sorts descriptors by localized label.
      *
      * @param value Descriptor to compare.
      * @return Standard comparison result.
@@ -43,7 +45,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Describes an accessible field option.
+   * @description Describes an accessible field option.
    *
    * @author mpdigitals
    */
@@ -53,7 +55,7 @@ public inherited sharing class PDFBuilderDescribeService {
     public String dataType;
 
     /**
-     * Creates a field descriptor.
+     * @description Creates a field descriptor.
      *
      * @param label Field label.
      * @param apiName Field API name or relationship path.
@@ -66,7 +68,7 @@ public inherited sharing class PDFBuilderDescribeService {
     }
 
     /**
-     * Sorts descriptors by localized label.
+     * @description Sorts descriptors by localized label.
      *
      * @param value Descriptor to compare.
      * @return Standard comparison result.
@@ -78,7 +80,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Describes an accessible child relationship option.
+   * @description Describes an accessible child relationship option.
    *
    * @author mpdigitals
    */
@@ -88,7 +90,7 @@ public inherited sharing class PDFBuilderDescribeService {
     public String childObjectApiName;
 
     /**
-     * Creates a child relationship descriptor.
+     * @description Creates a child relationship descriptor.
      *
      * @param label Related list label.
      * @param relationshipName Child relationship API name.
@@ -105,7 +107,7 @@ public inherited sharing class PDFBuilderDescribeService {
     }
 
     /**
-     * Sorts descriptors by localized label.
+     * @description Sorts descriptors by localized label.
      *
      * @param value Descriptor to compare.
      * @return Standard comparison result.
@@ -117,7 +119,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Returns preferred objects followed by accessible custom objects.
+   * @description Returns preferred objects followed by accessible custom objects.
    *
    * @param preferredObjectApiNames Ordered preferred object API names.
    * @return Available object descriptors.
@@ -129,7 +131,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Returns preferred objects and optionally appends accessible custom objects.
+   * @description Returns preferred objects and optionally appends accessible custom objects.
    *
    * @param preferredObjectApiNames Ordered preferred object API names.
    * @param includeCustomObjects Whether custom objects can be returned.
@@ -184,7 +186,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Returns direct and first-level parent fields for an object.
+   * @description Returns direct and first-level parent fields for an object.
    *
    * @param objectApiName Object API name.
    * @param searchTerm Optional label or API-name filter.
@@ -235,7 +237,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Returns accessible child relationships for an object.
+   * @description Returns accessible child relationships for an object.
    *
    * @param objectApiName Parent object API name.
    * @return Child relationship descriptors.
@@ -280,7 +282,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Returns direct accessible fields for a related-list child object.
+   * @description Returns direct accessible fields for a related-list child object.
    *
    * @param childObjectApiName Child object API name.
    * @param searchTerm Optional label or API-name filter.
@@ -309,7 +311,7 @@ public inherited sharing class PDFBuilderDescribeService {
       fields.add(
         new FieldDescriptor(
           fieldDescribe.getLabel(),
-          fieldApiName,
+          fieldDescribe.getName(),
           String.valueOf(fieldDescribe.getType())
         )
       );
@@ -320,7 +322,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Determines whether an object can be queried and rendered by the builder.
+   * @description Determines whether an object can be queried and rendered by the builder.
    *
    * @param describe Object describe result.
    * @return True when the object is accessible, queryable, and not deprecated.
@@ -334,7 +336,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Resolves and validates an object describe result.
+   * @description Resolves and validates an object describe result.
    *
    * @param objectApiName Object API name.
    * @return Validated describe result.
@@ -356,7 +358,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Adds accessible fields from non-polymorphic first-level parent relationships.
+   * @description Adds accessible fields from non-polymorphic first-level parent relationships.
    *
    * @param fields Destination descriptors.
    * @param addedFieldPaths Previously added paths.
@@ -405,7 +407,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Adds accessible fields from a resolved parent object.
+   * @description Adds accessible fields from a resolved parent object.
    *
    * @param fields Destination descriptors.
    * @param addedFieldPaths Previously added paths.
@@ -461,7 +463,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Normalizes an optional search term.
+   * @description Normalizes an optional search term.
    *
    * @param searchTerm Raw search term.
    * @return Lowercase trimmed search term.
@@ -471,7 +473,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Identifies PDF Builder's internal template storage object.
+   * @description Identifies PDF Builder's internal template storage object.
    *
    * @param apiName Object API name, optionally namespaced.
    * @return True when the object must remain hidden from the source-object selector.
@@ -483,7 +485,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Evaluates a direct field against the normalized search term.
+   * @description Evaluates a direct field against the normalized search term.
    *
    * @param normalizedSearch Normalized search term.
    * @param apiName Field API name.
@@ -501,7 +503,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * Evaluates a parent field against all supported search representations.
+   * @description Evaluates a parent field against all supported search representations.
    *
    * @param normalizedSearch Normalized search term.
    * @param fieldPath Relationship field path.

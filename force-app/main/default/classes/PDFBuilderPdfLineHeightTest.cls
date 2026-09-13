@@ -1,4 +1,6 @@
 /**
+ * Unit tests for PDF Builder PDF typography and related-list geometry.
+ *
  * @author mpdigitals
  * @date August 2026
  *
@@ -20,9 +22,7 @@ private class PDFBuilderPdfLineHeightTest {
       '<ul><li style="line-height:0.75">Item</li></ul>';
 
     Test.startTest();
-    String rendered = PDFBuilderController.renderRichTextContentForPdf(
-      source
-    );
+    String rendered = PDFBuilderController.renderRichTextContentForPdf(source);
     Test.stopTest();
 
     Assert.isTrue(

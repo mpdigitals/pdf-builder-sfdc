@@ -1,4 +1,6 @@
 /**
+ * Unit tests for PDF Builder renderer compatibility fallbacks.
+ *
  * @author mpdigitals
  * @date August 2026
  *
@@ -372,10 +374,7 @@ private class PDFBuilderPdfFallbackTest {
   ) {
     try {
       if (scenario == 'preview') {
-        PDFBuilderController.generatePreviewPdf(
-          '',
-          template.GeneratedHtml__c
-        );
+        PDFBuilderController.generatePreviewPdf('', template.GeneratedHtml__c);
       } else if (scenario == 'record preview') {
         PDFBuilderController.generatePreviewPdfForRecord(
           'Account',
