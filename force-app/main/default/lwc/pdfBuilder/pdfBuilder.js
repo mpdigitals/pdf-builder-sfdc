@@ -4445,7 +4445,8 @@ export default class PDFBuilder extends LightningElement {
       // An empty field is an editing state, not zero. Do not redraw the
       // selected block from its defaults while the user is replacing a
       // number. A literal "0" remains a valid value for controls that allow
-      // it (Position, Size, padding, borders, and table spacing).
+      // These controls include position, size, padding, borders, and table
+      // spacing.
       if (rawNumericValue === "") {
         return;
       }

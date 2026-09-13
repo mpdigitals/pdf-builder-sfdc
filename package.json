@@ -36,9 +36,13 @@
     "prettier-plugin-apex": "^2.0.1"
   },
   "overrides": {
+    "@babel/core": "7.29.7",
     "@istanbuljs/load-nyc-config": {
-      "js-yaml": "3.15.1"
-    }
+      "js-yaml": "3.15.2"
+    },
+    "joi": "18.2.8",
+    "js-yaml": "4.3.2",
+    "vitest": "4.1.11"
   },
   "lint-staged": {
     "**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}": [
