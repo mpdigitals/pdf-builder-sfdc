@@ -1569,7 +1569,11 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get showElementPaddingProperty() {
-    return !this.showLineProperties;
+    return !this.showLineProperties && !this.showRelatedListProperties;
+  }
+
+  get showElementBackgroundProperty() {
+    return !this.showRelatedListProperties;
   }
 
   get isBorderWidthDisabled() {
@@ -2592,13 +2596,15 @@ export default class PDFBuilder extends LightningElement {
 
   blurPropertiesPanelControl() {
     const activeElement = this.template.activeElement;
-    const propertiesPanel = this.template.querySelector(".properties-panel");
+    const builderPanels = this.template.querySelectorAll(
+      ".properties-panel, .sidebar"
+    );
 
     if (
       activeElement &&
-      propertiesPanel &&
-      activeElement !== propertiesPanel &&
-      propertiesPanel.contains(activeElement) &&
+      Array.from(builderPanels).some(
+        (panel) => panel !== activeElement && panel.contains(activeElement)
+      ) &&
       typeof activeElement.blur === "function"
     ) {
       activeElement.blur();
