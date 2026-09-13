@@ -600,14 +600,7 @@ export default class PDFBuilderBlock extends LightningElement {
     return true;
   }
 
-  applyLineHeight(value) {
-    const editableElement = this.getActiveEditableElement();
-    const selection = window.getSelection();
-
-    if (!editableElement || !selection) {
-      return false;
-    }
-
+  restoreActiveSelectionRange(editableElement, selection) {
     let range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
     if (
       (!range || range.collapsed) &&
@@ -629,6 +622,19 @@ export default class PDFBuilderBlock extends LightningElement {
       selection.removeAllRanges();
       selection.addRange(range);
     }
+
+    return range;
+  }
+
+  applyLineHeight(value) {
+    const editableElement = this.getActiveEditableElement();
+    const selection = window.getSelection();
+
+    if (!editableElement || !selection) {
+      return false;
+    }
+
+    const range = this.restoreActiveSelectionRange(editableElement, selection);
 
     if (!range) {
       return false;
@@ -738,29 +744,7 @@ export default class PDFBuilderBlock extends LightningElement {
     const alignment = ["center", "right", "justify"].includes(rawValue)
       ? rawValue
       : "left";
-    let range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-
-    if (
-      (!range || range.collapsed) &&
-      this.savedNonCollapsedSelectionRange &&
-      editableElement.contains(
-        this.savedNonCollapsedSelectionRange.commonAncestorContainer
-      )
-    ) {
-      range = this.savedNonCollapsedSelectionRange.cloneRange();
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-
-    if (
-      (!range || !editableElement.contains(range.commonAncestorContainer)) &&
-      this.savedSelectionRange &&
-      editableElement.contains(this.savedSelectionRange.commonAncestorContainer)
-    ) {
-      range = this.savedSelectionRange.cloneRange();
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
+    const range = this.restoreActiveSelectionRange(editableElement, selection);
 
     if (!range) {
       return false;

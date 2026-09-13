@@ -1,4 +1,6 @@
 /**
+ * HTML sanitization boundary for PDF Builder templates and previews.
+ *
  * @author mpdigitals
  * @date August 2026
  *
@@ -30,11 +32,16 @@ public inherited sharing class PDFBuilderHtmlSanitizer {
   };
 
   private PDFBuilderHtmlSanitizer() {
+    throw new UnsupportedOperationException(
+      'PDFBuilderHtmlSanitizer is a static utility class.'
+    );
   }
 
   /**
-   * Removes executable HTML, event handlers, active URL schemes and dangerous
+   * @description Removes executable HTML, event handlers, active URL schemes and dangerous
    * CSS constructs. Empty and null input are normalized to an empty string.
+   * @param html Raw template HTML.
+   * @return Sanitized HTML safe for the PDF rendering boundary.
    */
   public static String sanitize(String html) {
     if (String.isBlank(html)) {
@@ -209,8 +216,10 @@ public inherited sharing class PDFBuilderHtmlSanitizer {
   }
 
   /**
-   * Canonicalizes CSS escape sequences before security decisions. CSS permits
+   * @description Canonicalizes CSS escape sequences before security decisions. CSS permits
    * one to six hexadecimal digits followed by optional whitespace.
+   * @param value CSS value containing optional escape sequences.
+   * @return Canonicalized CSS value.
    */
   private static String decodeCssEscapes(String value) {
     String result = '';

@@ -1,5 +1,36 @@
 engines:
   eslint:
     eslint_config_file: "eslint.config.js"
+    # LWC templates are validated by the project's dedicated ESLint command.
+    # Restrict Code Analyzer's ESLint pass to JavaScript so it does not feed
+    # .html templates to the JavaScript parser during Security scans.
+    file_extensions:
+      javascript: [".js", ".cjs", ".mjs"]
+      typescript: []
+      html: []
+      css: []
+      other: []
   flow:
     disable_engine: true
+
+# The PDF Visualforce renderer intentionally emits sanitized rich HTML and
+# controller-validated #RRGGBB page colours.  PMD cannot trace either
+# guarantee across the Apex/Visualforce boundary, so suppress only these five
+# known false positives in this one file.  The cap prevents new occurrences
+# from being hidden inadvertently.
+suppressions:
+  "main/default/pages/PDFBuilderPdf.page":
+    - rule_selector: "pmd:VfHtmlStyleTagXss,pmd:VfUnescapeEl"
+      max_suppressed_violations: 5
+      reason: "Values are sanitized or strictly validated in PDFBuilderPdfPageController before this Visualforce page renders them."
+    - rule_selector: "cpd:DetectCopyPasteForVisualforce"
+      max_suppressed_violations: 2
+      reason: "The three intentional page regions use identical output markup and must remain individually addressable by the Visualforce renderer."
+  "main/default/lwc/pdfBuilder/__tests__/pdfBuilder.test.js":
+    - rule_selector: "cpd:DetectCopyPasteForJavascript"
+      max_suppressed_violations: 4
+      reason: "Scenario-specific builder fixtures intentionally repeat the same document shell so each interaction test remains self-contained."
+  "main/default/lwc/pdfBuilderBlock/__tests__/pdfBuilderBlock.test.js":
+    - rule_selector: "cpd:DetectCopyPasteForJavascript"
+      max_suppressed_violations: 1
+      reason: "The two formatting tests deliberately share an explicit DOM-selection setup while asserting different editor commands."

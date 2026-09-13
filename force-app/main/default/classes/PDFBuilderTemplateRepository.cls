@@ -1,4 +1,6 @@
 /**
+ * Repository for PDF Builder template records.
+ *
  * @author mpdigitals
  * @date August 2026
  *
@@ -104,28 +106,56 @@ public with sharing class PDFBuilderTemplateRepository {
     String recordTypeScope,
     Id excludedTemplateId
   ) {
-    List<PDFBuilderTemplate__c> templates = excludedTemplateId == null
-      ? [
-          SELECT Id, Name
-          FROM PDFBuilderTemplate__c
-          WHERE
-            ObjectApiName__c = :objectApiName
-            AND RecordTypeScope__c = :recordTypeScope
-            AND IsDefault__c = TRUE
-          WITH USER_MODE
-          LIMIT 1
-        ]
-      : [
-          SELECT Id, Name
-          FROM PDFBuilderTemplate__c
-          WHERE
-            ObjectApiName__c = :objectApiName
-            AND RecordTypeScope__c = :recordTypeScope
-            AND IsDefault__c = TRUE
-            AND Id != :excludedTemplateId
-          WITH USER_MODE
-          LIMIT 1
-        ];
+    List<PDFBuilderTemplate__c> templates;
+    if (excludedTemplateId == null) {
+      templates = recordTypeScope == 'ALL'
+        ? [
+            SELECT Id, Name
+            FROM PDFBuilderTemplate__c
+            WHERE
+              ObjectApiName__c = :objectApiName
+              AND (RecordTypeScope__c = :recordTypeScope
+              OR RecordTypeScope__c = NULL)
+              AND IsDefault__c = TRUE
+            WITH USER_MODE
+            LIMIT 1
+          ]
+        : [
+            SELECT Id, Name
+            FROM PDFBuilderTemplate__c
+            WHERE
+              ObjectApiName__c = :objectApiName
+              AND RecordTypeScope__c = :recordTypeScope
+              AND IsDefault__c = TRUE
+            WITH USER_MODE
+            LIMIT 1
+          ];
+    } else {
+      templates = recordTypeScope == 'ALL'
+        ? [
+            SELECT Id, Name
+            FROM PDFBuilderTemplate__c
+            WHERE
+              ObjectApiName__c = :objectApiName
+              AND (RecordTypeScope__c = :recordTypeScope
+              OR RecordTypeScope__c = NULL)
+              AND IsDefault__c = TRUE
+              AND Id != :excludedTemplateId
+            WITH USER_MODE
+            LIMIT 1
+          ]
+        : [
+            SELECT Id, Name
+            FROM PDFBuilderTemplate__c
+            WHERE
+              ObjectApiName__c = :objectApiName
+              AND RecordTypeScope__c = :recordTypeScope
+              AND IsDefault__c = TRUE
+              AND Id != :excludedTemplateId
+            WITH USER_MODE
+            LIMIT 1
+          ];
+    }
     return templates.isEmpty() ? null : templates[0];
   }
 

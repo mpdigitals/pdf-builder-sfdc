@@ -1,4 +1,6 @@
 /**
+ * Deployable configuration provider for PDF Builder.
+ *
  * @author mpdigitals
  * @date August 2026
  *

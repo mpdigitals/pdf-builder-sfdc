@@ -1,4 +1,6 @@
 /**
+ * Salesforce Files persistence and image discovery service for PDF Builder.
+ *
  * @author mpdigitals
  * @date August 2026
  *
@@ -71,13 +73,19 @@ public with sharing class PDFBuilderFileService {
   }
 
   /**
-   * Saves a generated PDF.
+   * @description Saves a generated PDF.
    *
    * Quotes are saved through QuoteDocument so that the generated PDF appears
    * in the standard Quote PDFs related list.
    *
    * Other objects use Salesforce Files with an independent ContentDocument
    * for each generated PDF.
+   *
+   * @param title Source record title used for the generated file.
+   * @param fileName Requested PDF file name.
+   * @param pdfData Generated PDF bytes.
+   * @param recordId Source record that receives the PDF.
+   * @return Persisted latest ContentVersion.
    */
   public static ContentVersion savePdf(
     String title,
@@ -115,13 +123,17 @@ public with sharing class PDFBuilderFileService {
   }
 
   /**
-   * Saves a Quote PDF through QuoteDocument.
+   * @description Saves a Quote PDF through QuoteDocument.
    *
    * QuoteDocument causes Salesforce to create the ContentVersion and associate
    * it with the Quote's standard Quote PDFs related list.
    *
    * All persistence and subsequent reads honor the authenticated caller's
    * object, field and record access.
+   *
+   * @param pdfData Generated PDF bytes.
+   * @param quoteId Quote that receives the PDF.
+   * @return ContentVersion created through QuoteDocument.
    */
   private static ContentVersion saveQuotePdf(Blob pdfData, Id quoteId) {
     Schema.SObjectType quoteDocumentType = Schema.getGlobalDescribe()
@@ -187,8 +199,11 @@ public with sharing class PDFBuilderFileService {
   }
 
   /**
-   * Detects Quote without creating a compile-time dependency on the optional
+   * @description Detects Quote without creating a compile-time dependency on the optional
    * Salesforce Quotes feature.
+   *
+   * @param recordId Record identifier to inspect.
+   * @return Whether the record is a Quote.
    */
   private static Boolean isQuoteRecord(Id recordId) {
     if (recordId == null) {
@@ -201,18 +216,23 @@ public with sharing class PDFBuilderFileService {
   }
 
   /**
-   * QuoteDocument is exposed only in orgs where Salesforce Quotes is enabled.
+   * @description Checks whether QuoteDocument is exposed in this org.
+   * @return Whether Salesforce Quotes supports QuoteDocument.
    */
   private static Boolean isQuoteDocumentAvailable() {
     return Schema.getGlobalDescribe().containsKey('QuoteDocument');
   }
 
   /**
-   * Calculates the next logical PDF sequence number for a record.
+   * @description Calculates the next logical PDF sequence number for a record.
    *
    * We intentionally read V1 / V2 / V3 from the file title instead of using
    * ContentVersion.VersionNumber because every generated PDF can be a separate
    * ContentDocument.
+   *
+   * @param title Source record title used in generated file names.
+   * @param recordId Source record with prior generated PDFs.
+   * @return Next available logical version number.
    */
   private static Integer getNextPdfSequenceNumber(String title, Id recordId) {
     if (String.isBlank(title) || recordId == null) {
@@ -284,7 +304,9 @@ public with sharing class PDFBuilderFileService {
   }
 
   /**
-   * Checks whether a String is an integer greater than zero.
+   * @description Checks whether a String is an integer greater than zero.
+   * @param value Candidate number text.
+   * @return Whether the value is a positive integer.
    */
   private static Boolean isPositiveInteger(String value) {
     if (String.isBlank(value)) {
@@ -299,11 +321,15 @@ public with sharing class PDFBuilderFileService {
   }
 
   /**
-   * Adds the logical version to the generated PDF filename.
+   * @description Adds the logical version to the generated PDF filename.
    *
    * Example:
    *
    * proposal.pdf -> proposal V3.pdf
+   *
+   * @param fileName Requested PDF file name.
+   * @param versionNumber Logical version number to append.
+   * @return Versioned PDF file name.
    */
   private static String appendPdfVersion(
     String fileName,

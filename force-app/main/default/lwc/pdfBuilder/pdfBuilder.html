@@ -41,8 +41,10 @@
         <div class="toolbar-template">
           <div class="toolbar-template-context">
             <select
-              class="toolbar-input toolbar-object-select"
+              class={objectSelectorClass}
               data-role="object-select"
+              data-guidance="object-selector"
+              aria-invalid={isObjectSelectionGuidanceActive}
               onchange={handleObjectChange}
             >
               <option value="">Select object</option>
@@ -130,6 +132,33 @@
         <template lwc:if={templateStatus}>
           <span class="toolbar-status">{templateStatus}</span>
         </template>
+
+        <label
+          class="theme-toggle"
+          title="Switch between the light and dark builder themes"
+        >
+          <input
+            class="theme-toggle-input"
+            type="checkbox"
+            checked={isDarkTheme}
+            aria-label="Use dark builder theme"
+            onchange={handleThemeChange}
+          />
+          <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.5"></circle>
+            <path
+              d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"
+            ></path>
+          </svg>
+          <span class="theme-toggle-track" aria-hidden="true">
+            <span class="theme-toggle-thumb"></span>
+          </span>
+          <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M20.2 15.3A8.6 8.6 0 0 1 8.7 3.8 8.6 8.6 0 1 0 20.2 15.3Z"
+            ></path>
+          </svg>
+        </label>
 
         <button
           class="toolbar-button icon-button fullscreen-button"
@@ -626,9 +655,10 @@
 
           <div class="tool-grid">
             <div
-              class="tool"
+              class={textToolClass}
               draggable={paletteItemDraggable}
               data-type="text"
+              data-guidance="text-tool"
               ondragstart={handleDragStart}
               ondragend={handleDragEnd}
               onmousedown={handlePaletteToolMouseDown}
@@ -718,9 +748,10 @@
             </div>
 
             <div
-              class="tool"
+              class={tableToolClass}
               draggable={paletteItemDraggable}
               data-type="table"
+              data-guidance="table-tool"
               ondragstart={handleDragStart}
               ondragend={handleDragEnd}
               onmousedown={handlePaletteToolMouseDown}
