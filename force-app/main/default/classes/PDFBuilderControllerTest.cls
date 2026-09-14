@@ -741,6 +741,62 @@ private class PDFBuilderControllerTest {
   }
 
   /**
+   * @description Verifies related-list columns use conventional type-based alignment.
+   */
+  @IsTest
+  static void alignsRelatedListValuesByDataType() {
+    Assert.areEqual(
+      'right',
+      PDFBuilderController.getRelatedListValueTextAlign(
+        Schema.DisplayType.Currency
+      ),
+      'Currency must align right.'
+    );
+    Assert.areEqual(
+      'right',
+      PDFBuilderController.getRelatedListValueTextAlign(
+        Schema.DisplayType.Percent
+      ),
+      'Percentages must align right.'
+    );
+    Assert.areEqual(
+      'right',
+      PDFBuilderController.getRelatedListValueTextAlign(
+        Schema.DisplayType.Double
+      ),
+      'Numbers must align right.'
+    );
+    Assert.areEqual(
+      'center',
+      PDFBuilderController.getRelatedListValueTextAlign(
+        Schema.DisplayType.Boolean
+      ),
+      'Booleans must align center.'
+    );
+    Assert.areEqual(
+      'center',
+      PDFBuilderController.getRelatedListValueTextAlign(
+        Schema.DisplayType.Date
+      ),
+      'Dates must align center.'
+    );
+    Assert.areEqual(
+      'center',
+      PDFBuilderController.getRelatedListValueTextAlign(
+        Schema.DisplayType.DateTime
+      ),
+      'Date-times must align center.'
+    );
+    Assert.areEqual(
+      'left',
+      PDFBuilderController.getRelatedListValueTextAlign(
+        Schema.DisplayType.String
+      ),
+      'Text must align left.'
+    );
+  }
+
+  /**
    * @description Verifies the permission set grants the same facade access to a non-admin user.
    */
   @IsTest

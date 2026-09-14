@@ -431,7 +431,9 @@ describe("c-pdf-builder", () => {
                     "Quantity",
                     "UnitPrice",
                     "Discount",
-                    "TotalPrice"
+                    "TotalPrice",
+                    "IsDeleted",
+                    "CreatedDate"
                   ]
                 }
               ]
@@ -455,10 +457,12 @@ describe("c-pdf-builder", () => {
       }
     ]);
     getRelatedListFields.mockResolvedValue([
-      { label: "Line Description", apiName: "description" },
-      { label: "Quantity", apiName: "quantity" },
-      { label: "Sales Price", apiName: "unitprice" },
-      { label: "Total Price", apiName: "totalprice" }
+      { label: "Line Description", apiName: "description", dataType: "String" },
+      { label: "Quantity", apiName: "quantity", dataType: "Double" },
+      { label: "Sales Price", apiName: "unitprice", dataType: "Currency" },
+      { label: "Total Price", apiName: "totalprice", dataType: "Currency" },
+      { label: "Deleted", apiName: "isdeleted", dataType: "Boolean" },
+      { label: "Created Date", apiName: "createddate", dataType: "DateTime" }
     ]);
 
     const element = createElement("c-pdf-builder", { is: PDFBuilder });
@@ -494,8 +498,23 @@ describe("c-pdf-builder", () => {
       "quantity",
       "unitprice",
       "Discount",
-      "totalprice"
+      "totalprice",
+      "isdeleted",
+      "createddate"
     ]);
+
+    const columnStyles = Object.fromEntries(
+      normalizedBlock.block.relatedListColumnLabels.map((column) => [
+        column.apiName.toLowerCase(),
+        column.style
+      ])
+    );
+    expect(columnStyles.description).toContain("text-align:left");
+    expect(columnStyles.quantity).toContain("text-align:right");
+    expect(columnStyles.unitprice).toContain("text-align:right");
+    expect(columnStyles.totalprice).toContain("text-align:right");
+    expect(columnStyles.isdeleted).toContain("text-align:center");
+    expect(columnStyles.createddate).toContain("text-align:center");
   });
 
   it("loads the selected template and its object without changing the template contract", async () => {
