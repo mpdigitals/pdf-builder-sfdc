@@ -612,6 +612,197 @@ describe("c-pdf-builder", () => {
     ).toBe("Quote proposal");
   });
 
+  it.each([
+    [
+      "object variables",
+      {
+        id: "object-variable-text",
+        type: "text",
+        content: "Customer: {!Quote.Name}",
+        styles: {}
+      },
+      "This template contains object variables that do not belong to Account. Review and update them before previewing or generating the PDF."
+    ],
+    [
+      "a related list",
+      {
+        id: "object-related-list",
+        type: "relatedList",
+        content: "",
+        relatedListRelationshipName: "QuoteLineItems",
+        relatedListChildObjectApiName: "QuoteLineItem",
+        relatedListColumns: [],
+        styles: {}
+      },
+      "This template contains a related list that does not belong to Account. Review and update it before previewing or generating the PDF."
+    ]
+  ])(
+    "warns after changing object when the template contains %s",
+    async (_dependencyName, dependentBlock, expectedContent) => {
+      const templateContent = createKeyboardShortcutTemplate();
+      templateContent.body.sections[0].blocks = [dependentBlock];
+      getTemplate.mockResolvedValue({
+        id: "a01000000000002AAA",
+        name: "Quote proposal",
+        objectApiName: "Quote",
+        contentJson: JSON.stringify(templateContent),
+        generatedHtml: ""
+      });
+
+      const element = createElement("c-pdf-builder", {
+        is: PDFBuilder
+      });
+      document.body.appendChild(element);
+      await flushPromises();
+
+      const templateSelect = element.shadowRoot.querySelector(
+        '[data-role="template-select"]'
+      );
+      templateSelect.value = "a01000000000002AAA";
+      templateSelect.dispatchEvent(new CustomEvent("change"));
+      await flushPromises();
+      await flushPromises();
+      const objectSelect = element.shadowRoot.querySelector(
+        '[data-role="object-select"]'
+      );
+      objectSelect.value = "Account";
+      objectSelect.dispatchEvent(new CustomEvent("change"));
+      await flushPromises();
+
+      const warning = element.shadowRoot.querySelector(
+        '[data-role="object-dependency-warning"]'
+      );
+      expect(warning).not.toBeNull();
+      expect(warning.querySelector("h2").textContent.trim()).toBe(
+        "Review object-dependent content"
+      );
+      expect(warning.querySelector("p").textContent.trim()).toBe(
+        expectedContent
+      );
+
+      warning
+        .querySelector('[data-role="object-dependency-warning-close"]')
+        .click();
+      await flushPromises();
+      expect(
+        element.shadowRoot.querySelector(
+          '[data-role="object-dependency-warning"]'
+        )
+      ).toBeNull();
+    }
+  );
+
+  it("does not warn after changing object when the template only contains global variables", async () => {
+    const templateContent = createKeyboardShortcutTemplate();
+    templateContent.body.sections[0].blocks = [
+      {
+        id: "global-variable-text",
+        type: "text",
+        content: "Company: {!$Organization.Name}",
+        styles: {}
+      }
+    ];
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Quote proposal",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(templateContent),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+    await flushPromises();
+    const objectSelect = element.shadowRoot.querySelector(
+      '[data-role="object-select"]'
+    );
+    objectSelect.value = "Account";
+    objectSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(
+        '[data-role="object-dependency-warning"]'
+      )
+    ).toBeNull();
+  });
+
+  it("does not warn when object variables and the related list belong to the newly selected object", async () => {
+    const templateContent = createKeyboardShortcutTemplate();
+    templateContent.body.sections[0].blocks = [
+      {
+        id: "matching-object-variable",
+        type: "text",
+        content: "Customer: {!Account.Name}",
+        styles: {}
+      },
+      {
+        id: "matching-related-list",
+        type: "relatedList",
+        content: "",
+        relatedListRelationshipName: "Contacts",
+        relatedListChildObjectApiName: "Contact",
+        relatedListColumns: ["Name"],
+        styles: {}
+      }
+    ];
+    getRelatedLists.mockImplementation(({ objectApiName }) => {
+      return objectApiName === "Account"
+        ? [
+            {
+              label: "Contacts (Contacts)",
+              relationshipName: "Contacts",
+              childObjectApiName: "Contact"
+            }
+          ]
+        : [];
+    });
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Quote proposal",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(templateContent),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+    await flushPromises();
+
+    const objectSelect = element.shadowRoot.querySelector(
+      '[data-role="object-select"]'
+    );
+    objectSelect.value = "Account";
+    objectSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(
+        '[data-role="object-dependency-warning"]'
+      )
+    ).toBeNull();
+  });
+
   it("keeps the latest template when load requests finish out of order", async () => {
     const firstTemplate = createDeferred();
     const secondTemplate = createDeferred();

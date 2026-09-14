@@ -310,6 +310,50 @@
         </section>
       </template>
 
+      <template lwc:if={isObjectDependencyWarningOpen}>
+        <section class="delete-confirm-backdrop" role="presentation">
+          <div
+            class="delete-confirm unsaved-changes-confirm object-dependency-warning"
+            data-role="object-dependency-warning"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="object-dependency-warning-title"
+            aria-describedby="object-dependency-warning-description"
+          >
+            <div
+              class="delete-confirm-icon unsaved-changes-confirm-icon"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 10v6" />
+                <path d="M12 7h.01" />
+              </svg>
+            </div>
+
+            <div class="delete-confirm-copy">
+              <h2 id="object-dependency-warning-title">
+                {objectDependencyWarningTitle}
+              </h2>
+              <p id="object-dependency-warning-description">
+                {objectDependencyWarningMessage}
+              </p>
+            </div>
+
+            <div class="delete-confirm-actions">
+              <button
+                class="unsaved-changes-save"
+                data-role="object-dependency-warning-close"
+                type="button"
+                onclick={handleCloseObjectDependencyWarning}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </section>
+      </template>
+
       <template lwc:if={showRichTextToolbar}>
         <div
           class="rich-text-toolbar"
