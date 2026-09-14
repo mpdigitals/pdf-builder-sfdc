@@ -99,6 +99,67 @@ const createDeferred = () => {
   return { promise, resolve, reject };
 };
 
+const createKeyboardShortcutTemplate = () => {
+  const regionStyles = {
+    background: "#ffffff",
+    padding: 8,
+    borderWidth: 0,
+    borderStyle: "none",
+    borderColor: "#c9c9c9",
+    borderRadius: 0
+  };
+
+  return {
+    pagePadding: 32,
+    globalElementPadding: 8,
+    showHeader: true,
+    showBody: true,
+    showFooter: true,
+    repeatHeaderOnEachPage: true,
+    repeatFooterOnEachPage: true,
+    manualPageCount: 0,
+    manualPages: [],
+    header: {
+      id: "header",
+      label: "Header",
+      styles: { ...regionStyles, height: 110 },
+      blocks: []
+    },
+    body: {
+      layout: "one",
+      sections: [
+        {
+          id: "body-1",
+          label: "Body",
+          styles: regionStyles,
+          blocks: [
+            {
+              id: "keyboard-test-line",
+              type: "divider",
+              content: "",
+              styles: {
+                x: 120,
+                y: 160,
+                lineLength: 300,
+                height: 1,
+                lineThickness: 1,
+                lineStyle: "solid",
+                lineColor: "#181818"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    footer: {
+      id: "footer",
+      label: "Footer",
+      styles: { ...regionStyles, height: 80 },
+      blocks: []
+    }
+  };
+};
+
 describe("c-pdf-builder", () => {
   beforeEach(() => {
     getConfiguration.mockResolvedValue({
@@ -549,6 +610,197 @@ describe("c-pdf-builder", () => {
       element.shadowRoot.querySelector('input[placeholder="Template name"]')
         .value
     ).toBe("Quote proposal");
+  });
+
+  it.each([
+    [
+      "object variables",
+      {
+        id: "object-variable-text",
+        type: "text",
+        content: "Customer: {!Quote.Name}",
+        styles: {}
+      },
+      "This template contains object variables that do not belong to Account. Review and update them before previewing or generating the PDF."
+    ],
+    [
+      "a related list",
+      {
+        id: "object-related-list",
+        type: "relatedList",
+        content: "",
+        relatedListRelationshipName: "QuoteLineItems",
+        relatedListChildObjectApiName: "QuoteLineItem",
+        relatedListColumns: [],
+        styles: {}
+      },
+      "This template contains a related list that does not belong to Account. Review and update it before previewing or generating the PDF."
+    ]
+  ])(
+    "warns after changing object when the template contains %s",
+    async (_dependencyName, dependentBlock, expectedContent) => {
+      const templateContent = createKeyboardShortcutTemplate();
+      templateContent.body.sections[0].blocks = [dependentBlock];
+      getTemplate.mockResolvedValue({
+        id: "a01000000000002AAA",
+        name: "Quote proposal",
+        objectApiName: "Quote",
+        contentJson: JSON.stringify(templateContent),
+        generatedHtml: ""
+      });
+
+      const element = createElement("c-pdf-builder", {
+        is: PDFBuilder
+      });
+      document.body.appendChild(element);
+      await flushPromises();
+
+      const templateSelect = element.shadowRoot.querySelector(
+        '[data-role="template-select"]'
+      );
+      templateSelect.value = "a01000000000002AAA";
+      templateSelect.dispatchEvent(new CustomEvent("change"));
+      await flushPromises();
+      await flushPromises();
+      const objectSelect = element.shadowRoot.querySelector(
+        '[data-role="object-select"]'
+      );
+      objectSelect.value = "Account";
+      objectSelect.dispatchEvent(new CustomEvent("change"));
+      await flushPromises();
+
+      const warning = element.shadowRoot.querySelector(
+        '[data-role="object-dependency-warning"]'
+      );
+      expect(warning).not.toBeNull();
+      expect(warning.querySelector("h2").textContent.trim()).toBe(
+        "Review object-dependent content"
+      );
+      expect(warning.querySelector("p").textContent.trim()).toBe(
+        expectedContent
+      );
+
+      warning
+        .querySelector('[data-role="object-dependency-warning-close"]')
+        .click();
+      await flushPromises();
+      expect(
+        element.shadowRoot.querySelector(
+          '[data-role="object-dependency-warning"]'
+        )
+      ).toBeNull();
+    }
+  );
+
+  it("does not warn after changing object when the template only contains global variables", async () => {
+    const templateContent = createKeyboardShortcutTemplate();
+    templateContent.body.sections[0].blocks = [
+      {
+        id: "global-variable-text",
+        type: "text",
+        content: "Company: {!$Organization.Name}",
+        styles: {}
+      }
+    ];
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Quote proposal",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(templateContent),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+    await flushPromises();
+    const objectSelect = element.shadowRoot.querySelector(
+      '[data-role="object-select"]'
+    );
+    objectSelect.value = "Account";
+    objectSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(
+        '[data-role="object-dependency-warning"]'
+      )
+    ).toBeNull();
+  });
+
+  it("does not warn when object variables and the related list belong to the newly selected object", async () => {
+    const templateContent = createKeyboardShortcutTemplate();
+    templateContent.body.sections[0].blocks = [
+      {
+        id: "matching-object-variable",
+        type: "text",
+        content: "Customer: {!Account.Name}",
+        styles: {}
+      },
+      {
+        id: "matching-related-list",
+        type: "relatedList",
+        content: "",
+        relatedListRelationshipName: "Contacts",
+        relatedListChildObjectApiName: "Contact",
+        relatedListColumns: ["Name"],
+        styles: {}
+      }
+    ];
+    getRelatedLists.mockImplementation(({ objectApiName }) => {
+      return objectApiName === "Account"
+        ? [
+            {
+              label: "Contacts (Contacts)",
+              relationshipName: "Contacts",
+              childObjectApiName: "Contact"
+            }
+          ]
+        : [];
+    });
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Quote proposal",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(templateContent),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+    await flushPromises();
+
+    const objectSelect = element.shadowRoot.querySelector(
+      '[data-role="object-select"]'
+    );
+    objectSelect.value = "Account";
+    objectSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(
+        '[data-role="object-dependency-warning"]'
+      )
+    ).toBeNull();
   });
 
   it("keeps the latest template when load requests finish out of order", async () => {
@@ -1125,6 +1377,174 @@ describe("c-pdf-builder", () => {
     expect(verticalCopy.block.styles.y).toBe(sourceVertical.block.styles.y);
   });
 
+  it("does not delete the selected block while editing the preview Record ID", async () => {
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Quote proposal",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(createKeyboardShortcutTemplate()),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    const selectedBlock = element.shadowRoot.querySelector(
+      '[data-block-id="keyboard-test-line"] c-pdf-builder-block'
+    );
+    selectedBlock.dispatchEvent(
+      new CustomEvent("selectblock", {
+        detail: { blockId: "keyboard-test-line", regionId: "body-1" },
+        bubbles: true,
+        composed: true
+      })
+    );
+    await flushPromises();
+
+    Array.from(element.shadowRoot.querySelectorAll("button"))
+      .find((button) => button.textContent.trim() === "Preview")
+      .click();
+    await flushPromises();
+
+    expect(element.shadowRoot.querySelector(".delete-button").disabled).toBe(
+      true
+    );
+    const recordIdInput =
+      element.shadowRoot.querySelector(".preview-record-id");
+    const windowKeyDownHandler = jest.fn();
+    window.addEventListener("keydown", windowKeyDownHandler);
+    recordIdInput.value = "0Q0000000000000001";
+    recordIdInput.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Backspace",
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      })
+    );
+    recordIdInput.value = "";
+    recordIdInput.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Delete",
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      })
+    );
+    window.removeEventListener("keydown", windowKeyDownHandler);
+    await flushPromises();
+
+    expect(windowKeyDownHandler).not.toHaveBeenCalled();
+    expect(
+      element.shadowRoot.querySelector(
+        '[data-block-id="keyboard-test-line"] c-pdf-builder-block'
+      )
+    ).not.toBeNull();
+  });
+
+  it("still deletes the selected block with the canvas keyboard shortcut", async () => {
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Quote proposal",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(createKeyboardShortcutTemplate()),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    element.shadowRoot
+      .querySelector('[data-block-id="keyboard-test-line"] c-pdf-builder-block')
+      .dispatchEvent(
+        new CustomEvent("selectblock", {
+          detail: { blockId: "keyboard-test-line", regionId: "body-1" },
+          bubbles: true,
+          composed: true
+        })
+      );
+    await flushPromises();
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Delete", cancelable: true })
+    );
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(
+        '[data-block-id="keyboard-test-line"] c-pdf-builder-block'
+      )
+    ).toBeNull();
+  });
+
+  it("releases the template selector focus when a loaded block is selected", async () => {
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Opportunity service quotation",
+      objectApiName: "Opportunity",
+      contentJson: JSON.stringify(createKeyboardShortcutTemplate()),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+    templateSelect.focus();
+
+    element.shadowRoot
+      .querySelector('[data-block-id="keyboard-test-line"] c-pdf-builder-block')
+      .dispatchEvent(
+        new CustomEvent("selectblock", {
+          detail: { blockId: "keyboard-test-line", regionId: "body-1" },
+          bubbles: true,
+          composed: true
+        })
+      );
+    await flushPromises();
+
+    expect(element.shadowRoot.activeElement).not.toBe(templateSelect);
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Delete", cancelable: true })
+    );
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(
+        '[data-block-id="keyboard-test-line"] c-pdf-builder-block'
+      )
+    ).toBeNull();
+  });
+
   it("keeps an image container fitted to its aspect ratio and padding while resizing", async () => {
     const regionStyles = {
       background: "#ffffff",
@@ -1384,5 +1804,157 @@ describe("c-pdf-builder", () => {
       expect(computedStyle.minWidth).toBe("0");
       expect(computedStyle.flexGrow).toBe("1");
     });
+  });
+
+  it("prevents header and footer resizing from crossing their content", async () => {
+    const regionStyles = {
+      background: "#ffffff",
+      padding: 10,
+      borderWidth: 2,
+      borderStyle: "solid",
+      borderColor: "#c9c9c9",
+      borderRadius: 0
+    };
+    const content = {
+      pagePadding: 32,
+      globalElementPadding: 8,
+      showHeader: true,
+      showBody: true,
+      showFooter: true,
+      repeatHeaderOnEachPage: true,
+      repeatFooterOnEachPage: true,
+      manualPageCount: 0,
+      manualPages: [],
+      header: {
+        id: "header",
+        label: "Header",
+        styles: { ...regionStyles, height: 250 },
+        blocks: [
+          {
+            id: "header-image",
+            type: "image",
+            imageSrc: "",
+            imageAlt: "Header image",
+            styles: { width: 100, height: 80, x: 0, y: 120 }
+          }
+        ]
+      },
+      body: {
+        layout: "one",
+        sections: [
+          {
+            id: "body-1",
+            label: "Body",
+            styles: {
+              background: "#ffffff",
+              padding: 8,
+              borderWidth: 0,
+              borderStyle: "none",
+              borderColor: "#c9c9c9",
+              borderRadius: 0
+            },
+            blocks: []
+          }
+        ]
+      },
+      footer: {
+        id: "footer",
+        label: "Footer",
+        styles: { ...regionStyles, padding: 8, height: 160 },
+        blocks: [
+          {
+            id: "footer-line",
+            type: "verticalLine",
+            content: "",
+            styles: { width: 12, height: 70, x: 0, y: 60 }
+          }
+        ]
+      }
+    };
+    getTemplate.mockResolvedValueOnce({
+      id: "a01000000000002AAA",
+      name: "Protected fixed regions",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(content),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    let header = element.shadowRoot.querySelector('[data-region-id="header"]');
+    header.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await flushPromises();
+
+    header = element.shadowRoot.querySelector('[data-region-id="header"]');
+    const headerBlock = header.querySelector(
+      '.block-shell[data-block-id="header-image"]'
+    );
+    header.getBoundingClientRect = jest.fn(() => ({
+      top: 100,
+      bottom: 350,
+      left: 0,
+      right: 700,
+      width: 700,
+      height: 250
+    }));
+    headerBlock.getBoundingClientRect = jest.fn(() => ({
+      top: 120,
+      bottom: 300,
+      left: 10,
+      right: 110,
+      width: 100,
+      height: 180
+    }));
+
+    let heightInput = element.shadowRoot.querySelector(
+      'input[data-style="height"]'
+    );
+    heightInput.value = "40";
+    heightInput.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot
+        .querySelector('[data-region-id="header"]')
+        .getAttribute("style")
+    ).toContain("--region-height:212px");
+
+    let footer = element.shadowRoot.querySelector('[data-region-id="footer"]');
+    footer.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await flushPromises();
+
+    footer = element.shadowRoot.querySelector('[data-region-id="footer"]');
+    const footerResizeHandle = footer.querySelector(".region-resize-handle");
+    footerResizeHandle.dispatchEvent(
+      new MouseEvent("mousedown", {
+        bubbles: true,
+        clientY: 100
+      })
+    );
+    window.dispatchEvent(new MouseEvent("mousemove", { clientY: 300 }));
+    window.dispatchEvent(new MouseEvent("mouseup", { clientY: 300 }));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot
+        .querySelector('[data-region-id="footer"]')
+        .getAttribute("style")
+    ).toContain("--region-height:150px");
+
+    heightInput = element.shadowRoot.querySelector(
+      'input[data-style="height"]'
+    );
+    expect(heightInput.value).toBe("150");
   });
 });

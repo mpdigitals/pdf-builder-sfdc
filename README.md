@@ -6,11 +6,11 @@
 
 <p align="center">
   <a href="https://app.codacy.com/gh/mpdigitals/pdf-builder-sfdc/dashboard"><img src="https://app.codacy.com/project/badge/Grade/30cd2cc87bc44f6cbc299ffb0e519094" alt="Codacy quality grade"></a>
-  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/badge/pre--release-v1.0.16--beta.5-orange" alt="Current pre-release"></a>
+  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/badge/pre--release-v1.0.17--beta.4-orange" alt="Current pre-release"></a>
 </p>
 
 <p align="center">
-  <strong>Native WYSIWYG document generation for Salesforce any standard or custom object, no external rendering service.</strong>
+  <strong>Native WYSIWYG document generation for any standard or custom Salesforce object—no external rendering service.</strong>
 </p>
 
 PDF Builder is a Salesforce-native application for visually designing reusable PDF templates, merging live record data, previewing the result, and generating production documents without leaving the platform.
@@ -23,7 +23,7 @@ The authoring and rendering flow runs entirely in Salesforce using Lightning Web
   </tr>
 </table>
 
-The visual Builder is the heart of the application: compose headers, body and footer regions on a canvas; add rich text, images, tables, related lists and dividers; then preview the document with Salesforce data before generating it.
+The visual Builder is the heart of the application: compose headers, body and footer regions on a canvas; add rich text, images, tables, related lists and dividers; then preview the document with Salesforce data before generating it. A light/dark workspace toggle keeps the authoring interface comfortable without changing the document's own colors.
 
 Templates can be scoped to **all record types** or to a specific record type, with one default template per scope. The generator automatically offers the templates that apply to the current record and selects the most specific default.
 
@@ -72,15 +72,15 @@ support.
 
 ### Recommended: unlocked package
 
-Install the current beta unlocked package (`v1.0.16-beta.5`). It is an
+Install the current beta unlocked package (`v1.0.17-beta.4`). It is an
 unreleased Salesforce package version intended for evaluation. Install it in a
 sandbox or Developer Edition and validate it against your configuration before
 wider use.
 
 | Target            | Installation link                                                                                                 |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Sandbox           | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZJ6DIAW)          |
-| Developer Edition | [Install in Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZJ6DIAW) |
+| Sandbox           | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQPRIA4)          |
+| Developer Edition | [Install in Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQPRIA4) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
@@ -90,7 +90,7 @@ The same version can also be installed with Salesforce CLI:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZJ6DIAW \
+  --package 04tQy000000ZQPRIA4 \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
@@ -163,7 +163,7 @@ Design professional templates visually with drag & drop layout, live preview, re
 
 The `PDF Builder` Lightning tab opens the authoring workspace. Its three-column layout keeps the element palette, document canvas, and contextual properties visible while editing.
 
-The responsive toolbar groups undo/redo, HTML and preview actions, template context, and template management so the authoring controls stay usable in narrow Lightning workspaces. It provides generated HTML inspection, record-aware preview, object and template selection, save and delete actions, and fullscreen editing.
+The responsive toolbar groups undo/redo, HTML and preview actions, template context, and template management so the authoring controls stay usable in narrow Lightning workspaces. It provides generated HTML inspection, record-aware preview, object and template selection, save and delete actions, light/dark workspace themes, and fullscreen editing.
 
 <table align="center" border="1" cellpadding="0" cellspacing="0">
   <tr>
@@ -176,6 +176,8 @@ The responsive toolbar groups undo/redo, HTML and preview actions, template cont
 Choose **All record types** to make a template available for every record of the selected object, or assign it to one active record type. A template can be marked as the default for its scope; PDF Builder enforces one default per object and scope.
 
 On a record page, the generator shows only templates assigned to the record's object and record type, plus those assigned to all record types. It selects the record-type default when one exists, otherwise the all-record-types default. Users can still choose any other available template.
+
+When an author changes the template object, the Builder detects merge fields or a related list that belong to the previous object and presents a clear review warning. This prevents stale object-dependent content from going unnoticed before preview or PDF generation.
 
 ### Elements
 
@@ -193,6 +195,8 @@ On a record page, the generator shows only templates assigned to the record's ob
 </p>
 
 Elements can be moved and resized on the canvas. Undo and redo preserve the editing workflow, and fullscreen mode provides more room for complex templates.
+
+Related-list column selections are restored from saved templates even when legacy API-name casing differs. Values use field-aware alignment: numeric, currency and percentage values align right; dates and booleans align centrally; text remains left-aligned.
 
 Selected elements can also be copied, pasted, or deleted from their contextual controls.
 
@@ -216,6 +220,8 @@ The layout supports:
 - per-region and per-element appearance and sizing;
 - automatic preview pagination for overflowing content and related-list rows.
 
+Header and footer resizing respects the bounds of their existing elements, whether the size is changed by dragging or by entering a number, so fixed-region content cannot be clipped accidentally.
+
 <p align="center">
   <img src="docs/images/page-layout-settings.png" alt="PDF page layout, header, footer, padding, background, and body-section settings" width="48%">
 </p>
@@ -236,7 +242,7 @@ Fields can be inserted as a value, a label, or a combined label and value. The b
 
 Salesforce values are formatted for the running user. This includes locale-aware dates, numbers, currencies, percentages, and field labels.
 
-The field browser groups organization, current-object, and parent-object fields. Authors can search the available fields and choose whether an inserted field displays its value, label, or both.
+The field browser groups organization, current-object, and parent-object fields. Authors can search the available fields and choose whether an inserted field displays its value, label, or both. If an insertion requires an object or a text/table target, the Builder highlights the missing prerequisite as well as explaining it.
 
 #### Browse available data
 

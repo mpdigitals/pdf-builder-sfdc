@@ -2211,6 +2211,22 @@
   color: #91c0ff;
 }
 
+.builder:has(.theme-toggle-input:checked) .related-list-columns-picker {
+  --slds-g-color-neutral-base-100: #142846;
+  --slds-g-color-neutral-base-95: #1a3158;
+  --slds-g-color-neutral-base-30: #dce8fb;
+  --slds-g-color-border-base-4: #365581;
+  --slds-c-listbox-option-color: #dce8fb;
+  --slds-c-listbox-option-color-hover: #ffffff;
+  --slds-c-listbox-option-color-focus: #ffffff;
+  --slds-c-listbox-option-color-background: #142846;
+  --slds-c-listbox-option-color-background-hover: #1a3158;
+  --slds-c-listbox-option-color-background-focus: #1d3969;
+  color: #dce8fb;
+  -webkit-text-fill-color: #dce8fb;
+  color-scheme: dark;
+}
+
 .builder:has(.theme-toggle-input:checked) .canvas-wrapper,
 .builder:has(.theme-toggle-input:checked) .preview-content,
 .builder:has(.theme-toggle-input:checked) .preview-loading,

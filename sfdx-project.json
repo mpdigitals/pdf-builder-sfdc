@@ -4,9 +4,9 @@
       "path": "force-app",
       "default": true,
       "package": "PDF Builder",
-      "versionName": "Version 1.0.16 Beta 5",
-      "versionNumber": "1.0.16.NEXT",
-      "versionDescription": "Beta 5: Add record-type template defaults and refine the Builder and PDF output",
+      "versionName": "Version 1.0.17 Beta 4",
+      "versionNumber": "1.0.17.NEXT",
+      "versionDescription": "Beta 4: Refine object-aware authoring, related lists, fixed-region resizing, and keyboard focus handling",
       "apexTestAccess": {
         "permissionSets": ["PDFBuilderUser"]
       }
@@ -37,6 +37,10 @@
     "PDF Builder@1.0.16-2": "04tQy000000ZFgvIAG",
     "PDF Builder@1.0.16-3": "04tQy000000ZFtpIAG",
     "PDF Builder@1.0.16-4": "04tQy000000ZG8LIAW",
-    "PDF Builder@1.0.16-5": "04tQy000000ZJ6DIAW"
+    "PDF Builder@1.0.16-5": "04tQy000000ZJ6DIAW",
+    "PDF Builder@1.0.17-1": "04tQy000000ZQAvIAO",
+    "PDF Builder@1.0.17-2": "04tQy000000ZQHNIA4",
+    "PDF Builder@1.0.17-3": "04tQy000000ZQNpIAO",
+    "PDF Builder@1.0.17-4": "04tQy000000ZQPRIA4"
   }
 }

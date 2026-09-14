@@ -54,6 +54,69 @@ const REGION_RUNTIME_KEYS = new Set(["className", "inlineStyle", "isEmpty"]);
 const DEFAULT_TABLE_HEIGHT = 120;
 const DEFAULT_RELATED_LIST_HEIGHT = 50;
 const BUILDER_THEME_STORAGE_KEY = "pdfbuilder.builder-theme";
+const USER_MESSAGES = Object.freeze({
+  PDF_BUILDER_LOAD_ERROR_TITLE: "PDF Builder could not be loaded",
+  OBJECT_METADATA_LOAD_ERROR_TITLE: "Object metadata could not be loaded",
+  TEMPLATE_NOT_SAVED_TITLE: "Template not saved",
+  TEMPLATE_NAME_AND_OBJECT_REQUIRED:
+    "Enter a template name and select an object.",
+  TEMPLATE_NAME_REQUIRED: "Enter a template name before saving the template.",
+  TEMPLATE_OBJECT_REQUIRED: "Select an object before saving the template.",
+  TEMPLATE_TOO_LARGE: (jsonLength, htmlLength, maximumLength) =>
+    `Template is too large to save. JSON: ${jsonLength}, HTML: ${htmlLength}, max: ${maximumLength}.`,
+  TEMPLATE_SAVED: "Template saved",
+  TEMPLATE_LIST_REFRESH_WARNING:
+    "The template was saved, but the template list could not be refreshed.",
+  TEMPLATE_SAVE_ERROR_TITLE: "Template could not be saved",
+  TEMPLATE_DELETED: "Template deleted",
+  TEMPLATE_DELETE_ERROR_TITLE: "Template could not be deleted",
+  TEMPLATE_LOADED: "Template loaded",
+  TEMPLATE_LOAD_ERROR_TITLE: "Template could not be loaded",
+  VARIABLE_NOT_INSERTED_TITLE: "Variable not inserted",
+  VARIABLE_INSERT_TARGET_REQUIRED:
+    "Select a text or table block before inserting a variable.",
+  RELATED_LIST_FIELDS_LOAD_ERROR_TITLE:
+    "Related-list fields could not be loaded",
+  OBJECT_REQUIRED_TITLE: "Object required",
+  RELATED_LIST_OBJECT_REQUIRED:
+    "Select an object before configuring related-list fields.",
+  SALESFORCE_FILES_LOAD_ERROR_TITLE: "Salesforce Files could not be loaded",
+  IMAGE_SELECTED_TITLE: "Image selected",
+  IMAGE_SELECTED: (fileName) =>
+    `“${fileName}” was added from Salesforce Files.`,
+  IMAGE_SAVE_ERROR_TITLE: "Image could not be saved",
+  IMAGE_READ_ERROR_TITLE: "Unable to read image",
+  PREVIEW_ERROR_TITLE: "Preview could not be generated",
+  PREVIEW_OBJECT_REQUIRED: "Select an object before using a Record ID.",
+  HTML_COPIED_TITLE: "HTML copied",
+  HTML_COPIED: "The generated HTML was copied.",
+  HTML_COPY_ERROR_TITLE: "Unable to copy HTML",
+  RELATED_LIST_NOT_ADDED_TITLE: "Related list not added",
+  RELATED_LIST_LIMIT: "Only one related list block is allowed in this version.",
+  OBJECT_DEPENDENCY_WARNING_TITLE: "Review object-dependent content",
+  OBJECT_DEPENDENCY_VARIABLES: (objectLabel) =>
+    `This template contains object variables that do not belong to ${objectLabel}. Review and update them before previewing or generating the PDF.`,
+  OBJECT_DEPENDENCY_VARIABLES_AND_RELATED_LIST: (objectLabel) =>
+    `This template contains object variables and a related list that do not belong to ${objectLabel}. Review and update them before previewing or generating the PDF.`,
+  OBJECT_DEPENDENCY_RELATED_LIST: (objectLabel) =>
+    `This template contains a related list that does not belong to ${objectLabel}. Review and update it before previewing or generating the PDF.`,
+  SELECTED_OBJECT_FALLBACK: "the selected object",
+  UNTITLED_TEMPLATE: "Untitled template",
+  UNSAVED_MISSING_NAME_AND_OBJECT:
+    "it has no template name and no selected object",
+  UNSAVED_MISSING_NAME: "it has no template name",
+  UNSAVED_MISSING_OBJECT: "it has no selected object",
+  UNSAVED_DISCARD: "Don’t save",
+  UNSAVED_LEAVE: "Leave without saving",
+  UNSAVED_SAVE_TITLE: "Save changes?",
+  UNSAVED_LEAVE_TITLE: "Leave without saving?",
+  TEMPLATE_DELETING: "Deleting template…",
+  TEMPLATE_LOADING: "Loading template…",
+  TEMPLATE_SAVING: "Saving template…",
+  UNEXPECTED_ERROR: "Unexpected error",
+  STORAGE_LIMIT_ERROR: (technicalDetail) =>
+    `Salesforce storage is full. Free up file/data storage or request additional capacity, then try again. Technical detail: ${technicalDetail}`
+});
 
 export default class PDFBuilder extends LightningElement {
   @api recordId;
@@ -237,6 +300,8 @@ export default class PDFBuilder extends LightningElement {
   isTemplateLoading = false;
   isDeleteConfirmOpen = false;
   isUnsavedChangesConfirmOpen = false;
+  isObjectDependencyWarningOpen = false;
+  objectDependencyWarningMessage = "";
   isImageFilePickerOpen = false;
   isImageFileLoading = false;
   salesforceImageFiles = [];
@@ -1871,12 +1936,12 @@ export default class PDFBuilder extends LightningElement {
 
   get templateBusyLabel() {
     if (this.isTemplateDeleting) {
-      return "Deleting template…";
+      return USER_MESSAGES.TEMPLATE_DELETING;
     }
     if (this.isTemplateLoading) {
-      return "Loading template…";
+      return USER_MESSAGES.TEMPLATE_LOADING;
     }
-    return "Saving template…";
+    return USER_MESSAGES.TEMPLATE_SAVING;
   }
 
   get isLoadTemplateDisabled() {
@@ -1922,7 +1987,7 @@ export default class PDFBuilder extends LightningElement {
     } catch (error) {
       this.metadataError = this.getUserFacingErrorMessage(error);
       this.showToast(
-        "PDF Builder could not be loaded",
+        USER_MESSAGES.PDF_BUILDER_LOAD_ERROR_TITLE,
         this.metadataError,
         "error"
       );
@@ -2051,14 +2116,27 @@ export default class PDFBuilder extends LightningElement {
       this.loadFieldsForSelectedObject(),
       this.loadRelatedListsForSelectedObject(),
       this.loadRecordTypeOptionsForSelectedObject()
-    ]).catch((error) => {
-      this.metadataError = "";
-      this.showToast(
-        "Object metadata could not be loaded",
-        this.getUserFacingErrorMessage(error),
-        "error"
-      );
-    });
+    ])
+      .then(() => {
+        if (objectChanged && this.selectedObjectApiName === nextObjectApiName) {
+          const mismatches = this.getObjectDependencyMismatches(
+            nextObjectApiName,
+            this.relatedListOptions
+          );
+
+          if (mismatches.hasRelatedList || mismatches.hasObjectVariables) {
+            this.openObjectDependencyWarning(mismatches, nextObjectApiName);
+          }
+        }
+      })
+      .catch((error) => {
+        this.metadataError = "";
+        this.showToast(
+          USER_MESSAGES.OBJECT_METADATA_LOAD_ERROR_TITLE,
+          this.getUserFacingErrorMessage(error),
+          "error"
+        );
+      });
   }
 
   handleFieldSearchChange(event) {
@@ -2156,7 +2234,7 @@ export default class PDFBuilder extends LightningElement {
   get unsavedChangesTemplateLabel() {
     return (
       String(this.templateName || this.loadedTemplateName || "").trim() ||
-      "Untitled template"
+      USER_MESSAGES.UNTITLED_TEMPLATE
     );
   }
 
@@ -2172,24 +2250,24 @@ export default class PDFBuilder extends LightningElement {
     const isObjectMissing = !String(this.selectedObjectApiName || "").trim();
 
     if (isTemplateNameMissing && isObjectMissing) {
-      return "it has no template name and no selected object";
+      return USER_MESSAGES.UNSAVED_MISSING_NAME_AND_OBJECT;
     }
     if (isTemplateNameMissing) {
-      return "it has no template name";
+      return USER_MESSAGES.UNSAVED_MISSING_NAME;
     }
-    return "it has no selected object";
+    return USER_MESSAGES.UNSAVED_MISSING_OBJECT;
   }
 
   get unsavedDiscardButtonLabel() {
     return this.canSaveUnsavedTemplateChanges
-      ? "Don’t save"
-      : "Leave without saving";
+      ? USER_MESSAGES.UNSAVED_DISCARD
+      : USER_MESSAGES.UNSAVED_LEAVE;
   }
 
   get unsavedChangesDialogTitle() {
     return this.canSaveUnsavedTemplateChanges
-      ? "Save changes?"
-      : "Leave without saving?";
+      ? USER_MESSAGES.UNSAVED_SAVE_TITLE
+      : USER_MESSAGES.UNSAVED_LEAVE_TITLE;
   }
 
   resetTemplateEditor() {
@@ -2239,15 +2317,15 @@ export default class PDFBuilder extends LightningElement {
     if (isTemplateNameMissing || isObjectMissing) {
       let message = "";
       if (isTemplateNameMissing && isObjectMissing) {
-        message = "Enter a template name and select an object.";
+        message = USER_MESSAGES.TEMPLATE_NAME_AND_OBJECT_REQUIRED;
       } else if (isTemplateNameMissing) {
-        message = "Enter a template name before saving the template.";
+        message = USER_MESSAGES.TEMPLATE_NAME_REQUIRED;
       } else {
-        message = "Select an object before saving the template.";
+        message = USER_MESSAGES.TEMPLATE_OBJECT_REQUIRED;
       }
 
       this.templateStatus = "";
-      this.showToast("Template not saved", message, "error");
+      this.showToast(USER_MESSAGES.TEMPLATE_NOT_SAVED_TITLE, message, "error");
       return false;
     }
 
@@ -2268,8 +2346,12 @@ export default class PDFBuilder extends LightningElement {
       ) {
         this.templateStatus = "";
         this.showToast(
-          "Template not saved",
-          `Template is too large to save. JSON: ${contentJson.length}, HTML: ${generatedHtml.length}, max: ${this.longTextLimit}.`,
+          USER_MESSAGES.TEMPLATE_NOT_SAVED_TITLE,
+          USER_MESSAGES.TEMPLATE_TOO_LARGE(
+            contentJson.length,
+            generatedHtml.length,
+            this.longTextLimit
+          ),
           "error"
         );
         return false;
@@ -2294,15 +2376,15 @@ export default class PDFBuilder extends LightningElement {
       this.selectedTemplateId = templateId;
       this.templateName = normalizedTemplateName;
       this.loadedTemplateName = normalizedTemplateName;
-      this.templateStatus = "Template saved";
+      this.templateStatus = USER_MESSAGES.TEMPLATE_SAVED;
       this.markTemplateEditorSaved();
 
       try {
         this.templateOptions = formatTemplateOptions(await getTemplates());
       } catch {
         this.showToast(
-          "Template saved",
-          "The template was saved, but the template list could not be refreshed.",
+          USER_MESSAGES.TEMPLATE_SAVED,
+          USER_MESSAGES.TEMPLATE_LIST_REFRESH_WARNING,
           "warning"
         );
       }
@@ -2310,7 +2392,7 @@ export default class PDFBuilder extends LightningElement {
     } catch (error) {
       const message = this.getUserFacingErrorMessage(error);
       this.templateStatus = "";
-      this.showToast("Template could not be saved", message, "error");
+      this.showToast(USER_MESSAGES.TEMPLATE_SAVE_ERROR_TITLE, message, "error");
       return false;
     } finally {
       this.isTemplateSaving = false;
@@ -2353,11 +2435,11 @@ export default class PDFBuilder extends LightningElement {
       this.selectedTemplateId = null;
       this.resetTemplateEditor();
       this.templateOptions = formatTemplateOptions(await getTemplates());
-      this.templateStatus = "Template deleted";
+      this.templateStatus = USER_MESSAGES.TEMPLATE_DELETED;
     } catch (error) {
       this.templateStatus = "";
       this.showToast(
-        "Template could not be deleted",
+        USER_MESSAGES.TEMPLATE_DELETE_ERROR_TITLE,
         this.getUserFacingErrorMessage(error),
         "error"
       );
@@ -2416,13 +2498,13 @@ export default class PDFBuilder extends LightningElement {
       ) {
         return;
       }
-      this.templateStatus = "Template loaded";
+      this.templateStatus = USER_MESSAGES.TEMPLATE_LOADED;
       this.markTemplateEditorSaved();
     } catch (error) {
       if (requestId === this.templateLoadRequestId) {
         this.templateStatus = "";
         this.showToast(
-          "Template could not be loaded",
+          USER_MESSAGES.TEMPLATE_LOAD_ERROR_TITLE,
           this.getUserFacingErrorMessage(error),
           "error"
         );
@@ -2520,10 +2602,7 @@ export default class PDFBuilder extends LightningElement {
   }
 
   handleBuilderKeyDown(event) {
-    if (
-      this.editingTextBlockId ||
-      this.isInteractiveKeyboardTarget(event.target)
-    ) {
+    if (this.editingTextBlockId || this.isInteractiveKeyboardEvent(event)) {
       return;
     }
 
@@ -2573,6 +2652,12 @@ export default class PDFBuilder extends LightningElement {
     this.deleteSelectedBlock();
   }
 
+  handleBuilderSurfaceKeyDown(event) {
+    if (this.isInteractiveKeyboardEvent(event)) {
+      event.stopPropagation();
+    }
+  }
+
   handlePropertiesPanelKeyDown(event) {
     if (!this.isInteractiveKeyboardTarget(event.target)) {
       return;
@@ -2597,7 +2682,7 @@ export default class PDFBuilder extends LightningElement {
   blurPropertiesPanelControl() {
     const activeElement = this.template.activeElement;
     const builderPanels = this.template.querySelectorAll(
-      ".properties-panel, .sidebar"
+      ".properties-panel, .sidebar, .top-toolbar"
     );
 
     if (
@@ -2634,8 +2719,17 @@ export default class PDFBuilder extends LightningElement {
       tagName === "INPUT" ||
       tagName === "TEXTAREA" ||
       tagName === "SELECT" ||
-      tagName === "BUTTON"
+      tagName === "BUTTON" ||
+      tagName?.startsWith("LIGHTNING-")
     );
+  }
+
+  isInteractiveKeyboardEvent(event) {
+    const eventPath =
+      typeof event?.composedPath === "function" ? event.composedPath() : [];
+    const targets = eventPath.length > 0 ? eventPath : [event?.target];
+
+    return targets.some((target) => this.isInteractiveKeyboardTarget(target));
   }
 
   handleDragStart(event) {
@@ -2748,8 +2842,8 @@ export default class PDFBuilder extends LightningElement {
     if (!["text", "field", "table"].includes(selectedBlockType)) {
       this.showInsertTargetGuidance();
       this.showToast(
-        "Variable not inserted",
-        "Select a text or table block before inserting a variable.",
+        USER_MESSAGES.VARIABLE_NOT_INSERTED_TITLE,
+        USER_MESSAGES.VARIABLE_INSERT_TARGET_REQUIRED,
         "warning"
       );
       return;
@@ -2759,8 +2853,8 @@ export default class PDFBuilder extends LightningElement {
     if (!blockComponent) {
       this.showInsertTargetGuidance();
       this.showToast(
-        "Variable not inserted",
-        "Select a text or table block before inserting a variable.",
+        USER_MESSAGES.VARIABLE_NOT_INSERTED_TITLE,
+        USER_MESSAGES.VARIABLE_INSERT_TARGET_REQUIRED,
         "warning"
       );
       return;
@@ -3445,7 +3539,7 @@ export default class PDFBuilder extends LightningElement {
     ).catch((error) => {
       this.metadataError = "";
       this.showToast(
-        "Related-list fields could not be loaded",
+        USER_MESSAGES.RELATED_LIST_FIELDS_LOAD_ERROR_TITLE,
         this.getUserFacingErrorMessage(error),
         "error"
       );
@@ -4682,7 +4776,7 @@ export default class PDFBuilder extends LightningElement {
       (error) => {
         this.metadataError = "";
         this.showToast(
-          "Related-list fields could not be loaded",
+          USER_MESSAGES.RELATED_LIST_FIELDS_LOAD_ERROR_TITLE,
           this.getUserFacingErrorMessage(error),
           "error"
         );
@@ -4744,8 +4838,8 @@ export default class PDFBuilder extends LightningElement {
       openedSection.open = false;
       this.showObjectSelectionGuidance();
       this.showToast(
-        "Object required",
-        "Select an object before configuring related-list fields.",
+        USER_MESSAGES.OBJECT_REQUIRED_TITLE,
+        USER_MESSAGES.RELATED_LIST_OBJECT_REQUIRED,
         "warning"
       );
       return;
@@ -4856,7 +4950,7 @@ export default class PDFBuilder extends LightningElement {
     } catch (error) {
       this.salesforceImageFiles = [];
       this.showToast(
-        "Salesforce Files could not be loaded",
+        USER_MESSAGES.SALESFORCE_FILES_LOAD_ERROR_TITLE,
         this.getUserFacingErrorMessage(error),
         "error"
       );
@@ -4883,8 +4977,8 @@ export default class PDFBuilder extends LightningElement {
     );
     this.handleCloseSalesforceImagePicker();
     this.showToast(
-      "Image selected",
-      `“${file.fileName}” was added from Salesforce Files.`,
+      USER_MESSAGES.IMAGE_SELECTED_TITLE,
+      USER_MESSAGES.IMAGE_SELECTED(file.fileName),
       "success"
     );
   }
@@ -4956,12 +5050,12 @@ export default class PDFBuilder extends LightningElement {
       } catch (error) {
         const message = this.getUserFacingErrorMessage(error);
         this.templateStatus = "";
-        this.showToast("Image could not be saved", message, "error");
+        this.showToast(USER_MESSAGES.IMAGE_SAVE_ERROR_TITLE, message, "error");
       }
     } catch (error) {
       const message = this.getUserFacingErrorMessage(error);
       this.templateStatus = "";
-      this.showToast("Unable to read image", message, "error");
+      this.showToast(USER_MESSAGES.IMAGE_READ_ERROR_TITLE, message, "error");
     } finally {
       if (input) {
         input.value = "";
@@ -6967,6 +7061,9 @@ export default class PDFBuilder extends LightningElement {
   }
 
   openPreview() {
+    this.stopTextEditing();
+    this.template.activeElement?.blur?.();
+    this.clearSelection();
     this.isPreviewOpen = true;
     if (!this.previewRecordId) {
       this.previewRecordId = this.recordId || this.pageRefRecordId || "";
@@ -6990,8 +7087,8 @@ export default class PDFBuilder extends LightningElement {
 
     if (hasRecordContext && !this.selectedObjectApiName) {
       this.showToast(
-        "Preview could not be generated",
-        "Select an object before using a Record ID.",
+        USER_MESSAGES.PREVIEW_ERROR_TITLE,
+        USER_MESSAGES.PREVIEW_OBJECT_REQUIRED,
         "error"
       );
       return;
@@ -7034,7 +7131,7 @@ export default class PDFBuilder extends LightningElement {
       }
       this.templateStatus = "";
       this.showToast(
-        "Preview could not be generated",
+        USER_MESSAGES.PREVIEW_ERROR_TITLE,
         this.getUserFacingErrorMessage(error),
         "error"
       );
@@ -7439,13 +7536,13 @@ export default class PDFBuilder extends LightningElement {
     try {
       await navigator.clipboard.writeText(html);
       this.showToast(
-        "HTML copied",
-        "The generated HTML was copied.",
+        USER_MESSAGES.HTML_COPIED_TITLE,
+        USER_MESSAGES.HTML_COPIED,
         "success"
       );
     } catch (error) {
       this.showToast(
-        "Unable to copy HTML",
+        USER_MESSAGES.HTML_COPY_ERROR_TITLE,
         this.getUserFacingErrorMessage(error),
         "error"
       );
@@ -7623,8 +7720,8 @@ export default class PDFBuilder extends LightningElement {
     if (type === "relatedList" && this.hasRelatedListBlock()) {
       this.templateStatus = "";
       this.showToast(
-        "Related list not added",
-        "Only one related list block is allowed in this version.",
+        USER_MESSAGES.RELATED_LIST_NOT_ADDED_TITLE,
+        USER_MESSAGES.RELATED_LIST_LIMIT,
         "warning"
       );
       return null;
@@ -7940,7 +8037,10 @@ export default class PDFBuilder extends LightningElement {
     requestedHeight,
     model = this.documentModel
   ) {
-    const minimumRegionHeight = 40;
+    const minimumRegionHeight = this.getFixedRegionMinimumContentHeight(
+      regionId,
+      model
+    );
     const headerHeight =
       model?.showHeader === false
         ? 0
@@ -7964,6 +8064,105 @@ export default class PDFBuilder extends LightningElement {
       maximumRegionHeight,
       Math.max(minimumRegionHeight, this.toNumber(requestedHeight))
     );
+  }
+
+  getFixedRegionMinimumContentHeight(regionId, model = this.documentModel) {
+    const absoluteMinimumHeight = 40;
+    const region = this.getRegionByIdFromModel(regionId, model);
+
+    if (
+      (regionId !== "header" && regionId !== "footer") ||
+      !region ||
+      !(region.blocks || []).length
+    ) {
+      return absoluteMinimumHeight;
+    }
+
+    const renderedMinimumHeight =
+      this.getRenderedFixedRegionMinimumContentHeight(regionId, region);
+
+    if (Number.isFinite(renderedMinimumHeight)) {
+      return Math.max(absoluteMinimumHeight, renderedMinimumHeight);
+    }
+
+    const padding = Math.max(0, this.toNumber(region.styles?.padding));
+    const borderWidth =
+      (region.styles?.borderStyle || "none") === "none"
+        ? 0
+        : Math.max(0, this.toNumber(region.styles?.borderWidth));
+    let flowContentHeight = 0;
+    let contentBottom = 0;
+
+    (region.blocks || []).forEach((block) => {
+      const blockHeight = Math.max(
+        0,
+        this.toOptionalNumber(block.styles?.height) ??
+          this.getEstimatedBlockHeight(block)
+      );
+      const blockY = this.toOptionalCoordinate(block.styles?.y);
+      const blockX = this.toOptionalCoordinate(block.styles?.x);
+
+      if (blockX !== null && blockY !== null) {
+        contentBottom = Math.max(contentBottom, blockY + blockHeight);
+        return;
+      }
+
+      flowContentHeight += blockHeight;
+      contentBottom = Math.max(contentBottom, flowContentHeight);
+    });
+
+    return Math.max(
+      absoluteMinimumHeight,
+      padding + contentBottom + padding + borderWidth * 2
+    );
+  }
+
+  getRenderedFixedRegionMinimumContentHeight(regionId, region) {
+    const regionElement = this.getRegionElementById(regionId);
+    const blockElements = regionElement
+      ? Array.from(
+          regionElement.querySelectorAll(
+            `.block-shell[data-region-id="${regionId}"][data-block-id]`
+          )
+        )
+      : [];
+
+    if (
+      !blockElements.length ||
+      blockElements.length !== region.blocks.length
+    ) {
+      return null;
+    }
+
+    const regionRect = regionElement.getBoundingClientRect();
+    const canvasScale = this.getCanvasVisualScale();
+    let contentBottom = 0;
+
+    for (const blockElement of blockElements) {
+      const blockRect = blockElement.getBoundingClientRect();
+      const blockHeight = blockRect.bottom - blockRect.top;
+
+      if (!Number.isFinite(blockHeight) || blockHeight <= 0) {
+        return null;
+      }
+
+      contentBottom = Math.max(
+        contentBottom,
+        (blockRect.bottom - regionRect.top) / canvasScale
+      );
+    }
+
+    if (!Number.isFinite(contentBottom) || contentBottom <= 0) {
+      return null;
+    }
+
+    const paddingBottom = Math.max(0, this.toNumber(region.styles?.padding));
+    const borderBottom =
+      (region.styles?.borderStyle || "none") === "none"
+        ? 0
+        : Math.max(0, this.toNumber(region.styles?.borderWidth));
+
+    return contentBottom + paddingBottom + borderBottom;
   }
 
   clampFixedRegionWidth(requestedWidth, model = this.documentModel) {
@@ -10068,6 +10267,101 @@ export default class PDFBuilder extends LightningElement {
     return false;
   }
 
+  getObjectDependencyMismatches(objectApiName, relatedListOptions = []) {
+    const mismatches = {
+      hasRelatedList: false,
+      hasObjectVariables: false
+    };
+    const normalizedObjectApiName = String(objectApiName || "").toLowerCase();
+    const normalizedRelatedLists = (relatedListOptions || []).map((option) => ({
+      relationshipName: String(option.relationshipName || "").toLowerCase(),
+      childObjectApiName: String(option.childObjectApiName || "").toLowerCase()
+    }));
+
+    for (const region of this.getAllRegions(this.documentModel)) {
+      for (const block of region.blocks || []) {
+        if (block.type === "relatedList") {
+          const relationshipName = String(
+            block.relatedListRelationshipName || ""
+          ).toLowerCase();
+          const childObjectApiName = String(
+            block.relatedListChildObjectApiName || ""
+          ).toLowerCase();
+          const hasRelatedListConfiguration = Boolean(
+            relationshipName || childObjectApiName
+          );
+          const isCompatibleRelatedList = normalizedRelatedLists.some(
+            (option) =>
+              (!relationshipName ||
+                option.relationshipName === relationshipName) &&
+              (!childObjectApiName ||
+                option.childObjectApiName === childObjectApiName)
+          );
+
+          mismatches.hasRelatedList ||=
+            hasRelatedListConfiguration && !isCompatibleRelatedList;
+        }
+
+        const variableContent = [
+          typeof block.content === "string" ? block.content : "",
+          Array.isArray(block.tableData) ? JSON.stringify(block.tableData) : ""
+        ].join(" ");
+        const objectVariablePattern =
+          /\{!\s*([A-Za-z][A-Za-z0-9_]*)\.[^{}]+\}/gi;
+        let variableMatch = objectVariablePattern.exec(variableContent);
+
+        while (variableMatch) {
+          if (variableMatch[1].toLowerCase() !== normalizedObjectApiName) {
+            mismatches.hasObjectVariables = true;
+            break;
+          }
+          variableMatch = objectVariablePattern.exec(variableContent);
+        }
+
+        if (mismatches.hasRelatedList && mismatches.hasObjectVariables) {
+          return mismatches;
+        }
+      }
+    }
+
+    return mismatches;
+  }
+
+  openObjectDependencyWarning(
+    { hasRelatedList, hasObjectVariables },
+    objectApiName
+  ) {
+    const selectedObjectLabel =
+      this.objectOptions.find((option) => option.apiName === objectApiName)
+        ?.label ||
+      objectApiName ||
+      USER_MESSAGES.SELECTED_OBJECT_FALLBACK;
+    let message =
+      USER_MESSAGES.OBJECT_DEPENDENCY_VARIABLES(selectedObjectLabel);
+
+    if (hasRelatedList && hasObjectVariables) {
+      message =
+        USER_MESSAGES.OBJECT_DEPENDENCY_VARIABLES_AND_RELATED_LIST(
+          selectedObjectLabel
+        );
+    } else if (hasRelatedList) {
+      message =
+        USER_MESSAGES.OBJECT_DEPENDENCY_RELATED_LIST(selectedObjectLabel);
+    }
+
+    this.objectDependencyWarningMessage = message;
+    this.isObjectDependencyWarningOpen = true;
+  }
+
+  handleCloseObjectDependencyWarning() {
+    this.isObjectDependencyWarningOpen = false;
+    this.objectDependencyWarningMessage = "";
+  }
+
+  get objectDependencyWarningTitle() {
+    return USER_MESSAGES.OBJECT_DEPENDENCY_WARNING_TITLE;
+  }
+
   getRichTextHtml(content) {
     const value = content || "";
 
@@ -10151,14 +10445,16 @@ export default class PDFBuilder extends LightningElement {
       return error.body.map((item) => item.message).join(", ");
     }
 
-    return error?.body?.message || error?.message || "Unexpected error";
+    return (
+      error?.body?.message || error?.message || USER_MESSAGES.UNEXPECTED_ERROR
+    );
   }
 
   getUserFacingErrorMessage(error) {
     const message = this.getErrorMessage(error);
 
     if (/STORAGE_LIMIT_EXCEEDED|storage limit exceeded/i.test(message)) {
-      return `Salesforce storage is full. Free up file/data storage or request additional capacity, then try again. Technical detail: ${message}`;
+      return USER_MESSAGES.STORAGE_LIMIT_ERROR(message);
     }
 
     return message;

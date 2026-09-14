@@ -746,12 +746,28 @@ public with sharing class PDFBuilderController {
       throw new AuraHandledException('Image data is required.');
     }
 
+    String normalizedContentType = normalizeImageContentType(contentType);
+    String normalizedBase64Data = base64Data.trim();
+    if (normalizedBase64Data.length() > SETTINGS.maxClientImageBase64Length) {
+      throw new AuraHandledException(
+        'The image exceeds the maximum supported upload size.'
+      );
+    }
+
+    Blob imageData;
+    try {
+      imageData = EncodingUtil.base64Decode(normalizedBase64Data);
+    } catch (Exception error) {
+      throw new AuraHandledException('Image data is not valid Base64.');
+    }
+    validateImageSignature(imageData, normalizedContentType);
+
     String normalizedFileName = sanitizeFileName(
       String.isBlank(fileName) ? 'template-image' : fileName
     );
     normalizedFileName = ensureImageFileExtension(
       normalizedFileName,
-      contentType
+      normalizedContentType
     );
 
     ContentVersion imageVersion;
@@ -760,7 +776,7 @@ public with sharing class PDFBuilderController {
       imageVersion = new ContentVersion(
         Title = normalizedFileName,
         PathOnClient = normalizedFileName,
-        VersionData = EncodingUtil.base64Decode(base64Data)
+        VersionData = imageData
       );
       Database.SaveResult saveResult = PDFBuilderFileService.insertImage(
         imageVersion
@@ -1224,9 +1240,13 @@ public with sharing class PDFBuilderController {
     );
 
     PreviewFlowResult result = new PreviewFlowResult(
-      sanitizeLwcRuntimeArtifacts(browserHeaderHtml),
-      sanitizeLwcRuntimeArtifacts(bodyHtml),
-      sanitizeLwcRuntimeArtifacts(browserFooterHtml)
+      PDFBuilderHtmlSanitizer.sanitize(
+        sanitizeLwcRuntimeArtifacts(browserHeaderHtml)
+      ),
+      PDFBuilderHtmlSanitizer.sanitize(sanitizeLwcRuntimeArtifacts(bodyHtml)),
+      PDFBuilderHtmlSanitizer.sanitize(
+        sanitizeLwcRuntimeArtifacts(browserFooterHtml)
+      )
     );
     resetPdfPageLayoutContext();
     return result;
@@ -5203,12 +5223,21 @@ public with sharing class PDFBuilderController {
       ' WHERE ' +
       parentFieldName +
       ' = :recordId' +
-      ' ORDER BY Id ASC';
+      ' ORDER BY Id ASC' +
+      ' LIMIT :rowQueryLimit';
+    Integer rowQueryLimit = SETTINGS.relatedListQueryLimit + 1;
     List<SObject> rows = Database.queryWithBinds(
       query,
-      new Map<String, Object>{ 'recordId' => recordId },
+      new Map<String, Object>{
+        'recordId' => recordId,
+        'rowQueryLimit' => rowQueryLimit
+      },
       AccessLevel.USER_MODE
     );
+    Boolean rowsTruncated = rows.size() > SETTINGS.relatedListQueryLimit;
+    if (rowsTruncated) {
+      rows.remove(rows.size() - 1);
+    }
 
     String normalizedOddColor = normalizePdfColorLiteral(oddColor, '#ffffff');
     String normalizedEvenColor = normalizePdfColorLiteral(evenColor, '#ffffff');
@@ -5362,6 +5391,23 @@ public with sharing class PDFBuilderController {
         '" style="' +
         emptyStyle +
         '">No records</td></tr>';
+    }
+
+    if (rowsTruncated) {
+      String truncationStyle =
+        getRelatedListCellBorderStyle(borderMode, false, true) +
+        cellPaddingStyle +
+        'font-size:' +
+        renderedFontSize +
+        ';color:#706e6b;text-align:left;';
+      tableHtml +=
+        '<tr style="page-break-inside:avoid;"><td colspan="' +
+        requestedColumns.size() +
+        '" style="' +
+        truncationStyle +
+        '">Showing the first ' +
+        SETTINGS.relatedListQueryLimit +
+        ' records.</td></tr>';
     }
 
     tableHtml += '</tbody></table>';
@@ -6193,6 +6239,7 @@ public with sharing class PDFBuilderController {
       SELECT Id
       FROM ContentVersion
       WHERE Title = :value OR PathOnClient = :value
+      WITH USER_MODE
       ORDER BY CreatedDate DESC
       LIMIT 1
     ];
@@ -6256,7 +6303,73 @@ public with sharing class PDFBuilderController {
       return '.gif';
     }
 
+    if (contentType == 'image/webp') {
+      return '.webp';
+    }
+
     return '.png';
+  }
+
+  private static String normalizeImageContentType(String contentType) {
+    String normalizedContentType = String.isBlank(contentType)
+      ? ''
+      : contentType.trim().toLowerCase();
+    Map<String, String> configuredTypeByMime = new Map<String, String>{
+      'image/png' => 'PNG',
+      'image/jpeg' => 'JPEG',
+      'image/jpg' => 'JPG',
+      'image/gif' => 'GIF',
+      'image/webp' => 'WEBP'
+    };
+    String configuredType = configuredTypeByMime.get(normalizedContentType);
+    Set<String> supportedTypes = new Set<String>(SETTINGS.supportedImageTypes);
+    Boolean jpegSupported =
+      configuredType == 'JPEG' && supportedTypes.contains('JPG');
+    Boolean jpgSupported =
+      configuredType == 'JPG' && supportedTypes.contains('JPEG');
+
+    if (
+      configuredType == null ||
+      (!supportedTypes.contains(configuredType) &&
+      !jpegSupported &&
+      !jpgSupported)
+    ) {
+      throw new AuraHandledException(
+        'Unsupported image type. Use PNG, JPEG, GIF, or WEBP.'
+      );
+    }
+    return normalizedContentType == 'image/jpg'
+      ? 'image/jpeg'
+      : normalizedContentType;
+  }
+
+  private static void validateImageSignature(
+    Blob imageData,
+    String contentType
+  ) {
+    String imageHex = EncodingUtil.convertToHex(imageData).toUpperCase();
+    Boolean validSignature;
+
+    if (contentType == 'image/png') {
+      validSignature = imageHex.startsWith('89504E470D0A1A0A');
+    } else if (contentType == 'image/jpeg') {
+      validSignature = imageHex.startsWith('FFD8FF');
+    } else if (contentType == 'image/gif') {
+      validSignature =
+        imageHex.startsWith('474946383761') ||
+        imageHex.startsWith('474946383961');
+    } else {
+      validSignature =
+        imageHex.startsWith('52494646') &&
+        imageHex.length() >= 24 &&
+        imageHex.substring(16, 24) == '57454250';
+    }
+
+    if (!validSignature) {
+      throw new AuraHandledException(
+        'Image data does not match the selected image type.'
+      );
+    }
   }
 
   private static String ensureImageFileExtension(

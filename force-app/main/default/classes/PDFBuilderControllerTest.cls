@@ -135,6 +135,11 @@ private class PDFBuilderControllerTest {
       'Client image limit must match metadata.'
     );
     Assert.areEqual(
+      200,
+      settings.relatedListQueryLimit,
+      'Related list query limit must match metadata.'
+    );
+    Assert.areEqual(
       0.96,
       settings.pdfFontScale,
       'PDF font compensation must remain compatible.'
@@ -634,7 +639,9 @@ private class PDFBuilderControllerTest {
     Test.startTest();
     String imageUrl = PDFBuilderController.saveTemplateImage(
       'builder logo',
-      EncodingUtil.base64Encode(Blob.valueOf('pdf-builder-image')),
+      EncodingUtil.base64Encode(
+        EncodingUtil.convertFromHex('89504E470D0A1A0A00000000')
+      ),
       'image/png'
     );
     List<PDFBuilderController.SalesforceImageFileOption> files = PDFBuilderController.getSalesforceImageFiles(
@@ -910,6 +917,41 @@ private class PDFBuilderControllerTest {
       Assert.isNotNull(
         expected,
         'Image persistence must expose a handled error.'
+      );
+    }
+  }
+
+  /**
+   * @description Verifies image persistence rejects unsupported MIME types and
+   * payloads whose binary signature does not match the declared type.
+   */
+  @IsTest
+  static void rejectsInvalidTemplateImages() {
+    try {
+      PDFBuilderController.saveTemplateImage(
+        'image.svg',
+        EncodingUtil.base64Encode(Blob.valueOf('<svg></svg>')),
+        'image/svg+xml'
+      );
+      Assert.fail('Unsupported image MIME types must be rejected.');
+    } catch (AuraHandledException expected) {
+      Assert.isNotNull(
+        expected,
+        'Unsupported MIME must expose a handled error.'
+      );
+    }
+
+    try {
+      PDFBuilderController.saveTemplateImage(
+        'image.png',
+        EncodingUtil.base64Encode(Blob.valueOf('not-a-png')),
+        'image/png'
+      );
+      Assert.fail('A mismatched image signature must be rejected.');
+    } catch (AuraHandledException expected) {
+      Assert.isNotNull(
+        expected,
+        'A mismatched signature must expose a handled error.'
       );
     }
   }
