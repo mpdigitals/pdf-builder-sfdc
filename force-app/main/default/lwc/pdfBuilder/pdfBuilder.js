@@ -2682,7 +2682,7 @@ export default class PDFBuilder extends LightningElement {
   blurPropertiesPanelControl() {
     const activeElement = this.template.activeElement;
     const builderPanels = this.template.querySelectorAll(
-      ".properties-panel, .sidebar"
+      ".properties-panel, .sidebar, .top-toolbar"
     );
 
     if (

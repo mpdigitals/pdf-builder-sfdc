@@ -1497,6 +1497,54 @@ describe("c-pdf-builder", () => {
     ).toBeNull();
   });
 
+  it("releases the template selector focus when a loaded block is selected", async () => {
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Opportunity service quotation",
+      objectApiName: "Opportunity",
+      contentJson: JSON.stringify(createKeyboardShortcutTemplate()),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+    templateSelect.focus();
+
+    element.shadowRoot
+      .querySelector('[data-block-id="keyboard-test-line"] c-pdf-builder-block')
+      .dispatchEvent(
+        new CustomEvent("selectblock", {
+          detail: { blockId: "keyboard-test-line", regionId: "body-1" },
+          bubbles: true,
+          composed: true
+        })
+      );
+    await flushPromises();
+
+    expect(element.shadowRoot.activeElement).not.toBe(templateSelect);
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Delete", cancelable: true })
+    );
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(
+        '[data-block-id="keyboard-test-line"] c-pdf-builder-block'
+      )
+    ).toBeNull();
+  });
+
   it("keeps an image container fitted to its aspect ratio and padding while resizing", async () => {
     const regionStyles = {
       background: "#ffffff",

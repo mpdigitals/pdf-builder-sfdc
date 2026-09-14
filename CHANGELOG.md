@@ -4,6 +4,33 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.0.17-beta.4] - 2026-09-15
+
+### Added
+
+- Added light and dark Builder workspace themes without changing the authored document palette.
+- Added contextual guidance when a merge field or related list requires a selected object or insertion target.
+- Added a review dialog when changing objects leaves merge fields or related-list configuration associated with the previous object.
+
+### Changed
+
+- Related-list values now use field-aware alignment: numeric, currency and percentage values align right; dates and booleans align centrally; text remains left-aligned.
+- Header and footer resizing now stops at the bounds required by their positioned content for both pointer and numeric changes.
+- User-facing Builder messages are centralized for consistent dialogs, status messages and validation feedback.
+- CI now runs on Node.js 22, and the source deployment manifest includes the complete application metadata required by a clean org.
+
+### Fixed
+
+- Restored every saved related-list column when legacy templates use different API-name casing.
+- Prevented keyboard deletion shortcuts from acting on selected elements while an input, search, preview ID or editable table cell owns focus.
+- Released toolbar and property-panel focus when an element is selected so `Delete` and `Backspace` apply to the canvas selection as intended.
+- Prevented header and footer content from being clipped when their regions are resized.
+- Improved related-list preview and server-rendered PDF pagination so table rows remain visible and positioned with the following body content.
+
+### Security
+
+- Updated vulnerable transitive development dependencies and retained sanitization at template persistence, preview and final PDF boundaries.
+
 ## [1.0.16-beta.5] - 2026-09-03
 
 ### Added
@@ -127,7 +154,8 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.5...HEAD
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.17-beta.4...HEAD
+[1.0.17-beta.4]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.5...v1.0.17-beta.4
 [1.0.16-beta.5]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.4...v1.0.16-beta.5
 [1.0.16-beta.4]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.3...v1.0.16-beta.4
 [1.0.16-beta.3]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.2...v1.0.16-beta.3
