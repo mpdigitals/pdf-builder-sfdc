@@ -1566,4 +1566,156 @@ describe("c-pdf-builder", () => {
       expect(computedStyle.flexGrow).toBe("1");
     });
   });
+
+  it("prevents header and footer resizing from crossing their content", async () => {
+    const regionStyles = {
+      background: "#ffffff",
+      padding: 10,
+      borderWidth: 2,
+      borderStyle: "solid",
+      borderColor: "#c9c9c9",
+      borderRadius: 0
+    };
+    const content = {
+      pagePadding: 32,
+      globalElementPadding: 8,
+      showHeader: true,
+      showBody: true,
+      showFooter: true,
+      repeatHeaderOnEachPage: true,
+      repeatFooterOnEachPage: true,
+      manualPageCount: 0,
+      manualPages: [],
+      header: {
+        id: "header",
+        label: "Header",
+        styles: { ...regionStyles, height: 250 },
+        blocks: [
+          {
+            id: "header-image",
+            type: "image",
+            imageSrc: "",
+            imageAlt: "Header image",
+            styles: { width: 100, height: 80, x: 0, y: 120 }
+          }
+        ]
+      },
+      body: {
+        layout: "one",
+        sections: [
+          {
+            id: "body-1",
+            label: "Body",
+            styles: {
+              background: "#ffffff",
+              padding: 8,
+              borderWidth: 0,
+              borderStyle: "none",
+              borderColor: "#c9c9c9",
+              borderRadius: 0
+            },
+            blocks: []
+          }
+        ]
+      },
+      footer: {
+        id: "footer",
+        label: "Footer",
+        styles: { ...regionStyles, padding: 8, height: 160 },
+        blocks: [
+          {
+            id: "footer-line",
+            type: "verticalLine",
+            content: "",
+            styles: { width: 12, height: 70, x: 0, y: 60 }
+          }
+        ]
+      }
+    };
+    getTemplate.mockResolvedValueOnce({
+      id: "a01000000000002AAA",
+      name: "Protected fixed regions",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(content),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    let header = element.shadowRoot.querySelector('[data-region-id="header"]');
+    header.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await flushPromises();
+
+    header = element.shadowRoot.querySelector('[data-region-id="header"]');
+    const headerBlock = header.querySelector(
+      '.block-shell[data-block-id="header-image"]'
+    );
+    header.getBoundingClientRect = jest.fn(() => ({
+      top: 100,
+      bottom: 350,
+      left: 0,
+      right: 700,
+      width: 700,
+      height: 250
+    }));
+    headerBlock.getBoundingClientRect = jest.fn(() => ({
+      top: 120,
+      bottom: 300,
+      left: 10,
+      right: 110,
+      width: 100,
+      height: 180
+    }));
+
+    let heightInput = element.shadowRoot.querySelector(
+      'input[data-style="height"]'
+    );
+    heightInput.value = "40";
+    heightInput.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot
+        .querySelector('[data-region-id="header"]')
+        .getAttribute("style")
+    ).toContain("--region-height:212px");
+
+    let footer = element.shadowRoot.querySelector('[data-region-id="footer"]');
+    footer.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await flushPromises();
+
+    footer = element.shadowRoot.querySelector('[data-region-id="footer"]');
+    const footerResizeHandle = footer.querySelector(".region-resize-handle");
+    footerResizeHandle.dispatchEvent(
+      new MouseEvent("mousedown", {
+        bubbles: true,
+        clientY: 100
+      })
+    );
+    window.dispatchEvent(new MouseEvent("mousemove", { clientY: 300 }));
+    window.dispatchEvent(new MouseEvent("mouseup", { clientY: 300 }));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot
+        .querySelector('[data-region-id="footer"]')
+        .getAttribute("style")
+    ).toContain("--region-height:150px");
+
+    heightInput = element.shadowRoot.querySelector(
+      'input[data-style="height"]'
+    );
+    expect(heightInput.value).toBe("150");
+  });
 });

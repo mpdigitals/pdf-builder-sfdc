@@ -4,9 +4,9 @@
       "path": "force-app",
       "default": true,
       "package": "PDF Builder",
-      "versionName": "Version 1.0.17 Beta 2",
+      "versionName": "Version 1.0.17 Beta 3",
       "versionNumber": "1.0.17.NEXT",
-      "versionDescription": "Beta 2: Harden PDF rendering and related-list handling, protect active controls, and refine dark mode",
+      "versionDescription": "Beta 3: Protect header and footer content during manual and numeric resizing",
       "apexTestAccess": {
         "permissionSets": ["PDFBuilderUser"]
       }

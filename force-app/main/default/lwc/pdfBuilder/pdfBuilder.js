@@ -7955,7 +7955,10 @@ export default class PDFBuilder extends LightningElement {
     requestedHeight,
     model = this.documentModel
   ) {
-    const minimumRegionHeight = 40;
+    const minimumRegionHeight = this.getFixedRegionMinimumContentHeight(
+      regionId,
+      model
+    );
     const headerHeight =
       model?.showHeader === false
         ? 0
@@ -7979,6 +7982,105 @@ export default class PDFBuilder extends LightningElement {
       maximumRegionHeight,
       Math.max(minimumRegionHeight, this.toNumber(requestedHeight))
     );
+  }
+
+  getFixedRegionMinimumContentHeight(regionId, model = this.documentModel) {
+    const absoluteMinimumHeight = 40;
+    const region = this.getRegionByIdFromModel(regionId, model);
+
+    if (
+      (regionId !== "header" && regionId !== "footer") ||
+      !region ||
+      !(region.blocks || []).length
+    ) {
+      return absoluteMinimumHeight;
+    }
+
+    const renderedMinimumHeight =
+      this.getRenderedFixedRegionMinimumContentHeight(regionId, region);
+
+    if (Number.isFinite(renderedMinimumHeight)) {
+      return Math.max(absoluteMinimumHeight, renderedMinimumHeight);
+    }
+
+    const padding = Math.max(0, this.toNumber(region.styles?.padding));
+    const borderWidth =
+      (region.styles?.borderStyle || "none") === "none"
+        ? 0
+        : Math.max(0, this.toNumber(region.styles?.borderWidth));
+    let flowContentHeight = 0;
+    let contentBottom = 0;
+
+    (region.blocks || []).forEach((block) => {
+      const blockHeight = Math.max(
+        0,
+        this.toOptionalNumber(block.styles?.height) ??
+          this.getEstimatedBlockHeight(block)
+      );
+      const blockY = this.toOptionalCoordinate(block.styles?.y);
+      const blockX = this.toOptionalCoordinate(block.styles?.x);
+
+      if (blockX !== null && blockY !== null) {
+        contentBottom = Math.max(contentBottom, blockY + blockHeight);
+        return;
+      }
+
+      flowContentHeight += blockHeight;
+      contentBottom = Math.max(contentBottom, flowContentHeight);
+    });
+
+    return Math.max(
+      absoluteMinimumHeight,
+      padding + contentBottom + padding + borderWidth * 2
+    );
+  }
+
+  getRenderedFixedRegionMinimumContentHeight(regionId, region) {
+    const regionElement = this.getRegionElementById(regionId);
+    const blockElements = regionElement
+      ? Array.from(
+          regionElement.querySelectorAll(
+            `.block-shell[data-region-id="${regionId}"][data-block-id]`
+          )
+        )
+      : [];
+
+    if (
+      !blockElements.length ||
+      blockElements.length !== region.blocks.length
+    ) {
+      return null;
+    }
+
+    const regionRect = regionElement.getBoundingClientRect();
+    const canvasScale = this.getCanvasVisualScale();
+    let contentBottom = 0;
+
+    for (const blockElement of blockElements) {
+      const blockRect = blockElement.getBoundingClientRect();
+      const blockHeight = blockRect.bottom - blockRect.top;
+
+      if (!Number.isFinite(blockHeight) || blockHeight <= 0) {
+        return null;
+      }
+
+      contentBottom = Math.max(
+        contentBottom,
+        (blockRect.bottom - regionRect.top) / canvasScale
+      );
+    }
+
+    if (!Number.isFinite(contentBottom) || contentBottom <= 0) {
+      return null;
+    }
+
+    const paddingBottom = Math.max(0, this.toNumber(region.styles?.padding));
+    const borderBottom =
+      (region.styles?.borderStyle || "none") === "none"
+        ? 0
+        : Math.max(0, this.toNumber(region.styles?.borderWidth));
+
+    return contentBottom + paddingBottom + borderBottom;
   }
 
   clampFixedRegionWidth(requestedWidth, model = this.documentModel) {
