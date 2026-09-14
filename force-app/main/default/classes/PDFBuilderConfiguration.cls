@@ -46,6 +46,8 @@ public inherited sharing class PDFBuilderConfiguration {
     @AuraEnabled
     public Integer imageQueryLimit;
     @AuraEnabled
+    public Integer relatedListQueryLimit;
+    @AuraEnabled
     public Integer maxClientImageBase64Length;
     @AuraEnabled
     public Integer pdfContentWidth;
@@ -146,6 +148,11 @@ public inherited sharing class PDFBuilderConfiguration {
       metadataRecord?.ImageQueryLimit__c,
       'Image Query Limit',
       200
+    );
+    settings.relatedListQueryLimit = requiredBoundedInteger(
+      metadataRecord?.RelatedListQueryLimit__c,
+      'Related List Query Limit',
+      2000
     );
     settings.maxClientImageBase64Length = requiredPositiveInteger(
       metadataRecord?.MaxClientImageBase64__c,

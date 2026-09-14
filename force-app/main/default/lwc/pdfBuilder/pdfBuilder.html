@@ -1,5 +1,9 @@
 <template>
-  <div class={builderClass} style={builderStyle}>
+  <div
+    class={builderClass}
+    style={builderStyle}
+    onkeydown={handleBuilderSurfaceKeyDown}
+  >
     <template lwc:if={isConfigurationReady}>
       <div class="top-toolbar">
         <div class="toolbar-actions">
@@ -1968,6 +1972,7 @@
               <div class="property-group">
                 <label>Columns</label>
                 <lightning-dual-listbox
+                  class="related-list-columns-picker"
                   name="relatedListColumns"
                   source-label="Available fields"
                   selected-label="Selected fields"

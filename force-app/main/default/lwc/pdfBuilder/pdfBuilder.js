@@ -2520,10 +2520,7 @@ export default class PDFBuilder extends LightningElement {
   }
 
   handleBuilderKeyDown(event) {
-    if (
-      this.editingTextBlockId ||
-      this.isInteractiveKeyboardTarget(event.target)
-    ) {
+    if (this.editingTextBlockId || this.isInteractiveKeyboardEvent(event)) {
       return;
     }
 
@@ -2571,6 +2568,12 @@ export default class PDFBuilder extends LightningElement {
 
     event.preventDefault();
     this.deleteSelectedBlock();
+  }
+
+  handleBuilderSurfaceKeyDown(event) {
+    if (this.isInteractiveKeyboardEvent(event)) {
+      event.stopPropagation();
+    }
   }
 
   handlePropertiesPanelKeyDown(event) {
@@ -2634,8 +2637,17 @@ export default class PDFBuilder extends LightningElement {
       tagName === "INPUT" ||
       tagName === "TEXTAREA" ||
       tagName === "SELECT" ||
-      tagName === "BUTTON"
+      tagName === "BUTTON" ||
+      tagName?.startsWith("LIGHTNING-")
     );
+  }
+
+  isInteractiveKeyboardEvent(event) {
+    const eventPath =
+      typeof event?.composedPath === "function" ? event.composedPath() : [];
+    const targets = eventPath.length > 0 ? eventPath : [event?.target];
+
+    return targets.some((target) => this.isInteractiveKeyboardTarget(target));
   }
 
   handleDragStart(event) {
@@ -6967,6 +6979,9 @@ export default class PDFBuilder extends LightningElement {
   }
 
   openPreview() {
+    this.stopTextEditing();
+    this.template.activeElement?.blur?.();
+    this.clearSelection();
     this.isPreviewOpen = true;
     if (!this.previewRecordId) {
       this.previewRecordId = this.recordId || this.pageRefRecordId || "";

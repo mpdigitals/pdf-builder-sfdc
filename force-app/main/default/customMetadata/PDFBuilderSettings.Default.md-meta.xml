@@ -60,6 +60,9 @@ User</value></values>
     <values><field>ImageQueryLimit__c</field><value
       xsi:type="xsd:double"
     >60</value></values>
+    <values><field>RelatedListQueryLimit__c</field><value
+      xsi:type="xsd:double"
+    >200</value></values>
     <values><field>MaxClientImageBase64__c</field><value
       xsi:type="xsd:double"
     >1800000</value></values>

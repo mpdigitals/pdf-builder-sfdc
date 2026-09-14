@@ -99,6 +99,67 @@ const createDeferred = () => {
   return { promise, resolve, reject };
 };
 
+const createKeyboardShortcutTemplate = () => {
+  const regionStyles = {
+    background: "#ffffff",
+    padding: 8,
+    borderWidth: 0,
+    borderStyle: "none",
+    borderColor: "#c9c9c9",
+    borderRadius: 0
+  };
+
+  return {
+    pagePadding: 32,
+    globalElementPadding: 8,
+    showHeader: true,
+    showBody: true,
+    showFooter: true,
+    repeatHeaderOnEachPage: true,
+    repeatFooterOnEachPage: true,
+    manualPageCount: 0,
+    manualPages: [],
+    header: {
+      id: "header",
+      label: "Header",
+      styles: { ...regionStyles, height: 110 },
+      blocks: []
+    },
+    body: {
+      layout: "one",
+      sections: [
+        {
+          id: "body-1",
+          label: "Body",
+          styles: regionStyles,
+          blocks: [
+            {
+              id: "keyboard-test-line",
+              type: "divider",
+              content: "",
+              styles: {
+                x: 120,
+                y: 160,
+                lineLength: 300,
+                height: 1,
+                lineThickness: 1,
+                lineStyle: "solid",
+                lineColor: "#181818"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    footer: {
+      id: "footer",
+      label: "Footer",
+      styles: { ...regionStyles, height: 80 },
+      blocks: []
+    }
+  };
+};
+
 describe("c-pdf-builder", () => {
   beforeEach(() => {
     getConfiguration.mockResolvedValue({
@@ -1123,6 +1184,126 @@ describe("c-pdf-builder", () => {
       sourceVertical.block.styles.x
     );
     expect(verticalCopy.block.styles.y).toBe(sourceVertical.block.styles.y);
+  });
+
+  it("does not delete the selected block while editing the preview Record ID", async () => {
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Quote proposal",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(createKeyboardShortcutTemplate()),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    const selectedBlock = element.shadowRoot.querySelector(
+      '[data-block-id="keyboard-test-line"] c-pdf-builder-block'
+    );
+    selectedBlock.dispatchEvent(
+      new CustomEvent("selectblock", {
+        detail: { blockId: "keyboard-test-line", regionId: "body-1" },
+        bubbles: true,
+        composed: true
+      })
+    );
+    await flushPromises();
+
+    Array.from(element.shadowRoot.querySelectorAll("button"))
+      .find((button) => button.textContent.trim() === "Preview")
+      .click();
+    await flushPromises();
+
+    expect(element.shadowRoot.querySelector(".delete-button").disabled).toBe(
+      true
+    );
+    const recordIdInput =
+      element.shadowRoot.querySelector(".preview-record-id");
+    const windowKeyDownHandler = jest.fn();
+    window.addEventListener("keydown", windowKeyDownHandler);
+    recordIdInput.value = "0Q0000000000000001";
+    recordIdInput.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Backspace",
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      })
+    );
+    recordIdInput.value = "";
+    recordIdInput.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Delete",
+        bubbles: true,
+        composed: true,
+        cancelable: true
+      })
+    );
+    window.removeEventListener("keydown", windowKeyDownHandler);
+    await flushPromises();
+
+    expect(windowKeyDownHandler).not.toHaveBeenCalled();
+    expect(
+      element.shadowRoot.querySelector(
+        '[data-block-id="keyboard-test-line"] c-pdf-builder-block'
+      )
+    ).not.toBeNull();
+  });
+
+  it("still deletes the selected block with the canvas keyboard shortcut", async () => {
+    getTemplate.mockResolvedValue({
+      id: "a01000000000002AAA",
+      name: "Quote proposal",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify(createKeyboardShortcutTemplate()),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    element.shadowRoot
+      .querySelector('[data-block-id="keyboard-test-line"] c-pdf-builder-block')
+      .dispatchEvent(
+        new CustomEvent("selectblock", {
+          detail: { blockId: "keyboard-test-line", regionId: "body-1" },
+          bubbles: true,
+          composed: true
+        })
+      );
+    await flushPromises();
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Delete", cancelable: true })
+    );
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(
+        '[data-block-id="keyboard-test-line"] c-pdf-builder-block'
+      )
+    ).toBeNull();
   });
 
   it("keeps an image container fitted to its aspect ratio and padding while resizing", async () => {

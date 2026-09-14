@@ -315,6 +315,86 @@ private class PDFBuilderPdfRendererTest {
   }
 
   /**
+   * @description Verifies browser preview header and footer fragments cross
+   * the same final HTML sanitization boundary as the body.
+   */
+  @IsTest
+  static void sanitizesPreviewFlowHeaderAndFooter() {
+    Account account = [
+      SELECT Id
+      FROM Account
+      WHERE Name = 'Renderer Account'
+      LIMIT 1
+    ];
+    String unsafeShell =
+      '<header onclick="alert(1)"><strong>{!Account.Name}</strong></header>' +
+      '<main><p>Body</p></main>' +
+      '<footer><img src="x" onerror="alert(2)" />' +
+      '<script>alert(3)</script>Footer</footer>';
+
+    Test.startTest();
+    PDFBuilderController.PreviewFlowResult result = PDFBuilderController.renderPdfFlowForRecordPreview(
+      'Account',
+      account.Id,
+      JSON.serialize(createDynamicDocumentModel()),
+      unsafeShell
+    );
+    Test.stopTest();
+
+    Assert.isFalse(
+      result.headerHtml.containsIgnoreCase('onclick='),
+      'Header event handlers must be removed at the final preview boundary.'
+    );
+    Assert.isFalse(
+      result.footerHtml.containsIgnoreCase('onerror='),
+      'Footer event handlers must be removed at the final preview boundary.'
+    );
+    Assert.isFalse(
+      result.footerHtml.containsIgnoreCase('<script'),
+      'Footer scripts must be removed at the final preview boundary.'
+    );
+  }
+
+  /**
+   * @description Verifies large related lists are capped explicitly and the
+   * generated preview discloses that rows were truncated.
+   */
+  @IsTest
+  static void capsLargeRelatedListPreview() {
+    Account account = [
+      SELECT Id
+      FROM Account
+      WHERE Name = 'Renderer Account'
+      LIMIT 1
+    ];
+    List<Contact> additionalContacts = new List<Contact>();
+    for (Integer index = 0; index < 199; index += 1) {
+      additionalContacts.add(
+        new Contact(
+          LastName = 'Related row ' + index,
+          Email = 'related-' + index + '@example.com',
+          AccountId = account.Id
+        )
+      );
+    }
+    insert additionalContacts;
+
+    Test.startTest();
+    PDFBuilderController.PreviewFlowResult result = PDFBuilderController.renderPdfFlowForRecordPreview(
+      'Account',
+      account.Id,
+      JSON.serialize(createDynamicDocumentModel()),
+      createPreviewShell()
+    );
+    Test.stopTest();
+
+    Assert.isTrue(
+      result.bodyHtml.contains('Showing the first 200 records.'),
+      'A capped related list must disclose the configured row limit.'
+    );
+  }
+
+  /**
    * @description Verifies current-schema tables merge global variables during
    * record preview without requiring a related-list rendering context.
    */
