@@ -7,7 +7,7 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 ### Changed
 
 - Aligned local tooling with Node.js 22.13+, Salesforce API 67.0 and the next `1.0.18` development line without changing the published `1.0.17` release.
-- CI now verifies repository formatting, reports meaningful LWC coverage and always uploads the current security SARIF result so resolved alerts can close.
+- CI now verifies repository formatting, reports meaningful LWC coverage and uploads a valid CodeQL v4 SARIF result even when the security scan is clean so resolved alerts can close.
 - Strengthened Apex permission coverage with a real least-privilege Salesforce user that reads, creates and deletes templates through the public controller facade.
 - Refreshed repository metadata and applied the established formatter consistently across supported source files while leaving Salesforce XML formatting stable.
 
