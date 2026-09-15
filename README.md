@@ -77,7 +77,7 @@ use, then install the same package in production when ready.
 | Target                          | Installation link                                                                                                               |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | Sandbox                         | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG)                        |
-| Developer Edition or production | [Install in Developer Edition or production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG) |
+| Developer Edition or Production | [Install in Developer Edition or Production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
