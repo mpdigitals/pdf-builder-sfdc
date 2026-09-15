@@ -4,7 +4,7 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
-## [1.0.17-beta.4] - 2026-09-15
+## [1.0.17] - 2026-09-15
 
 ### Added
 
@@ -154,8 +154,8 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.17-beta.4...HEAD
-[1.0.17-beta.4]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.5...v1.0.17-beta.4
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.17...HEAD
+[1.0.17]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.5...v1.0.17
 [1.0.16-beta.5]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.4...v1.0.16-beta.5
 [1.0.16-beta.4]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.3...v1.0.16-beta.4
 [1.0.16-beta.3]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.2...v1.0.16-beta.3

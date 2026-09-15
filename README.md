@@ -1,4 +1,4 @@
-# PDF Builder for Salesforce (Beta)
+# PDF Builder for Salesforce
 
 <p align="center">
   <img src="docs/images/pdf-builder-header-compact.png" alt="PDF Builder for Salesforce" width="850">
@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://app.codacy.com/gh/mpdigitals/pdf-builder-sfdc/dashboard"><img src="https://app.codacy.com/project/badge/Grade/30cd2cc87bc44f6cbc299ffb0e519094" alt="Codacy quality grade"></a>
-  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/badge/pre--release-v1.0.17--beta.4-orange" alt="Current pre-release"></a>
+  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/badge/release-v1.0.17-2da44e" alt="Current release"></a>
 </p>
 
 <p align="center">
@@ -72,15 +72,14 @@ support.
 
 ### Recommended: unlocked package
 
-Install the current beta unlocked package (`v1.0.17-beta.4`). It is an
-unreleased Salesforce package version intended for evaluation. Install it in a
-sandbox or Developer Edition and validate it against your configuration before
-wider use.
+Install the current unlocked package (`v1.0.17`). It is a released Salesforce
+package version. Install it in a sandbox or Developer Edition first and
+validate it against your configuration before wider use.
 
 | Target            | Installation link                                                                                                 |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Sandbox           | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQPRIA4)          |
-| Developer Edition | [Install in Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQPRIA4) |
+| Sandbox           | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG)          |
+| Developer Edition | [Install in Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
