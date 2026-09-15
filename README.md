@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <strong>Native WYSIWYG document generation for any standard or custom Salesforce object—no external rendering service.</strong>
+  <strong>Native WYSIWYG PDF generation for any standard or custom Salesforce object—no external rendering service.</strong>
 </p>
 
 <div align="center">
