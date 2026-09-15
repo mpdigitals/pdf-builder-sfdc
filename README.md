@@ -13,6 +13,8 @@
   <strong>Native WYSIWYG document generation for any standard or custom Salesforce object—no external rendering service.</strong>
 </p>
 
+https://github.com/user-attachments/assets/c1c05f9f-68cd-437c-a81d-b7f68223ea89
+
 PDF Builder is a Salesforce-native application for visually designing reusable PDF templates, merging live record data, previewing the result, and generating production documents without leaving the platform.
 
 The authoring and rendering flow runs entirely in Salesforce using Lightning Web Components, Apex, Custom Metadata, custom objects, Salesforce Files, and Salesforce's native PDF conversion.
