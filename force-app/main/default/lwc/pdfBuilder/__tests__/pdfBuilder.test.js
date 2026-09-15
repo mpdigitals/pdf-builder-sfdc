@@ -347,10 +347,10 @@ describe("c-pdf-builder", () => {
     expect(updatedHeaderRepeat.disabled).toBe(true);
   });
 
-  it("requires an object before expanding related-list fields", async () => {
+  it("requires an object before expanding Related List fields", async () => {
     getTemplate.mockResolvedValueOnce({
       id: "a01000000000002AAA",
-      name: "Unassigned related list",
+      name: "Unassigned Related List",
       objectApiName: "",
       contentJson: JSON.stringify({
         pagePadding: 32,
@@ -444,14 +444,14 @@ describe("c-pdf-builder", () => {
       expect.objectContaining({
         detail: expect.objectContaining({
           title: "Object required",
-          message: "Select an object before configuring related-list fields.",
+          message: "Select an object before configuring Related List fields.",
           variant: "warning"
         })
       })
     );
   });
 
-  it("restores every saved related-list column when legacy API-name casing differs", async () => {
+  it("restores every saved Related List column when legacy API-name casing differs", async () => {
     getTemplate.mockResolvedValueOnce({
       id: "a01000000000002AAA",
       name: "Opportunity proposal",
@@ -624,7 +624,7 @@ describe("c-pdf-builder", () => {
       "This template contains object variables that do not belong to Account. Review and update them before previewing or generating the PDF."
     ],
     [
-      "a related list",
+      "a Related List",
       {
         id: "object-related-list",
         type: "relatedList",
@@ -634,7 +634,7 @@ describe("c-pdf-builder", () => {
         relatedListColumns: [],
         styles: {}
       },
-      "This template contains a related list that does not belong to Account. Review and update it before previewing or generating the PDF."
+      "This template contains a Related List that does not belong to Account. Review and update it before previewing or generating the PDF."
     ]
   ])(
     "warns after changing object when the template contains %s",

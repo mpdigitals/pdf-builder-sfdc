@@ -5,7 +5,7 @@
  * @date August 2026
  *
  * @description Verifies PDF compatibility fallbacks, image normalization, and
- * empty related-list rendering paths.
+ * empty Related List rendering paths.
  */
 @IsTest
 private class PDFBuilderPdfFallbackTest {
@@ -171,7 +171,7 @@ private class PDFBuilderPdfFallbackTest {
     );
     Assert.isFalse(
       result.bodyHtml.contains('[[DBRL|'),
-      'All related-list tokens must be resolved.'
+      'All Related List tokens must be resolved.'
     );
   }
 
@@ -546,12 +546,12 @@ private class PDFBuilderPdfFallbackTest {
   }
 
   /**
-   * @description Creates one related-list block for the empty-state model.
+   * @description Creates one Related List block for the empty-state model.
    * @param blockId Block identifier.
    * @param y Vertical position.
-   * @param borderMode Related-list border mode.
+   * @param borderMode Related List border mode.
    * @param rowColor Empty-row background color.
-   * @return Related-list block fixture.
+   * @return Related List block fixture.
    */
   @SuppressWarnings('PMD.ExcessiveParameterList')
   private static Map<String, Object> createRelatedListBlock(

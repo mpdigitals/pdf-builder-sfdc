@@ -10,22 +10,22 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 - Added light and dark Builder workspace themes without changing the authored document palette.
 - Added contextual guidance when a merge field or related list requires a selected object or insertion target.
-- Added a review dialog when changing objects leaves merge fields or related-list configuration associated with the previous object.
+- Added a review dialog when changing objects leaves merge fields or related list configuration associated with the previous object.
 
 ### Changed
 
-- Related-list values now use field-aware alignment: numeric, currency and percentage values align right; dates and booleans align centrally; text remains left-aligned.
+- Related list values now use field-aware alignment: numeric, currency and percentage values align right; dates and booleans align centrally; text remains left-aligned.
 - Header and footer resizing now stops at the bounds required by their positioned content for both pointer and numeric changes.
 - User-facing Builder messages are centralized for consistent dialogs, status messages and validation feedback.
 - CI now runs on Node.js 22, and the source deployment manifest includes the complete application metadata required by a clean org.
 
 ### Fixed
 
-- Restored every saved related-list column when legacy templates use different API-name casing.
+- Restored every saved related list column when legacy templates use different API-name casing.
 - Prevented keyboard deletion shortcuts from acting on selected elements while an input, search, preview ID or editable table cell owns focus.
 - Released toolbar and property-panel focus when an element is selected so `Delete` and `Backspace` apply to the canvas selection as intended.
 - Prevented header and footer content from being clipped when their regions are resized.
-- Improved related-list preview and server-rendered PDF pagination so table rows remain visible and positioned with the following body content.
+- Improved related list preview and server-rendered PDF pagination so table rows remain visible and positioned with the following body content.
 
 ### Security
 
@@ -42,7 +42,7 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 ### Changed
 
 - The Builder toolbar is grouped and responsive, with clearer separation between authoring, template context, and save/delete controls.
-- Related-list placeholders in the Builder now use a compact header-and-sample-row representation.
+- Related List placeholders in the Builder now use a compact header-and-sample-row representation.
 - The README now introduces the visual Builder first, highlights the Live Demo, and documents record-type template availability.
 
 ### Fixed
@@ -63,7 +63,7 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ### Fixed
 
-- An unconfigured related-list placeholder now remains at its configured position in preview output.
+- An unconfigured Related List placeholder now remains at its configured position in preview output.
 
 ## [1.0.16-beta.3] - 2026-08-31
 

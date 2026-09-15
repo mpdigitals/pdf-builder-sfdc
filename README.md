@@ -17,6 +17,16 @@ PDF Builder is a Salesforce-native application for visually designing reusable P
 
 The authoring and rendering flow runs entirely in Salesforce using Lightning Web Components, Apex, Custom Metadata, custom objects, Salesforce Files, and Salesforce's native PDF conversion.
 
+## Live Demo
+
+Explore the Builder in a public Salesforce Experience Cloud environment before installing it. The demo includes polished Opportunity and Quote examples: edit their layouts, inspect generated HTML, and preview the result directly in the browser.
+
+<p align="center">
+  <a href="https://pdfbuild-dev-ed.trailblaze.my.site.com/"><img src="https://img.shields.io/badge/Explore_the-Live%20Demo-0176D3?style=for-the-badge&logo=salesforce&logoColor=white" alt="Explore the PDF Builder Live Demo" height="36"></a>
+</p>
+
+The demo is desktop-optimized and read-only. Install PDF Builder to save template changes, manage template defaults and record-type assignments, and use the complete functionality.
+
 <table align="center" border="2" cellpadding="4" cellspacing="0">
   <tr>
     <td align="center" bgcolor="#57606a"><img src="docs/images/quote-template-editor.png" alt="PDF Builder visual template editor for a Salesforce Quote" width="100%"></td>
@@ -27,18 +37,6 @@ The visual Builder is the heart of the application: compose headers, body and fo
 
 Templates can be scoped to **all record types** or to a specific record type, with one default template per scope. The generator automatically offers the templates that apply to the current record and selects the most specific default.
 
-## Try the Live Demo
-
-Try the complete PDF Builder workflow in the public Salesforce Experience Cloud demo:
-
-<p align="center">
-  <a href="https://pdfbuild-dev-ed.trailblaze.my.site.com/"><img src="https://img.shields.io/badge/Launch-Live%20Demo-0176D3?style=for-the-badge&logo=salesforce&logoColor=white" alt="Launch the PDF Builder live demo"></a>
-</p>
-
-Explore polished Opportunity and Quote examples, edit their layouts, inspect generated HTML, and preview the result directly in the browser. It is the quickest way to see the Builder, record-aware templates, related lists, and PDF generation working together.
-
-The demo is desktop-optimized and read-only. Install PDF Builder to save template changes, manage template defaults and record-type assignments, and use the complete functionality.
-
 ## Why PDF Builder?
 
 <table>
@@ -47,7 +45,7 @@ The demo is desktop-optimized and read-only. Install PDF Builder to save templat
   </tr>
   <tr>
     <td width="33.33%">Runs entirely on the Salesforce platform with no middleware or external rendering engine.</td>
-    <td width="33.33%">Build templates for accessible standard or custom objects, including parent fields and related-list data.</td>
+    <td width="33.33%">Build templates for accessible standard or custom objects, including parent fields and related list data.</td>
     <td width="33.33%">Create layouts visually with rich text, images, tables, lines, spacing, positioning, headers, footers, and pagination.</td>
   </tr>
   <tr>
@@ -73,13 +71,13 @@ support.
 ### Recommended: unlocked package
 
 Install the current unlocked package (`v1.0.17`). It is a released Salesforce
-package version. Install it in a sandbox or Developer Edition first and
-validate it against your configuration before wider use.
+package version. Validate it in a sandbox or Developer Edition before wider
+use, then install the same package in production when ready.
 
-| Target            | Installation link                                                                                                 |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Sandbox           | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG)          |
-| Developer Edition | [Install in Developer Edition](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG) |
+| Target                          | Installation link                                                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Sandbox                         | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG)                        |
+| Developer Edition or production | [Install in Developer Edition or production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
@@ -89,7 +87,7 @@ The same version can also be installed with Salesforce CLI:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZQPRIA4 \
+  --package 04tQy000000ZQvhIAG \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
@@ -190,12 +188,12 @@ When an author changes the template object, the Builder detects merge fields or 
 | Related List | Dynamic child records with selectable and reorderable columns, zebra colors, font sizing, and border modes.     |
 
 <p align="center">
-  <img src="docs/images/element-palette.png" alt="Text, image, line, vertical line, table, and related-list elements" width="38%">
+  <img src="docs/images/element-palette.png" alt="Text, image, line, vertical line, table, and Related List elements" width="38%">
 </p>
 
 Elements can be moved and resized on the canvas. Undo and redo preserve the editing workflow, and fullscreen mode provides more room for complex templates.
 
-Related-list column selections are restored from saved templates even when legacy API-name casing differs. Values use field-aware alignment: numeric, currency and percentage values align right; dates and booleans align centrally; text remains left-aligned.
+Related List column selections are restored from saved templates even when legacy API-name casing differs. Values use field-aware alignment: numeric, currency and percentage values align right; dates and booleans align centrally; text remains left-aligned.
 
 Selected elements can also be copied, pasted, or deleted from their contextual controls.
 
@@ -217,7 +215,7 @@ The layout supports:
 - repeating header and footer content on subsequent pages;
 - additional manual pages;
 - per-region and per-element appearance and sizing;
-- automatic preview pagination for overflowing content and related-list rows.
+- automatic preview pagination for overflowing content and related list rows.
 
 Header and footer resizing respects the bounds of their existing elements, whether the size is changed by dragging or by entering a number, so fixed-region content cannot be clipped accidentally.
 
@@ -272,7 +270,7 @@ Users can choose one of two destinations:
 1. **Download to computer** — generates the PDF and downloads it through the browser.
 2. **Save to Salesforce Files** — saves and links the PDF to the current record, then provides an action to open the saved file.
 
-The builder also provides a preview modal. Enter a 15–18 character Salesforce record ID from the template's configured object to inspect merged fields and related-list rows before saving the template or generating a final document. Without a record ID, it still resolves Organization and current-user merge fields so authors can validate the layout early.
+The builder also provides a preview modal. Enter a 15–18 character Salesforce record ID from the template's configured object to inspect merged fields and related list rows before saving the template or generating a final document. Without a record ID, it still resolves Organization and current-user merge fields so authors can validate the layout early.
 
 <table>
   <tr>
@@ -449,7 +447,7 @@ manifest/                Metadata manifests used during development
 
 - Conditional visibility.
 - Reusable blocks.
-- Related-list filtering and totals.
+- Related List filtering and totals.
 - Publish subsequent unlocked-package versions with upgrade notes.
 - Add automated Apex deployment validation and metadata integrity checks to CI.
 - Expand administrator documentation.

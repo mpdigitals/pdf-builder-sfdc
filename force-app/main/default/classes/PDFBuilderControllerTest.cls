@@ -137,7 +137,7 @@ private class PDFBuilderControllerTest {
     Assert.areEqual(
       200,
       settings.relatedListQueryLimit,
-      'Related list query limit must match metadata.'
+      'Related List query limit must match metadata.'
     );
     Assert.areEqual(
       0.96,
@@ -561,11 +561,11 @@ private class PDFBuilderControllerTest {
     Assert.isTrue(foundName, 'Accessible Account fields must include Name.');
     Assert.isTrue(
       foundEmail,
-      'Accessible Contact related-list fields must include Email.'
+      'Accessible Contact Related List fields must include Email.'
     );
     Assert.isNotNull(
       relatedLists,
-      'Related-list metadata must always return a collection.'
+      'Related List metadata must always return a collection.'
     );
     Assert.areEqual(
       0,
@@ -748,7 +748,7 @@ private class PDFBuilderControllerTest {
   }
 
   /**
-   * @description Verifies related-list columns use conventional type-based alignment.
+   * @description Verifies Related List columns use conventional type-based alignment.
    */
   @IsTest
   static void alignsRelatedListValuesByDataType() {

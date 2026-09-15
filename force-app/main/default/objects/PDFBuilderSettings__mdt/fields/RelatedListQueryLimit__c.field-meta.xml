@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>RelatedListQueryLimit__c</fullName>
     <description
-  >Maximum related records rendered per related-list block before a truncation notice is displayed.</description>
+  >Maximum related records rendered per related list block before a truncation notice is displayed.</description>
     <fieldManageability>DeveloperControlled</fieldManageability>
     <label>Related List Query Limit</label>
     <precision>18</precision>

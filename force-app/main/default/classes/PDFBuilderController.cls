@@ -8,7 +8,7 @@
  */
 public with sharing class PDFBuilderController {
   // TODO(v2): Split this controller into focused services for template
-  // management, preview generation, PDF rendering, and related-list processing.
+  // management, preview generation, PDF rendering, and related list processing.
   // It remains unified in v1 to preserve the current tested behavior.
   private static final PDFBuilderConfiguration.Settings SETTINGS = PDFBuilderConfiguration.getSettings();
   private static final String ALL_RECORD_TYPES_SCOPE = 'ALL';
@@ -146,7 +146,7 @@ public with sharing class PDFBuilderController {
   }
 
   /**
-   * @description Describes a child relationship available to a related-list block.
+   * @description Describes a child relationship available to a Related List block.
    */
   public class RelatedListOption {
     @AuraEnabled
@@ -157,7 +157,7 @@ public with sharing class PDFBuilderController {
     public String childObjectApiName;
 
     /**
-     * @description Creates a related-list selector option.
+     * @description Creates a Related List selector option.
      * @param label Display label.
      * @param relationshipName Child relationship API name.
      * @param childObjectApiName Child object API name.
@@ -444,7 +444,7 @@ public with sharing class PDFBuilderController {
   /**
    * @description Returns configured child relationships for a source object.
    * @param objectApiName Source object API name.
-   * @return Related-list selector options.
+   * @return Related List selector options.
    */
   @AuraEnabled(cacheable=true)
   public static List<RelatedListOption> getRelatedLists(String objectApiName) {
@@ -470,7 +470,7 @@ public with sharing class PDFBuilderController {
   }
 
   /**
-   * @description Returns accessible fields for a related-list child object.
+   * @description Returns accessible fields for a Related List child object.
    * @param childObjectApiName Child object API name.
    * @param searchTerm Optional field search term.
    * @return Matching field selector options.
@@ -1055,7 +1055,7 @@ public with sharing class PDFBuilderController {
 
   /**
    * @description Resolves global merge fields for the browser preview when no record has
-   * been selected. Record and related-list fields remain unresolved because
+   * been selected. Record and Related List fields remain unresolved because
    * they require a record context, while Organization and User values do not.
    * @param generatedHtml Generated template HTML.
    * @return Sanitized browser preview HTML.
@@ -2337,7 +2337,7 @@ public with sharing class PDFBuilderController {
       String relationshipName = tokenParts.isEmpty() ? '' : tokenParts[0];
       String placeholder =
         '<div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;">' +
-        'Related list "' +
+        'Related List "' +
         escapeHtml(relationshipName) +
         '" requires a record context for preview/PDF.' +
         '</div>';
@@ -4930,7 +4930,7 @@ public with sharing class PDFBuilderController {
     }
 
     if (String.isBlank(relationshipName) || String.isBlank(columnCsv)) {
-      return '<div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;">Configure related list</div>';
+      return '<div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;">Configure Related List</div>';
     }
 
     String zebra = '1';

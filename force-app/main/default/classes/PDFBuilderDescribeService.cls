@@ -92,7 +92,7 @@ public inherited sharing class PDFBuilderDescribeService {
     /**
      * @description Creates a child relationship descriptor.
      *
-     * @param label Related list label.
+     * @param label Related List label.
      * @param relationshipName Child relationship API name.
      * @param childObjectApiName Child object API name.
      */
@@ -282,7 +282,7 @@ public inherited sharing class PDFBuilderDescribeService {
   }
 
   /**
-   * @description Returns direct accessible fields for a related-list child object.
+   * @description Returns direct accessible fields for a Related List child object.
    *
    * @param childObjectApiName Child object API name.
    * @param searchTerm Optional label or API-name filter.

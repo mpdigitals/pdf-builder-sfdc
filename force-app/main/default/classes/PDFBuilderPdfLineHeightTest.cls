@@ -1,10 +1,10 @@
 /**
- * Unit tests for PDF Builder PDF typography and related-list geometry.
+ * Unit tests for PDF Builder PDF typography and Related List geometry.
  *
  * @author mpdigitals
  * @date August 2026
  *
- * @description Verifies PDF typography normalization and related-list flow geometry.
+ * @description Verifies PDF typography normalization and Related List flow geometry.
  */
 @IsTest
 private class PDFBuilderPdfLineHeightTest {
@@ -168,7 +168,7 @@ private class PDFBuilderPdfLineHeightTest {
     Assert.isTrue(
       rendered.indexOf('[[DBRL|Items|Name|') <
       rendered.indexOf('After related list'),
-      'Related-list token must remain before the following block.'
+      'Related List token must remain before the following block.'
     );
     Assert.isTrue(
       rendered.contains('white-space:normal'),

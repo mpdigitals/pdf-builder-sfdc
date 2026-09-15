@@ -9,7 +9,7 @@
 @IsTest
 private class PDFBuilderPdfRendererTest {
   /**
-   * @description Creates record data used to characterize field and related-list merging.
+   * @description Creates record data used to characterize field and Related List merging.
    */
   @TestSetup
   static void createRecordData() {
@@ -296,7 +296,7 @@ private class PDFBuilderPdfRendererTest {
     );
     Assert.isFalse(
       result.bodyHtml.contains('[[DBRL|'),
-      'Related-list tokens must be fully resolved.'
+      'Related List tokens must be fully resolved.'
     );
     Assert.isTrue(
       result.footerHtml.contains('Renderer Account'),
@@ -396,7 +396,7 @@ private class PDFBuilderPdfRendererTest {
 
   /**
    * @description Verifies current-schema tables merge global variables during
-   * record preview without requiring a related-list rendering context.
+   * record preview without requiring a Related List rendering context.
    */
   @IsTest
   static void mergesOrganizationNameInsideCurrentTablePreview() {

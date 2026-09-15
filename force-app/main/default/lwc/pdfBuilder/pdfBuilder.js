@@ -76,10 +76,10 @@ const USER_MESSAGES = Object.freeze({
   VARIABLE_INSERT_TARGET_REQUIRED:
     "Select a text or table block before inserting a variable.",
   RELATED_LIST_FIELDS_LOAD_ERROR_TITLE:
-    "Related-list fields could not be loaded",
+    "Related List fields could not be loaded",
   OBJECT_REQUIRED_TITLE: "Object required",
   RELATED_LIST_OBJECT_REQUIRED:
-    "Select an object before configuring related-list fields.",
+    "Select an object before configuring Related List fields.",
   SALESFORCE_FILES_LOAD_ERROR_TITLE: "Salesforce Files could not be loaded",
   IMAGE_SELECTED_TITLE: "Image selected",
   IMAGE_SELECTED: (fileName) =>
@@ -91,15 +91,15 @@ const USER_MESSAGES = Object.freeze({
   HTML_COPIED_TITLE: "HTML copied",
   HTML_COPIED: "The generated HTML was copied.",
   HTML_COPY_ERROR_TITLE: "Unable to copy HTML",
-  RELATED_LIST_NOT_ADDED_TITLE: "Related list not added",
-  RELATED_LIST_LIMIT: "Only one related list block is allowed in this version.",
+  RELATED_LIST_NOT_ADDED_TITLE: "Related List not added",
+  RELATED_LIST_LIMIT: "Only one Related List block is allowed in this version.",
   OBJECT_DEPENDENCY_WARNING_TITLE: "Review object-dependent content",
   OBJECT_DEPENDENCY_VARIABLES: (objectLabel) =>
     `This template contains object variables that do not belong to ${objectLabel}. Review and update them before previewing or generating the PDF.`,
   OBJECT_DEPENDENCY_VARIABLES_AND_RELATED_LIST: (objectLabel) =>
-    `This template contains object variables and a related list that do not belong to ${objectLabel}. Review and update them before previewing or generating the PDF.`,
+    `This template contains object variables and a Related List that do not belong to ${objectLabel}. Review and update them before previewing or generating the PDF.`,
   OBJECT_DEPENDENCY_RELATED_LIST: (objectLabel) =>
-    `This template contains a related list that does not belong to ${objectLabel}. Review and update it before previewing or generating the PDF.`,
+    `This template contains a Related List that does not belong to ${objectLabel}. Review and update it before previewing or generating the PDF.`,
   SELECTED_OBJECT_FALLBACK: "the selected object",
   UNTITLED_TEMPLATE: "Untitled template",
   UNSAVED_MISSING_NAME_AND_OBJECT:
@@ -1225,7 +1225,7 @@ export default class PDFBuilder extends LightningElement {
         field: "Variable selected",
         image: "Image selected",
         table: "Table selected",
-        relatedList: "Related list selected",
+        relatedList: "Related List selected",
         divider: "Line selected",
         verticalLine: "Vertical line selected"
       };
@@ -10156,7 +10156,7 @@ export default class PDFBuilder extends LightningElement {
     const columnCsv = columns.join(",");
 
     if (!relationshipName || !columnCsv) {
-      return '<div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;">Configure related list</div>';
+      return '<div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;">Configure Related List</div>';
     }
 
     const zebra = "1";
@@ -10199,7 +10199,7 @@ export default class PDFBuilder extends LightningElement {
     const columnLabels = this.getRelatedListColumnLabels(block);
 
     if (!columns.length) {
-      return `<div style="${blockStyle};display:flex;align-items:center;justify-content:center;overflow:hidden;"><div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;width:100%;">Configure related list</div></div>`;
+      return `<div style="${blockStyle};display:flex;align-items:center;justify-content:center;overflow:hidden;"><div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;width:100%;">Configure Related List</div></div>`;
     }
 
     const previewRows = this.getRelatedListPreviewRows(block);
