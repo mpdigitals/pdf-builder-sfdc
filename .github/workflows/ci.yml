@@ -34,6 +34,9 @@ jobs:
       - name: Lint Lightning Web Components
         run: npm run lint
 
+      - name: Verify repository formatting
+        run: npm run prettier:verify
+
       - name: Run LWC unit tests
         run: npm run test:ci
 
@@ -134,31 +137,7 @@ jobs:
           print(f"Removed {removed} SARIF result(s) without artifact locations.")
           PY
 
-      - name: Check for uploadable SARIF results
-        id: sarif_results
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          import os
-
-          path = os.path.join(os.environ["RUNNER_TEMP"], "sfca-results.sarif")
-
-          with open(path, "r", encoding="utf-8") as f:
-              sarif = json.load(f)
-
-          result_count = sum(
-              len(run.get("results", [])) for run in sarif.get("runs", [])
-          )
-
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
-              f.write(f"has_results={'true' if result_count else 'false'}\n")
-
-          print(f"SARIF contains {result_count} uploadable result(s).")
-          PY
-
       - name: Upload results to GitHub Code Scanning
-        if: steps.sarif_results.outputs.has_results == 'true'
         uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d
         with:
           sarif_file: ${{ runner.temp }}/sfca-results.sarif

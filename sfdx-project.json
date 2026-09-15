@@ -4,9 +4,9 @@
       "path": "force-app",
       "default": true,
       "package": "PDF Builder",
-      "versionName": "Version 1.0.17",
-      "versionNumber": "1.0.17.NEXT",
-      "versionDescription": "First production release: object-aware authoring, related lists, fixed-region resizing, and keyboard focus handling",
+      "versionName": "Version 1.0.18",
+      "versionNumber": "1.0.18.NEXT",
+      "versionDescription": "Permission and release-quality maintenance for the production package",
       "apexTestAccess": {
         "permissionSets": ["PDFBuilderUser"]
       }
@@ -15,7 +15,7 @@
   "name": "PDFBuilder",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
-  "sourceApiVersion": "66.0",
+  "sourceApiVersion": "67.0",
   "packageAliases": {
     "PDF Builder": "0HoQy0000001yJtKAI",
     "PDF Builder@1.0.0-1": "04tQy000000Yr1tIAC",

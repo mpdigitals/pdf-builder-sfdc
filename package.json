@@ -1,21 +1,24 @@
 {
   "name": "pdf-builder-salesforce",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.18",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "license": "MIT",
-  "description": "Salesforce App",
+  "description": "Native Salesforce PDF template builder with visual authoring, merge fields, preview, and PDF generation.",
   "scripts": {
     "lint": "eslint force-app/main/default/lwc/**/*.js",
     "lint:pdf-builder": "eslint force-app/main/default/lwc/pdfBuilder*/**/*.js",
     "test": "npm run test:unit",
     "test:unit": "sfdx-lwc-jest",
-    "test:ci": "sfdx-lwc-jest -- --runInBand",
+    "test:ci": "sfdx-lwc-jest --coverage -- --runInBand",
     "test:pdf-builder": "sfdx-lwc-jest -- --runInBand force-app/main/default/lwc/pdfBuilder/__tests__/pdfBuilder.test.js force-app/main/default/lwc/pdfBuilderBlock/__tests__/pdfBuilderBlock.test.js force-app/main/default/lwc/pdfBuilderGenerator/__tests__/pdfBuilderGenerator.test.js force-app/main/default/lwc/pdfBuilderUtils/__tests__/pdfBuilderUtils.test.js force-app/main/default/lwc/pdfBuilderRichTextCommands/__tests__/pdfBuilderRichTextCommands.test.js",
     "test:unit:watch": "sfdx-lwc-jest --watch",
     "test:unit:debug": "sfdx-lwc-jest --debug",
     "test:unit:coverage": "sfdx-lwc-jest --coverage",
-    "prettier": "prettier --write \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
-    "prettier:verify": "prettier --check \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
+    "prettier": "prettier --write \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,yaml,yml}\"",
+    "prettier:verify": "prettier --check \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,yaml,yml}\"",
     "postinstall": "husky install",
     "precommit": "lint-staged"
   },
@@ -45,7 +48,7 @@
     "vitest": "4.1.11"
   },
   "lint-staged": {
-    "**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}": [
+    "**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,yaml,yml}": [
       "prettier --write"
     ],
     "**/{aura,lwc}/**/*.js": [

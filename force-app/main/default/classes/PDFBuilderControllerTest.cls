@@ -804,7 +804,7 @@ private class PDFBuilderControllerTest {
   }
 
   /**
-   * @description Verifies the permission set grants the same facade access to a non-admin user.
+   * @description Verifies a least-privilege user can read and manage templates through the facade.
    */
   @IsTest
   static void runsFacadeAsPermissionedUser() {
@@ -814,6 +814,18 @@ private class PDFBuilderControllerTest {
       '.' +
       String.valueOf(Datetime.now().getTime()) +
       '@example.com';
+    Profile leastPrivilegeProfile = [
+      SELECT Id
+      FROM Profile
+      WHERE
+        UserType = 'Standard'
+        AND UserLicense.Name = 'Salesforce'
+        AND PermissionsModifyAllData = FALSE
+        AND PermissionsCustomizeApplication = FALSE
+        AND PermissionsViewAllData = FALSE
+      ORDER BY Name ASC
+      LIMIT 1
+    ];
     User standardUser = new User(
       Alias = 'dbuser',
       Email = 'document.builder@example.com',
@@ -821,7 +833,7 @@ private class PDFBuilderControllerTest {
       LastName = 'PDF Builder User',
       LanguageLocaleKey = 'en_US',
       LocaleSidKey = 'en_US',
-      ProfileId = UserInfo.getProfileId(),
+      ProfileId = leastPrivilegeProfile.Id,
       TimeZoneSidKey = 'Europe/Madrid',
       Username = uniqueUsername
     );
@@ -838,9 +850,28 @@ private class PDFBuilderControllerTest {
     );
 
     List<PDFBuilderController.TemplateSummary> templates;
+    Id managedTemplateId;
     Test.startTest();
     System.runAs(standardUser) {
       templates = PDFBuilderController.getTemplates();
+      managedTemplateId = PDFBuilderController.saveTemplate(
+        null,
+        'Permissioned User Template',
+        'Account',
+        '{"pagePadding":32}',
+        '<main>Permissioned user template</main>',
+        'ALL',
+        false
+      );
+      PDFBuilderController.TemplateDetail managedTemplate = PDFBuilderController.getTemplate(
+        managedTemplateId
+      );
+      Assert.areEqual(
+        'ALL',
+        managedTemplate.recordTypeScope,
+        'The permissioned user must read the template Record Type scope.'
+      );
+      PDFBuilderController.deleteTemplate(managedTemplateId);
     }
     Test.stopTest();
 
@@ -848,6 +879,11 @@ private class PDFBuilderControllerTest {
       2,
       templates.size(),
       'The permissioned user must access shared templates.'
+    );
+    Assert.areEqual(
+      0,
+      [SELECT COUNT() FROM PDFBuilderTemplate__c WHERE Id = :managedTemplateId],
+      'The permissioned user must delete the template it created.'
     );
   }
 
