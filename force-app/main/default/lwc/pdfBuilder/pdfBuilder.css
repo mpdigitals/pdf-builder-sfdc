@@ -2523,7 +2523,10 @@
   background: #17233b;
 }
 
-.builder:has(.theme-toggle-input:checked) .canvas-wrapper,
+.builder:has(.theme-toggle-input:checked) .canvas-wrapper {
+  background: #20242b;
+}
+
 .builder:has(.theme-toggle-input:checked) .preview-content,
 .builder:has(.theme-toggle-input:checked) .preview-loading,
 .builder:has(.theme-toggle-input:checked) .preview-frame {
