@@ -1470,12 +1470,12 @@
           <h2>PDF Layout</h2>
 
           <details
-            class="property-section"
+            class="property-section layout-property-section"
             ontoggle={handlePropertySectionToggle}
           >
             <summary>Layout</summary>
 
-            <div class="property-group">
+            <div class="property-group layout-toggle-grid">
               <label class="checkbox-label">
                 <input
                   type="checkbox"
@@ -1504,7 +1504,9 @@
                   data-repeat="repeatHeaderOnEachPage"
                   onchange={handleRepeatRegionChange}
                 />
-                <span class="checkbox-text">Repeat header on next pages</span>
+                <span class="checkbox-text" title="Repeat header on next pages"
+                  >Repeat header</span
+                >
               </label>
 
               <label class="checkbox-label">
@@ -1515,49 +1517,72 @@
                   data-repeat="repeatFooterOnEachPage"
                   onchange={handleRepeatRegionChange}
                 />
-                <span class="checkbox-text">Repeat footer on next pages</span>
+                <span class="checkbox-text" title="Repeat footer on next pages"
+                  >Repeat footer</span
+                >
               </label>
             </div>
 
-            <div class="property-group">
-              <label>Page padding</label>
-              <input
-                type="number"
-                min="0"
-                value={pagePaddingValue}
-                data-role="page-padding"
-                onchange={handlePagePaddingChange}
-              />
-            </div>
+            <div class="layout-control-grid">
+              <div class="property-group layout-compact-control">
+                <label>Page padding</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={pagePaddingValue}
+                  data-role="page-padding"
+                  onchange={handlePagePaddingChange}
+                />
+              </div>
 
-            <div class="property-group">
-              <label>Page background</label>
-              <input
-                type="color"
-                value={pageBackgroundValue}
-                oninput={handlePageBackgroundChange}
-              />
-            </div>
+              <div class="property-group layout-compact-control">
+                <label title="Global element padding">Element padding</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={globalPaddingValue}
+                  onchange={handleGlobalPaddingChange}
+                />
+              </div>
 
-            <div class="property-group">
-              <label>Global element padding</label>
-              <input
-                type="number"
-                min="0"
-                value={globalPaddingValue}
-                onchange={handleGlobalPaddingChange}
-              />
-            </div>
+              <div class="property-group layout-compact-control">
+                <label>Body sections</label>
+                <select
+                  data-role="body-layout-select"
+                  onchange={handleBodyLayoutChange}
+                >
+                  <option value="one">One section</option>
+                  <option value="two">Two sections</option>
+                </select>
+              </div>
 
-            <div class="property-group">
-              <label>Body sections</label>
-              <select
-                data-role="body-layout-select"
-                onchange={handleBodyLayoutChange}
+              <div
+                class="property-group layout-compact-control layout-color-control"
               >
-                <option value="one">One section</option>
-                <option value="two">Two sections</option>
-              </select>
+                <label>Page color</label>
+                <div class="background-color-control">
+                  <label class="background-color-choice">
+                    <span>{pageBackgroundLabel}</span>
+                    <input
+                      class="background-color-input"
+                      type="color"
+                      value={pageBackgroundValue}
+                      aria-label="Choose page background color"
+                      title="Choose page background color"
+                      oninput={handlePageBackgroundChange}
+                    />
+                  </label>
+                  <button
+                    class="background-no-fill-button"
+                    type="button"
+                    title="No fill"
+                    aria-label="Use no fill for page background"
+                    onclick={handlePageBackgroundNoFill}
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
             </div>
           </details>
         </template>
@@ -1572,28 +1597,30 @@
             >
               <summary>Position</summary>
 
-              <div class="property-group">
-                <label>X (px)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={selectedBlockX}
-                  data-position="x"
-                  oninput={handleBlockPositionChange}
-                />
-              </div>
+              <div class="property-grid">
+                <div class="property-group">
+                  <label>X (px)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={selectedBlockX}
+                    data-position="x"
+                    oninput={handleBlockPositionChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Y (px)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={selectedBlockY}
-                  data-position="y"
-                  oninput={handleBlockPositionChange}
-                />
+                <div class="property-group">
+                  <label>Y (px)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={selectedBlockY}
+                    data-position="y"
+                    oninput={handleBlockPositionChange}
+                  />
+                </div>
               </div>
             </details>
           </template>
@@ -1605,55 +1632,57 @@
             >
               <summary>Size</summary>
 
-              <template lwc:if={showRegionHeight}>
-                <div class="property-group">
-                  <label>Width</label>
-                  <input
-                    type="number"
-                    min="40"
-                    value={selectedFixedRegionWidth}
-                    data-style="width"
-                    onchange={handleStyleChange}
-                  />
-                </div>
+              <div class="property-grid">
+                <template lwc:if={showRegionHeight}>
+                  <div class="property-group">
+                    <label>Width</label>
+                    <input
+                      type="number"
+                      min="40"
+                      value={selectedFixedRegionWidth}
+                      data-style="width"
+                      onchange={handleStyleChange}
+                    />
+                  </div>
 
-                <div class="property-group">
-                  <label>Height</label>
-                  <input
-                    type="number"
-                    min="40"
-                    value={selectedElement.styles.height}
-                    data-style="height"
-                    onchange={handleStyleChange}
-                  />
-                </div>
-              </template>
-
-              <template lwc:if={showBlockSizeProperties}>
-                <div class="property-group">
-                  <label>Width</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={selectedElement.styles.width}
-                    data-style="width"
-                    onchange={handleStyleChange}
-                  />
-                </div>
-
-                <template lwc:if={showBlockHeightProperty}>
                   <div class="property-group">
                     <label>Height</label>
                     <input
                       type="number"
-                      min="0"
+                      min="40"
                       value={selectedElement.styles.height}
                       data-style="height"
                       onchange={handleStyleChange}
                     />
                   </div>
                 </template>
-              </template>
+
+                <template lwc:if={showBlockSizeProperties}>
+                  <div class="property-group">
+                    <label>Width</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={selectedElement.styles.width}
+                      data-style="width"
+                      onchange={handleStyleChange}
+                    />
+                  </div>
+
+                  <template lwc:if={showBlockHeightProperty}>
+                    <div class="property-group">
+                      <label>Height</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={selectedElement.styles.height}
+                        data-style="height"
+                        onchange={handleStyleChange}
+                      />
+                    </div>
+                  </template>
+                </template>
+              </div>
             </details>
           </template>
 
@@ -1663,72 +1692,91 @@
           >
             <summary>Appearance</summary>
 
-            <template lwc:if={showElementBackgroundProperty}>
-              <div class="property-group">
-                <label>Background</label>
-                <input
-                  type="color"
-                  data-style="background"
-                  oninput={handleStyleChange}
-                />
-              </div>
-            </template>
+            <div class="property-grid">
+              <template lwc:if={showElementBackgroundProperty}>
+                <div class="property-group">
+                  <label>Background</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>{selectedElementBackgroundLabel}</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedElementBackgroundValue}
+                        data-style="background"
+                        aria-label="Choose background color"
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="background-no-fill-button"
+                      type="button"
+                      title="No fill"
+                      aria-label="Use no fill for background"
+                      onclick={handleElementBackgroundNoFill}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              </template>
 
-            <template lwc:if={showElementPaddingProperty}>
+              <template lwc:if={showElementPaddingProperty}>
+                <div class="property-group">
+                  <label>Padding</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={selectedElement.styles.padding}
+                    data-style="padding"
+                    onchange={handleStyleChange}
+                  />
+                </div>
+              </template>
+
               <div class="property-group">
-                <label>Padding</label>
+                <label>Border style</label>
+                <select data-style="borderStyle" onchange={handleStyleChange}>
+                  <option value="solid">Solid</option>
+                  <option value="dashed">Dashed</option>
+                  <option value="dotted">Dotted</option>
+                  <option value="double">Double</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+
+              <div class="property-group">
+                <label>Border width</label>
                 <input
                   type="number"
                   min="0"
-                  value={selectedElement.styles.padding}
-                  data-style="padding"
+                  value={selectedElement.styles.borderWidth}
+                  data-style="borderWidth"
+                  disabled={isBorderWidthDisabled}
                   onchange={handleStyleChange}
                 />
               </div>
-            </template>
 
-            <div class="property-group">
-              <label>Border style</label>
-              <select data-style="borderStyle" onchange={handleStyleChange}>
-                <option value="solid">Solid</option>
-                <option value="dashed">Dashed</option>
-                <option value="dotted">Dotted</option>
-                <option value="double">Double</option>
-                <option value="none">None</option>
-              </select>
-            </div>
+              <div class="property-group">
+                <label>Border color</label>
+                <input
+                  type="color"
+                  value={selectedElement.styles.borderColor}
+                  data-style="borderColor"
+                  oninput={handleStyleChange}
+                />
+              </div>
 
-            <div class="property-group">
-              <label>Border width</label>
-              <input
-                type="number"
-                min="0"
-                value={selectedElement.styles.borderWidth}
-                data-style="borderWidth"
-                disabled={isBorderWidthDisabled}
-                onchange={handleStyleChange}
-              />
-            </div>
-
-            <div class="property-group">
-              <label>Border color</label>
-              <input
-                type="color"
-                value={selectedElement.styles.borderColor}
-                data-style="borderColor"
-                oninput={handleStyleChange}
-              />
-            </div>
-
-            <div class="property-group">
-              <label>Border radius</label>
-              <input
-                type="number"
-                min="0"
-                value={selectedElement.styles.borderRadius}
-                data-style="borderRadius"
-                onchange={handleStyleChange}
-              />
+              <div class="property-group">
+                <label>Border radius</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={selectedElement.styles.borderRadius}
+                  data-style="borderRadius"
+                  onchange={handleStyleChange}
+                />
+              </div>
             </div>
           </details>
 
@@ -1739,120 +1787,127 @@
             >
               <summary>Typography</summary>
 
-              <div class="property-group">
-                <label>Text color</label>
-                <input
-                  type="color"
-                  value={selectedElement.styles.color}
-                  data-style="color"
-                  onclick={handlePropertyColorClick}
-                  oninput={handleStyleChange}
-                />
-              </div>
-
-              <div class="property-group">
-                <label>Font family</label>
-                <select data-style="fontFamily" onchange={handleStyleChange}>
-                  <option value="Arial, sans-serif">Arial</option>
-                  <option value="Helvetica, sans-serif">Helvetica</option>
-                  <option value="Verdana, sans-serif">Verdana</option>
-                  <option value="Tahoma, sans-serif">Tahoma</option>
-                  <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
-                  <option value="Times New Roman, serif">
-                    Times New Roman
-                  </option>
-                  <option value="Georgia, serif">Georgia</option>
-                  <option value="Garamond, serif">Garamond</option>
-                  <option value="Courier New, monospace">Courier New</option>
-                  <option value="Lucida Console, monospace">
-                    Lucida Console
-                  </option>
-                  <option value="Impact, fantasy">Impact</option>
-                  <option value="Palatino Linotype, serif">Palatino</option>
-                  <option value="Segoe UI, sans-serif">Segoe UI</option>
-                  <option value="Calibri, sans-serif">Calibri</option>
-                  <option value="Cambria, serif">Cambria</option>
-                  <option value="Open Sans, sans-serif">Open Sans</option>
-                  <option value="Roboto, sans-serif">Roboto</option>
-                  <option value="Montserrat, sans-serif">Montserrat</option>
-                  <option value="Lato, sans-serif">Lato</option>
-                  <option value="Poppins, sans-serif">Poppins</option>
-                </select>
-              </div>
-
-              <div class="property-group">
-                <label>Font size</label>
-                <div class="rich-size-combo property-size-combo">
+              <div class="property-grid">
+                <div class="property-group">
+                  <label>Text color</label>
                   <input
-                    class="rich-size rich-size-input property-size-input"
-                    type="text"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    value={propertyFontSizeValue}
-                    data-style="fontSize"
-                    oninput={handlePropertyFontSizeInput}
+                    type="color"
+                    value={selectedElement.styles.color}
+                    data-style="color"
+                    onclick={handlePropertyColorClick}
+                    oninput={handleStyleChange}
                   />
-                  <button
-                    class="rich-size-caret-button"
-                    type="button"
-                    onmousedown={handlePropertyFontSizeMenuMouseDown}
-                    title="Preset sizes"
-                  >
-                    <span class="rich-font-caret">▾</span>
-                  </button>
-                  <template lwc:if={isPropertyFontSizeMenuOpen}>
-                    <div class="rich-size-menu property-size-menu">
-                      <template
-                        for:each={fontSizeOptions}
-                        for:item="sizeOption"
-                      >
-                        <button
-                          key={sizeOption.value}
-                          class="rich-font-option"
-                          type="button"
-                          data-value={sizeOption.value}
-                          onmousedown={handlePropertyFontSizeOptionMouseDown}
-                        >
-                          {sizeOption.label}
-                        </button>
-                      </template>
-                    </div>
-                  </template>
                 </div>
-              </div>
 
-              <div class="property-group">
-                <label>Font weight</label>
-                <select data-style="fontWeight" onchange={handleStyleChange}>
-                  <option value="normal">Normal</option>
-                  <option value="bold">Bold</option>
-                </select>
-              </div>
+                <div class="property-group">
+                  <label>Font family</label>
+                  <select data-style="fontFamily" onchange={handleStyleChange}>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="Helvetica, sans-serif">Helvetica</option>
+                    <option value="Verdana, sans-serif">Verdana</option>
+                    <option value="Tahoma, sans-serif">Tahoma</option>
+                    <option value="Trebuchet MS, sans-serif">
+                      Trebuchet MS
+                    </option>
+                    <option value="Times New Roman, serif">
+                      Times New Roman
+                    </option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="Garamond, serif">Garamond</option>
+                    <option value="Courier New, monospace">Courier New</option>
+                    <option value="Lucida Console, monospace">
+                      Lucida Console
+                    </option>
+                    <option value="Impact, fantasy">Impact</option>
+                    <option value="Palatino Linotype, serif">Palatino</option>
+                    <option value="Segoe UI, sans-serif">Segoe UI</option>
+                    <option value="Calibri, sans-serif">Calibri</option>
+                    <option value="Cambria, serif">Cambria</option>
+                    <option value="Open Sans, sans-serif">Open Sans</option>
+                    <option value="Roboto, sans-serif">Roboto</option>
+                    <option value="Montserrat, sans-serif">Montserrat</option>
+                    <option value="Lato, sans-serif">Lato</option>
+                    <option value="Poppins, sans-serif">Poppins</option>
+                  </select>
+                </div>
 
-              <div class="property-group">
-                <label>Font style</label>
-                <select data-style="fontStyle" onchange={handleStyleChange}>
-                  <option value="normal">Normal</option>
-                  <option value="italic">Italic</option>
-                </select>
-              </div>
+                <div class="property-group">
+                  <label>Font size</label>
+                  <div class="rich-size-combo property-size-combo">
+                    <input
+                      class="rich-size rich-size-input property-size-input"
+                      type="text"
+                      inputmode="numeric"
+                      pattern="[0-9]*"
+                      value={propertyFontSizeValue}
+                      data-style="fontSize"
+                      oninput={handlePropertyFontSizeInput}
+                    />
+                    <button
+                      class="rich-size-caret-button"
+                      type="button"
+                      onmousedown={handlePropertyFontSizeMenuMouseDown}
+                      title="Preset sizes"
+                    >
+                      <span class="rich-font-caret">▾</span>
+                    </button>
+                    <template lwc:if={isPropertyFontSizeMenuOpen}>
+                      <div class="rich-size-menu property-size-menu">
+                        <template
+                          for:each={fontSizeOptions}
+                          for:item="sizeOption"
+                        >
+                          <button
+                            key={sizeOption.value}
+                            class="rich-font-option"
+                            type="button"
+                            data-value={sizeOption.value}
+                            onmousedown={handlePropertyFontSizeOptionMouseDown}
+                          >
+                            {sizeOption.label}
+                          </button>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </div>
 
-              <div class="property-group">
-                <label>Align</label>
-                <select data-style="textAlign" onchange={handleStyleChange}>
-                  <option value="left">Left</option>
-                  <option value="center">Center</option>
-                  <option value="right">Right</option>
-                </select>
-              </div>
+                <div class="property-group">
+                  <label>Font weight</label>
+                  <select data-style="fontWeight" onchange={handleStyleChange}>
+                    <option value="normal">Normal</option>
+                    <option value="bold">Bold</option>
+                  </select>
+                </div>
 
-              <div class="property-group">
-                <label>Vertical align</label>
-                <select data-style="verticalAlign" onchange={handleStyleChange}>
-                  <option value="top">Top</option>
-                  <option value="middle">Center</option>
-                  <option value="bottom">Bottom</option>
-                </select>
+                <div class="property-group">
+                  <label>Font style</label>
+                  <select data-style="fontStyle" onchange={handleStyleChange}>
+                    <option value="normal">Normal</option>
+                    <option value="italic">Italic</option>
+                  </select>
+                </div>
+
+                <div class="property-group">
+                  <label>Align</label>
+                  <select data-style="textAlign" onchange={handleStyleChange}>
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                  </select>
+                </div>
+
+                <div class="property-group">
+                  <label>Vertical align</label>
+                  <select
+                    data-style="verticalAlign"
+                    onchange={handleStyleChange}
+                  >
+                    <option value="top">Top</option>
+                    <option value="middle">Center</option>
+                    <option value="bottom">Bottom</option>
+                  </select>
+                </div>
               </div>
             </details>
           </template>
@@ -1864,50 +1919,52 @@
             >
               <summary>Image</summary>
 
-              <div class="property-group">
-                <label>Image URL</label>
-                <input
-                  type="url"
-                  value={selectedElement.imageSrc}
-                  onchange={handleImageUrlChange}
-                />
-              </div>
+              <div class="property-grid">
+                <div class="property-group property-span-full">
+                  <label>Image URL</label>
+                  <input
+                    type="url"
+                    value={selectedElement.imageSrc}
+                    onchange={handleImageUrlChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Upload image</label>
-                <input
-                  class="property-image-upload-input"
-                  type="file"
-                  accept="image/*"
-                  onchange={handleImageUpload}
-                />
-                <button
-                  class="computer-image-upload-button"
-                  type="button"
-                  onclick={handleOpenComputerImageUpload}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 16V4" />
-                    <path d="m7 9 5-5 5 5" />
-                    <path d="M5 14v5h14v-5" />
-                  </svg>
-                  Upload from computer
-                </button>
-                <button
-                  class="files-image-picker-button"
-                  type="button"
-                  onclick={handleOpenSalesforceImagePicker}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M3 7.5h7l2 2h9v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
-                    />
-                    <path d="M3 7.5V5a2 2 0 0 1 2-2h5l2 2h5" />
-                    <path d="M12 12v6" />
-                    <path d="M9 15h6" />
-                  </svg>
-                  Choose from Salesforce Files
-                </button>
+                <div class="property-group property-span-full">
+                  <label>Upload image</label>
+                  <input
+                    class="property-image-upload-input"
+                    type="file"
+                    accept="image/*"
+                    onchange={handleImageUpload}
+                  />
+                  <button
+                    class="computer-image-upload-button"
+                    type="button"
+                    onclick={handleOpenComputerImageUpload}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 16V4" />
+                      <path d="m7 9 5-5 5 5" />
+                      <path d="M5 14v5h14v-5" />
+                    </svg>
+                    Upload from computer
+                  </button>
+                  <button
+                    class="files-image-picker-button"
+                    type="button"
+                    onclick={handleOpenSalesforceImagePicker}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M3 7.5h7l2 2h9v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                      />
+                      <path d="M3 7.5V5a2 2 0 0 1 2-2h5l2 2h5" />
+                      <path d="M12 12v6" />
+                      <path d="M9 15h6" />
+                    </svg>
+                    Choose from Salesforce Files
+                  </button>
+                </div>
               </div>
             </details>
           </template>
@@ -1919,60 +1976,62 @@
             >
               <summary>Table</summary>
 
-              <div class="property-group">
-                <label>Rows</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="12"
-                  value={selectedElement.styles.tableRows}
-                  data-style="tableRows"
-                  onchange={handleStyleChange}
-                />
-              </div>
+              <div class="property-grid">
+                <div class="property-group">
+                  <label>Rows</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    value={selectedElement.styles.tableRows}
+                    data-style="tableRows"
+                    onchange={handleStyleChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Columns</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="12"
-                  value={selectedElement.styles.tableColumns}
-                  data-style="tableColumns"
-                  onchange={handleStyleChange}
-                />
-              </div>
+                <div class="property-group">
+                  <label>Columns</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    value={selectedElement.styles.tableColumns}
+                    data-style="tableColumns"
+                    onchange={handleStyleChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Cell padding</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={selectedElement.styles.tableCellPadding}
-                  data-style="tableCellPadding"
-                  onchange={handleStyleChange}
-                />
-              </div>
+                <div class="property-group">
+                  <label>Cell padding</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={selectedElement.styles.tableCellPadding}
+                    data-style="tableCellPadding"
+                    onchange={handleStyleChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Cell border width</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={selectedElement.styles.tableBorderWidth}
-                  data-style="tableBorderWidth"
-                  onchange={handleStyleChange}
-                />
-              </div>
+                <div class="property-group">
+                  <label>Cell border width</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={selectedElement.styles.tableBorderWidth}
+                    data-style="tableBorderWidth"
+                    onchange={handleStyleChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Cell border color</label>
-                <input
-                  type="color"
-                  value={selectedElement.styles.tableBorderColor}
-                  data-style="tableBorderColor"
-                  oninput={handleStyleChange}
-                />
+                <div class="property-group">
+                  <label>Cell border color</label>
+                  <input
+                    type="color"
+                    value={selectedElement.styles.tableBorderColor}
+                    data-style="tableBorderColor"
+                    oninput={handleStyleChange}
+                  />
+                </div>
               </div>
             </details>
           </template>
@@ -1985,131 +2044,184 @@
             >
               <summary>Related List</summary>
 
-              <div class="property-group">
-                <label>Child relationship</label>
-                <select
-                  data-role="related-list-select"
-                  onchange={handleRelatedListChange}
-                >
-                  <option value="">Select relationship</option>
-                  <template
-                    for:each={relatedListSelectOptions}
-                    for:item="option"
+              <div class="property-grid">
+                <div class="property-group property-span-full">
+                  <label>Child relationship</label>
+                  <select
+                    data-role="related-list-select"
+                    onchange={handleRelatedListChange}
                   >
-                    <option
-                      key={option.relationshipName}
-                      value={option.relationshipName}
+                    <option value="">Select relationship</option>
+                    <template
+                      for:each={relatedListSelectOptions}
+                      for:item="option"
                     >
-                      {option.label}
-                    </option>
+                      <option
+                        key={option.relationshipName}
+                        value={option.relationshipName}
+                      >
+                        {option.label}
+                      </option>
+                    </template>
+                  </select>
+
+                  <template lwc:if={selectedRelatedListObjectName}>
+                    <div class="related-list-object-info">
+                      <span>Related object</span>
+                      <strong>{selectedRelatedListObjectName}</strong>
+                    </div>
                   </template>
-                </select>
+                </div>
 
-                <template lwc:if={selectedRelatedListObjectName}>
-                  <div class="related-list-object-info">
-                    <span>Related object</span>
-                    <strong>{selectedRelatedListObjectName}</strong>
+                <div class="property-group property-span-full">
+                  <label>Columns</label>
+                  <lightning-dual-listbox
+                    class="related-list-columns-picker"
+                    name="relatedListColumns"
+                    source-label="Available fields"
+                    selected-label="Selected fields"
+                    options={relatedListFieldOptionItems}
+                    value={selectedRelatedListColumns}
+                    onchange={handleRelatedListColumnsChange}
+                  >
+                  </lightning-dual-listbox>
+                </div>
+
+                <div class="property-group">
+                  <label>Header color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>{relatedListHeaderBackgroundLabel}</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        data-key="relatedListHeaderRowColor"
+                        value={relatedListHeaderBackgroundValue}
+                        aria-label="Choose header background color"
+                        oninput={handleRelatedListColorChange}
+                      />
+                    </label>
+                    <button
+                      class="background-no-fill-button"
+                      type="button"
+                      data-key="relatedListHeaderRowColor"
+                      title="No fill"
+                      aria-label="Use no fill for header background"
+                      onclick={handleRelatedListBackgroundNoFill}
+                    >
+                      ×
+                    </button>
                   </div>
-                </template>
-              </div>
+                </div>
 
-              <div class="property-group">
-                <label>Columns</label>
-                <lightning-dual-listbox
-                  class="related-list-columns-picker"
-                  name="relatedListColumns"
-                  source-label="Available fields"
-                  selected-label="Selected fields"
-                  options={relatedListFieldOptionItems}
-                  value={selectedRelatedListColumns}
-                  onchange={handleRelatedListColumnsChange}
-                >
-                </lightning-dual-listbox>
-              </div>
+                <div class="property-group">
+                  <label>Odd row color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>{relatedListOddBackgroundLabel}</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        data-key="relatedListOddRowColor"
+                        value={relatedListOddBackgroundValue}
+                        aria-label="Choose odd row background color"
+                        oninput={handleRelatedListColorChange}
+                      />
+                    </label>
+                    <button
+                      class="background-no-fill-button"
+                      type="button"
+                      data-key="relatedListOddRowColor"
+                      title="No fill"
+                      aria-label="Use no fill for odd row background"
+                      onclick={handleRelatedListBackgroundNoFill}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
 
-              <div class="property-group">
-                <label>Header color</label>
-                <input
-                  type="color"
-                  data-key="relatedListHeaderRowColor"
-                  value={selectedBlock.relatedListHeaderRowColor}
-                  oninput={handleRelatedListColorChange}
-                />
-              </div>
+                <div class="property-group">
+                  <label>Even row color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>{relatedListEvenBackgroundLabel}</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        data-key="relatedListEvenRowColor"
+                        value={relatedListEvenBackgroundValue}
+                        aria-label="Choose even row background color"
+                        oninput={handleRelatedListColorChange}
+                      />
+                    </label>
+                    <button
+                      class="background-no-fill-button"
+                      type="button"
+                      data-key="relatedListEvenRowColor"
+                      title="No fill"
+                      aria-label="Use no fill for even row background"
+                      onclick={handleRelatedListBackgroundNoFill}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
 
-              <div class="property-group">
-                <label>Odd row color</label>
-                <input
-                  type="color"
-                  data-key="relatedListOddRowColor"
-                  value={selectedBlock.relatedListOddRowColor}
-                  oninput={handleRelatedListColorChange}
-                />
-              </div>
+                <div class="property-group">
+                  <label>Header text color</label>
+                  <input
+                    type="color"
+                    data-key="relatedListTextColor"
+                    value={selectedBlock.relatedListTextColor}
+                    oninput={handleRelatedListColorChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Even row color</label>
-                <input
-                  type="color"
-                  data-key="relatedListEvenRowColor"
-                  value={selectedBlock.relatedListEvenRowColor}
-                  oninput={handleRelatedListColorChange}
-                />
-              </div>
+                <div class="property-group">
+                  <label>Odd row text color</label>
+                  <input
+                    type="color"
+                    data-key="relatedListOddTextColor"
+                    value={selectedBlock.relatedListOddTextColor}
+                    oninput={handleRelatedListColorChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Header text color</label>
-                <input
-                  type="color"
-                  data-key="relatedListTextColor"
-                  value={selectedBlock.relatedListTextColor}
-                  oninput={handleRelatedListColorChange}
-                />
-              </div>
+                <div class="property-group">
+                  <label>Even row text color</label>
+                  <input
+                    type="color"
+                    data-key="relatedListEvenTextColor"
+                    value={selectedBlock.relatedListEvenTextColor}
+                    oninput={handleRelatedListColorChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Odd row text color</label>
-                <input
-                  type="color"
-                  data-key="relatedListOddTextColor"
-                  value={selectedBlock.relatedListOddTextColor}
-                  oninput={handleRelatedListColorChange}
-                />
-              </div>
+                <div class="property-group">
+                  <label>Font size</label>
+                  <input
+                    type="number"
+                    min="8"
+                    max="36"
+                    data-key="relatedListFontSize"
+                    value={selectedBlock.relatedListFontSize}
+                    onchange={handleRelatedListNumberChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Even row text color</label>
-                <input
-                  type="color"
-                  data-key="relatedListEvenTextColor"
-                  value={selectedBlock.relatedListEvenTextColor}
-                  oninput={handleRelatedListColorChange}
-                />
-              </div>
-
-              <div class="property-group">
-                <label>Font size</label>
-                <input
-                  type="number"
-                  min="8"
-                  max="36"
-                  data-key="relatedListFontSize"
-                  value={selectedBlock.relatedListFontSize}
-                  onchange={handleRelatedListNumberChange}
-                />
-              </div>
-
-              <div class="property-group">
-                <label>Grid lines</label>
-                <select
-                  data-key="relatedListBorderMode"
-                  onchange={handleRelatedListSelectChange}
-                >
-                  <option value="all">All lines</option>
-                  <option value="none">No lines</option>
-                  <option value="horizontal">Horizontal only</option>
-                  <option value="vertical">Vertical only</option>
-                </select>
+                <div class="property-group">
+                  <label>Grid lines</label>
+                  <select
+                    data-key="relatedListBorderMode"
+                    onchange={handleRelatedListSelectChange}
+                  >
+                    <option value="all">All lines</option>
+                    <option value="none">No lines</option>
+                    <option value="horizontal">Horizontal only</option>
+                    <option value="vertical">Vertical only</option>
+                  </select>
+                </div>
               </div>
             </details>
           </template>
@@ -2121,46 +2233,48 @@
             >
               <summary>Line</summary>
 
-              <div class="property-group">
-                <label>Line length</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={selectedElement.styles.lineLength}
-                  data-style="lineLength"
-                  onchange={handleStyleChange}
-                />
-              </div>
+              <div class="property-grid">
+                <div class="property-group">
+                  <label>Line length</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={selectedElement.styles.lineLength}
+                    data-style="lineLength"
+                    onchange={handleStyleChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Line thickness</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={selectedElement.styles.lineThickness}
-                  data-style="lineThickness"
-                  onchange={handleStyleChange}
-                />
-              </div>
+                <div class="property-group">
+                  <label>Line thickness</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={selectedElement.styles.lineThickness}
+                    data-style="lineThickness"
+                    onchange={handleStyleChange}
+                  />
+                </div>
 
-              <div class="property-group">
-                <label>Line style</label>
-                <select data-style="lineStyle" onchange={handleStyleChange}>
-                  <option value="solid">Solid</option>
-                  <option value="dashed">Dashed</option>
-                  <option value="dotted">Dotted</option>
-                  <option value="double">Double</option>
-                </select>
-              </div>
+                <div class="property-group">
+                  <label>Line style</label>
+                  <select data-style="lineStyle" onchange={handleStyleChange}>
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                    <option value="double">Double</option>
+                  </select>
+                </div>
 
-              <div class="property-group">
-                <label>Line color</label>
-                <input
-                  type="color"
-                  value={selectedElement.styles.lineColor}
-                  data-style="lineColor"
-                  oninput={handleStyleChange}
-                />
+                <div class="property-group">
+                  <label>Line color</label>
+                  <input
+                    type="color"
+                    value={selectedElement.styles.lineColor}
+                    data-style="lineColor"
+                    oninput={handleStyleChange}
+                  />
+                </div>
               </div>
             </details>
           </template>

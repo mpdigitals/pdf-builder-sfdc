@@ -1018,7 +1018,7 @@ export default class PDFBuilder extends LightningElement {
       `min-height:${this.pageHeight}px`,
       `height:${this.pageHeight}px`,
       `padding:${this.documentModel.pagePadding}px`,
-      `background:${this.documentModel.pageBackground || "#ffffff"}`,
+      `background:${this.documentModel.pageBackground || "transparent"}`,
       `--body-min-height:${bodyMinHeight}px`
     ].join(";");
   }
@@ -1028,7 +1028,65 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get pageBackgroundValue() {
-    return this.documentModel.pageBackground || "#ffffff";
+    return this.getSafeColorInputValue(this.documentModel.pageBackground);
+  }
+
+  get pageBackgroundLabel() {
+    return this.getBackgroundPickerLabel(this.documentModel.pageBackground);
+  }
+
+  get selectedElementBackgroundValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.background
+    );
+  }
+
+  get selectedElementBackgroundLabel() {
+    return this.getBackgroundPickerLabel(
+      this.selectedElement?.styles?.background
+    );
+  }
+
+  get relatedListHeaderBackgroundValue() {
+    return this.getSafeColorInputValue(
+      this.selectedBlock?.relatedListHeaderRowColor
+    );
+  }
+
+  get relatedListHeaderBackgroundLabel() {
+    return this.getBackgroundPickerLabel(
+      this.selectedBlock?.relatedListHeaderRowColor
+    );
+  }
+
+  get relatedListOddBackgroundValue() {
+    return this.getSafeColorInputValue(
+      this.selectedBlock?.relatedListOddRowColor
+    );
+  }
+
+  get relatedListOddBackgroundLabel() {
+    return this.getBackgroundPickerLabel(
+      this.selectedBlock?.relatedListOddRowColor
+    );
+  }
+
+  get relatedListEvenBackgroundValue() {
+    return this.getSafeColorInputValue(
+      this.selectedBlock?.relatedListEvenRowColor
+    );
+  }
+
+  get relatedListEvenBackgroundLabel() {
+    return this.getBackgroundPickerLabel(
+      this.selectedBlock?.relatedListEvenRowColor
+    );
+  }
+
+  getBackgroundPickerLabel(value) {
+    return String(value || "").toLowerCase() === "transparent"
+      ? "No fill"
+      : "Choose color";
   }
 
   get header() {
@@ -1086,7 +1144,7 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get previewModalStyle() {
-    const previewHorizontalPadding = 120;
+    const previewHorizontalPadding = 180;
     const modalSafeMargin = 32;
     const modalWidth = this.pageWidth + previewHorizontalPadding;
 
@@ -4390,7 +4448,24 @@ export default class PDFBuilder extends LightningElement {
     this.saveHistory();
     this.documentModel = this.decorateDocument({
       ...this.documentModel,
-      pageBackground: event.target.value || "#ffffff"
+      pageBackground: event.target.value || "transparent"
+    });
+  }
+
+  handlePageBackgroundNoFill() {
+    this.saveHistory();
+    this.documentModel = this.decorateDocument({
+      ...this.documentModel,
+      pageBackground: "transparent"
+    });
+  }
+
+  handleElementBackgroundNoFill() {
+    this.handleStyleChange({
+      target: {
+        dataset: { style: "background" },
+        value: "transparent"
+      }
     });
   }
 
@@ -4822,6 +4897,15 @@ export default class PDFBuilder extends LightningElement {
         };
       })
     );
+  }
+
+  handleRelatedListBackgroundNoFill(event) {
+    this.handleRelatedListColorChange({
+      target: {
+        dataset: { key: event.currentTarget.dataset.key },
+        value: "transparent"
+      }
+    });
   }
 
   handlePropertySectionToggle(event) {
@@ -7222,7 +7306,7 @@ export default class PDFBuilder extends LightningElement {
       0,
       this.toNumber(this.documentModel.pagePadding)
     );
-    const pageBackground = this.documentModel.pageBackground || "#ffffff";
+    const pageBackground = this.documentModel.pageBackground || "transparent";
     const contentWidth = Math.max(1, this.pageWidth - pagePadding * 2);
     // Header and Body share a boundary in the Builder. Keep the preview
     // continuous too, instead of inserting an artificial separation.
@@ -7597,12 +7681,16 @@ export default class PDFBuilder extends LightningElement {
     if (selectedBlock) {
       this.template.querySelectorAll("[data-key]").forEach((element) => {
         const value = selectedBlock[element.dataset.key];
+        const normalizedValue =
+          element.type === "color"
+            ? this.getSafeColorInputValue(value)
+            : String(value);
         if (
           value !== undefined &&
           value !== null &&
-          element.value !== String(value)
+          element.value !== normalizedValue
         ) {
-          element.value = String(value);
+          element.value = normalizedValue;
         }
       });
     }
@@ -7649,7 +7737,7 @@ export default class PDFBuilder extends LightningElement {
   createDefaultDocument() {
     return this.decorateDocument({
       pagePadding: this.defaultPagePadding,
-      pageBackground: "#ffffff",
+      pageBackground: "transparent",
       globalElementPadding: this.defaultElementPadding,
       showHeader: true,
       showBody: true,
@@ -7695,7 +7783,7 @@ export default class PDFBuilder extends LightningElement {
 
   createRegion(id, label, height) {
     const styles = {
-      background: "#ffffff",
+      background: "transparent",
       padding:
         this.documentModel?.globalElementPadding ?? this.defaultElementPadding,
       borderWidth: 0,
@@ -7739,7 +7827,7 @@ export default class PDFBuilder extends LightningElement {
       color: "#181818",
       colorExplicit: false,
       fontFamily: "Arial, sans-serif",
-      fontSize: 14,
+      fontSize: type === "text" ? 28 : 14,
       fontWeight: "normal",
       fontStyle: "normal",
       textAlign: "left",
@@ -7759,17 +7847,19 @@ export default class PDFBuilder extends LightningElement {
       width: this.getInitialBlockWidth(type, content),
       widthRatio: null,
       height:
-        type === "image"
-          ? 140
-          : type === "divider"
-            ? 12
-            : type === "verticalLine"
-              ? 120
-              : type === "relatedList"
-                ? DEFAULT_RELATED_LIST_HEIGHT
-                : type === "table"
-                  ? DEFAULT_TABLE_HEIGHT
-                  : null,
+        type === "text"
+          ? 40
+          : type === "image"
+            ? 140
+            : type === "divider"
+              ? 12
+              : type === "verticalLine"
+                ? 120
+                : type === "relatedList"
+                  ? DEFAULT_RELATED_LIST_HEIGHT
+                  : type === "table"
+                    ? DEFAULT_TABLE_HEIGHT
+                    : null,
       x: null,
       xRatio: null,
       y: null
@@ -7790,9 +7880,9 @@ export default class PDFBuilder extends LightningElement {
       relatedListChildObjectApiName: null,
       relatedListColumns: [],
       relatedListZebraEnabled: true,
-      relatedListOddRowColor: "#ffffff",
-      relatedListEvenRowColor: "#ffffff",
-      relatedListHeaderRowColor: "#e5e7eb",
+      relatedListOddRowColor: "transparent",
+      relatedListEvenRowColor: "transparent",
+      relatedListHeaderRowColor: "transparent",
       relatedListTextColor: "#181818",
       relatedListOddTextColor: "#181818",
       relatedListEvenTextColor: "#181818",
@@ -7910,7 +8000,7 @@ export default class PDFBuilder extends LightningElement {
       ...model,
       lineHeightSchemaVersion: 3,
       pagePadding: this.toNumber(model.pagePadding ?? this.defaultPagePadding),
-      pageBackground: normalizeColor(model.pageBackground, "#ffffff"),
+      pageBackground: normalizeColor(model.pageBackground, "transparent"),
       globalElementPadding: this.toNumber(
         model.globalElementPadding ?? this.defaultElementPadding
       ),
@@ -8237,7 +8327,7 @@ export default class PDFBuilder extends LightningElement {
 
   decorateRegion(region, documentModel = this.documentModel) {
     const styles = {
-      background: region.styles?.background || "#ffffff",
+      background: region.styles?.background || "transparent",
       padding: this.toNumber(
         region.styles?.padding ?? this.defaultElementPadding
       ),
@@ -8376,9 +8466,10 @@ export default class PDFBuilder extends LightningElement {
         ? block.relatedListColumns
         : [],
       relatedListZebraEnabled: true,
-      relatedListOddRowColor: block.relatedListOddRowColor || "#ffffff",
-      relatedListEvenRowColor: block.relatedListEvenRowColor || "#ffffff",
-      relatedListHeaderRowColor: block.relatedListHeaderRowColor || "#e5e7eb",
+      relatedListOddRowColor: block.relatedListOddRowColor || "transparent",
+      relatedListEvenRowColor: block.relatedListEvenRowColor || "transparent",
+      relatedListHeaderRowColor:
+        block.relatedListHeaderRowColor || "transparent",
       relatedListTextColor:
         block.relatedListTextColor ||
         block.styles?.relatedListTextColor ||
@@ -8487,8 +8578,8 @@ export default class PDFBuilder extends LightningElement {
         index: rowIndex,
         rowStyle: `background-color:${
           rowIndex % 2 === 0
-            ? block.relatedListOddRowColor || "#ffffff"
-            : block.relatedListEvenRowColor || "#ffffff"
+            ? block.relatedListOddRowColor || "transparent"
+            : block.relatedListEvenRowColor || "transparent"
         };`,
         cells: columns.map((column, cellIndex) => ({
           key: `preview-cell-${rowIndex}-${cellIndex}`,
@@ -8624,7 +8715,7 @@ export default class PDFBuilder extends LightningElement {
 
   buildRegionStyle(styles = {}) {
     const values = [
-      `--region-background:${styles.background || "#ffffff"}`,
+      `--region-background:${styles.background || "transparent"}`,
       `--region-padding:${this.toNumber(styles.padding)}px`,
       `--region-border-width:${this.toNumber(styles.borderWidth)}px`,
       `--region-border-style:${styles.borderStyle || "none"}`,
@@ -9493,7 +9584,10 @@ export default class PDFBuilder extends LightningElement {
       // Persist the schema marker. Without it, reloading treats every
       // saved template as legacy and rewrites line heights below 1.
       lineHeightSchemaVersion: 3,
-      pageBackground: normalizeColor(documentModel.pageBackground, "#ffffff"),
+      pageBackground: normalizeColor(
+        documentModel.pageBackground,
+        "transparent"
+      ),
       pagePadding: documentModel.pagePadding,
       globalElementPadding: documentModel.globalElementPadding,
       showHeader: documentModel.showHeader,
@@ -9819,7 +9913,7 @@ export default class PDFBuilder extends LightningElement {
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: Arial, sans-serif; color: #181818; }
-        .pdf-page { display: flex; flex-direction: column; gap: 0; width: ${this.pageWidth}px; min-height: ${this.pageHeight}px; padding: ${model.pagePadding}px; background: ${model.pageBackground || "#ffffff"}; }
+        .pdf-page { display: flex; flex-direction: column; gap: 0; width: ${this.pageWidth}px; min-height: ${this.pageHeight}px; padding: ${model.pagePadding}px; background: ${model.pageBackground || "transparent"}; }
         .pdf-body { display: flex; align-self: stretch; width: 100%; min-width: 0; flex: 1 1 auto; gap: 16px; min-height: 420px; }
         .pdf-body section { flex: 1 1 0; width: 0; min-width: 0; max-width: none; min-height: 420px; }
         p { margin: 0; }
@@ -9956,7 +10050,7 @@ export default class PDFBuilder extends LightningElement {
 
   getExportRegionStyle(styles = {}, options = {}) {
     const values = [
-      `background:${styles.background || "#ffffff"}`,
+      `background:${styles.background || "transparent"}`,
       `padding:${this.toNumber(styles.padding)}px`,
       `border:${this.toNumber(styles.borderWidth)}px ${styles.borderStyle || "none"} ${styles.borderColor || "#c9c9c9"}`,
       `border-radius:${this.toNumber(styles.borderRadius)}px`,
@@ -10160,9 +10254,9 @@ export default class PDFBuilder extends LightningElement {
     }
 
     const zebra = "1";
-    const odd = block.relatedListOddRowColor || "#ffffff";
-    const even = block.relatedListEvenRowColor || "#ffffff";
-    const header = block.relatedListHeaderRowColor || "#e5e7eb";
+    const odd = block.relatedListOddRowColor || "transparent";
+    const even = block.relatedListEvenRowColor || "transparent";
+    const header = block.relatedListHeaderRowColor || "transparent";
     const textColor =
       block.relatedListTextColor ||
       block.styles?.relatedListTextColor ||
@@ -10203,7 +10297,7 @@ export default class PDFBuilder extends LightningElement {
     }
 
     const previewRows = this.getRelatedListPreviewRows(block);
-    const headerColor = block.relatedListHeaderRowColor || "#e5e7eb";
+    const headerColor = block.relatedListHeaderRowColor || "transparent";
     const textColor =
       block.relatedListTextColor ||
       block.styles?.relatedListTextColor ||

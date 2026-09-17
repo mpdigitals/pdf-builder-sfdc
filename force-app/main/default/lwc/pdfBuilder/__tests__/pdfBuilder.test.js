@@ -242,6 +242,34 @@ describe("c-pdf-builder", () => {
     expect(element.shadowRoot.querySelector(".application-logo")).toBeNull();
   });
 
+  it("uses a compact two-column layout for page controls", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const toggleGrid = element.shadowRoot.querySelector(".layout-toggle-grid");
+    const controlGrid = element.shadowRoot.querySelector(
+      ".layout-control-grid"
+    );
+    const colorControl = element.shadowRoot.querySelector(
+      ".background-color-control"
+    );
+    const colorInput = colorControl.querySelector(".background-color-input");
+
+    expect(toggleGrid.querySelectorAll(".checkbox-label")).toHaveLength(4);
+    expect(controlGrid.querySelectorAll(".property-group")).toHaveLength(4);
+    expect(colorInput.type).toBe("color");
+    expect(colorInput.getAttribute("aria-label")).toBe(
+      "Choose page background color"
+    );
+    expect(colorControl.textContent).toContain("No fill");
+    expect(
+      element.shadowRoot.querySelector(".pdf-page").getAttribute("style")
+    ).toContain("background:transparent");
+  });
+
   it("warns when inserting a variable without a text or table block", async () => {
     const element = createElement("c-pdf-builder", {
       is: PDFBuilder

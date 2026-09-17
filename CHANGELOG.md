@@ -4,7 +4,14 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.0.18-beta.1] - 2026-09-17
+
 ### Changed
+
+- Compacted the Builder property editor into balanced two-column controls so common attributes require less scrolling.
+- Reworked background color controls with a clear `No fill` state, compact color selection and consistent sizing alongside other properties.
+- Increased the initial text block height to 40 pixels and its initial font size to 28 pixels.
+- Added breathing room to canvas drop guidance and action controls, and enlarged the Preview container without scaling the PDF page.
 
 - Aligned local tooling with Node.js 22.13+, Salesforce API 67.0 and the next `1.0.18` development line without changing the published `1.0.17` release.
 - CI now verifies repository formatting, reports meaningful LWC coverage and uploads a valid CodeQL v4 SARIF result even when the security scan is clean so resolved alerts can close.

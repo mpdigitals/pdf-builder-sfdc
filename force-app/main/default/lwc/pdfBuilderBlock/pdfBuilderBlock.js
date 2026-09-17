@@ -91,7 +91,7 @@ export default class PDFBuilderBlock extends LightningElement {
   }
 
   get relatedListHeaderStyle() {
-    const color = this.block?.relatedListHeaderRowColor || "#e5e7eb";
+    const color = this.block?.relatedListHeaderRowColor || "transparent";
     return `background-color:${color};`;
   }
 

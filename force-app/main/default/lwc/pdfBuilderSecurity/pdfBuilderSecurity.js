@@ -778,7 +778,7 @@ export function sanitizeDocumentModel(source) {
   return {
     lineHeightSchemaVersion:
       finiteNumber(source.lineHeightSchemaVersion, 0, 100) ?? 0,
-    pageBackground: normalizeColor(source.pageBackground, "#ffffff"),
+    pageBackground: normalizeColor(source.pageBackground, "transparent"),
     pagePadding: finiteNumber(source.pagePadding, 0, 500),
     globalElementPadding: finiteNumber(source.globalElementPadding, 0, 500),
     showHeader,

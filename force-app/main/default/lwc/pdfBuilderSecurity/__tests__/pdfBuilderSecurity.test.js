@@ -120,7 +120,7 @@ describe("pdfBuilderSecurity", () => {
         footer: { id: "footer", label: "Footer", styles: {}, blocks: [] }
       });
 
-      expect(result.pageBackground).toBe("#ffffff");
+      expect(result.pageBackground).toBe("transparent");
       expect(result).not.toHaveProperty("unexpectedDocumentProperty");
       expect(result.header.styles).not.toHaveProperty("position");
       expect(result.header.blocks[0]).not.toHaveProperty(
