@@ -10174,10 +10174,16 @@ export default class PDFBuilder extends LightningElement {
       }
       case "table":
         return this.getTableHtml(block, blockStyle);
-      case "relatedList":
-        return isPreview && !useRelatedListTokens
+      case "relatedList": {
+        const hasConfiguredRelatedList = Boolean(
+          block.relatedListRelationshipName &&
+          Array.isArray(block.relatedListColumns) &&
+          block.relatedListColumns.length
+        );
+        return isPreview && (!useRelatedListTokens || !hasConfiguredRelatedList)
           ? this.getRelatedListPreviewHtml(block, blockStyle)
           : `<div class="db-record-preview-related-list" data-configured-height="${this.toNumber(configuredHeight)}" style="${blockStyle};display:block;overflow:visible">${this.getRelatedListToken(block)}</div>`;
+      }
       case "verticalLine":
         return `<div style="${blockStyle};display:flex;align-items:center;justify-content:center"><div style="${this.getExportLineStyle(block.type, block.styles)}"></div></div>`;
       default:
@@ -10301,10 +10307,6 @@ export default class PDFBuilder extends LightningElement {
       ? block.relatedListColumns
       : [];
     const columnLabels = this.getRelatedListColumnLabels(block);
-
-    if (!columns.length) {
-      return `<div style="${blockStyle};display:flex;align-items:center;justify-content:center;overflow:hidden;"><div style="border:1px dashed #9ca3af;color:#706e6b;font-size:11px;text-align:center;padding:12px;width:100%;">Configure Related List</div></div>`;
-    }
 
     const previewRows = this.getRelatedListPreviewRows(block);
     const headerColor = block.relatedListHeaderRowColor || "transparent";

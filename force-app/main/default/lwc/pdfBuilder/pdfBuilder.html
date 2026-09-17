@@ -2115,6 +2115,16 @@
                 </div>
 
                 <div class="property-group">
+                  <label>Header text color</label>
+                  <input
+                    type="color"
+                    data-key="relatedListTextColor"
+                    value={selectedBlock.relatedListTextColor}
+                    oninput={handleRelatedListColorChange}
+                  />
+                </div>
+
+                <div class="property-group">
                   <label>Odd row color</label>
                   <div class="background-color-control">
                     <label class="background-color-choice">
@@ -2142,6 +2152,16 @@
                 </div>
 
                 <div class="property-group">
+                  <label>Odd row text color</label>
+                  <input
+                    type="color"
+                    data-key="relatedListOddTextColor"
+                    value={selectedBlock.relatedListOddTextColor}
+                    oninput={handleRelatedListColorChange}
+                  />
+                </div>
+
+                <div class="property-group">
                   <label>Even row color</label>
                   <div class="background-color-control">
                     <label class="background-color-choice">
@@ -2166,26 +2186,6 @@
                       ×
                     </button>
                   </div>
-                </div>
-
-                <div class="property-group">
-                  <label>Header text color</label>
-                  <input
-                    type="color"
-                    data-key="relatedListTextColor"
-                    value={selectedBlock.relatedListTextColor}
-                    oninput={handleRelatedListColorChange}
-                  />
-                </div>
-
-                <div class="property-group">
-                  <label>Odd row text color</label>
-                  <input
-                    type="color"
-                    data-key="relatedListOddTextColor"
-                    value={selectedBlock.relatedListOddTextColor}
-                    oninput={handleRelatedListColorChange}
-                  />
                 </div>
 
                 <div class="property-group">

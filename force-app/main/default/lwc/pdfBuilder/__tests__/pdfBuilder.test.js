@@ -477,6 +477,25 @@ describe("c-pdf-builder", () => {
         })
       })
     );
+
+    Array.from(element.shadowRoot.querySelectorAll("button"))
+      .find((button) => button.textContent.trim() === "Preview")
+      .click();
+    await flushPromises();
+
+    const previewTable = element.shadowRoot.querySelector(
+      ".preview-content table"
+    );
+    expect(
+      Array.from(previewTable.querySelectorAll("thead th")).map((cell) =>
+        cell.textContent.trim()
+      )
+    ).toEqual(["Column 1", "Column 2", "Column 3"]);
+    expect(
+      Array.from(previewTable.querySelectorAll("tbody td")).map((cell) =>
+        cell.textContent.trim()
+      )
+    ).toEqual(["Sample value", "Sample value", "Sample value"]);
   });
 
   it("restores every saved Related List column when legacy API-name casing differs", async () => {
@@ -604,6 +623,25 @@ describe("c-pdf-builder", () => {
     expect(columnStyles.totalprice).toContain("text-align:right");
     expect(columnStyles.isdeleted).toContain("text-align:center");
     expect(columnStyles.createddate).toContain("text-align:center");
+
+    expect(
+      Array.from(
+        element.shadowRoot.querySelectorAll(
+          'details[data-section="related-list"] .property-grid > .property-group > label'
+        )
+      ).map((label) => label.textContent.trim())
+    ).toEqual([
+      "Child relationship",
+      "Columns",
+      "Header color",
+      "Header text color",
+      "Odd row color",
+      "Odd row text color",
+      "Even row color",
+      "Even row text color",
+      "Font size",
+      "Grid lines"
+    ]);
   });
 
   it("loads the selected template and its object without changing the template contract", async () => {

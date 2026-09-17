@@ -4,6 +4,15 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+### Changed
+
+- Grouped Related List background and text colors by header, odd rows and even rows.
+- Refined the night-mode `No fill` reset and delete-button states to match the surrounding dark controls.
+
+### Fixed
+
+- Unconfigured Related Lists now show the same three-column sample table in Preview as they do in the Builder.
+
 ## [1.0.18-beta.2] - 2026-09-17
 
 ### Fixed

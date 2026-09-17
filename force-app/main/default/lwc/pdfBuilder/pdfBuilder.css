@@ -2496,6 +2496,31 @@
 
 .builder:has(.theme-toggle-input:checked) .background-no-fill-button {
   border-left-color: #344c78;
+  color: #dce8fb;
+  background-color: #101d36;
+  background-image:
+    linear-gradient(45deg, #20375a 25%, transparent 25%),
+    linear-gradient(-45deg, #20375a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #20375a 75%),
+    linear-gradient(-45deg, transparent 75%, #20375a 75%);
+}
+
+.builder:has(.theme-toggle-input:checked) .background-no-fill-button:hover,
+.builder:has(.theme-toggle-input:checked)
+  .background-no-fill-button:focus-visible {
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px #74abff;
+}
+
+.builder:has(.theme-toggle-input:checked) .delete-button {
+  border: 1px solid #d44d62;
+  background: #b72f46;
+}
+
+.builder:has(.theme-toggle-input:checked) .delete-button:disabled {
+  border-color: #304465;
+  color: #72829f;
+  background: #17233b;
 }
 
 .builder:has(.theme-toggle-input:checked) .canvas-wrapper,
