@@ -4,7 +4,17 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.0.18-beta.2] - 2026-09-17
+
+### Fixed
+
+- Pages configured with `No fill` now render as white paper in the Builder, Preview and generated HTML while retaining their transparent value in the saved template.
+- Printable pages keep a light color scheme in night mode so document text, guides and borders remain legible.
+- Background color controls now match the surrounding dark inputs in night mode instead of showing a white control surface.
+
 ## [1.0.18-beta.1] - 2026-09-17
+
+> Withdrawn. Its unlocked package was deleted and replaced by `1.0.18-beta.2`.
 
 ### Changed
 

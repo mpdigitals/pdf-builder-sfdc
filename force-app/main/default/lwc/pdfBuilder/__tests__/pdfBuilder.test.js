@@ -267,7 +267,7 @@ describe("c-pdf-builder", () => {
     expect(colorControl.textContent).toContain("No fill");
     expect(
       element.shadowRoot.querySelector(".pdf-page").getAttribute("style")
-    ).toContain("background:transparent");
+    ).toContain("background:#ffffff");
   });
 
   it("warns when inserting a variable without a text or table block", async () => {

@@ -1538,6 +1538,8 @@
   gap: 0;
   margin: 0 auto;
   background: #ffffff;
+  color: #181818;
+  color-scheme: light;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
   box-sizing: border-box;
 }
@@ -2480,6 +2482,20 @@
   color: #dce8fb;
   -webkit-text-fill-color: #dce8fb;
   color-scheme: dark;
+}
+
+.builder:has(.theme-toggle-input:checked) .background-color-control {
+  border-color: #344c78;
+  background: #101d36;
+}
+
+.builder:has(.theme-toggle-input:checked) .background-color-choice {
+  color: #edf3ff;
+  background: #101d36;
+}
+
+.builder:has(.theme-toggle-input:checked) .background-no-fill-button {
+  border-left-color: #344c78;
 }
 
 .builder:has(.theme-toggle-input:checked) .canvas-wrapper,

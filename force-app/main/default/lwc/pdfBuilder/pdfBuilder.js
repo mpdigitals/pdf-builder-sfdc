@@ -1018,7 +1018,7 @@ export default class PDFBuilder extends LightningElement {
       `min-height:${this.pageHeight}px`,
       `height:${this.pageHeight}px`,
       `padding:${this.documentModel.pagePadding}px`,
-      `background:${this.documentModel.pageBackground || "transparent"}`,
+      `background:${this.getRenderedPageBackground()}`,
       `--body-min-height:${bodyMinHeight}px`
     ].join(";");
   }
@@ -1087,6 +1087,16 @@ export default class PDFBuilder extends LightningElement {
     return String(value || "").toLowerCase() === "transparent"
       ? "No fill"
       : "Choose color";
+  }
+
+  getRenderedPageBackground(value = this.documentModel?.pageBackground) {
+    const normalizedValue = String(value || "")
+      .trim()
+      .toLowerCase();
+
+    return !normalizedValue || normalizedValue === "transparent"
+      ? "#ffffff"
+      : value;
   }
 
   get header() {
@@ -7306,7 +7316,7 @@ export default class PDFBuilder extends LightningElement {
       0,
       this.toNumber(this.documentModel.pagePadding)
     );
-    const pageBackground = this.documentModel.pageBackground || "transparent";
+    const pageBackground = this.getRenderedPageBackground();
     const contentWidth = Math.max(1, this.pageWidth - pagePadding * 2);
     // Header and Body share a boundary in the Builder. Keep the preview
     // continuous too, instead of inserting an artificial separation.
@@ -9913,7 +9923,7 @@ export default class PDFBuilder extends LightningElement {
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: Arial, sans-serif; color: #181818; }
-        .pdf-page { display: flex; flex-direction: column; gap: 0; width: ${this.pageWidth}px; min-height: ${this.pageHeight}px; padding: ${model.pagePadding}px; background: ${model.pageBackground || "transparent"}; }
+        .pdf-page { display: flex; flex-direction: column; gap: 0; width: ${this.pageWidth}px; min-height: ${this.pageHeight}px; padding: ${model.pagePadding}px; background: ${this.getRenderedPageBackground(model.pageBackground)}; }
         .pdf-body { display: flex; align-self: stretch; width: 100%; min-width: 0; flex: 1 1 auto; gap: 16px; min-height: 420px; }
         .pdf-body section { flex: 1 1 0; width: 0; min-width: 0; max-width: none; min-height: 420px; }
         p { margin: 0; }
