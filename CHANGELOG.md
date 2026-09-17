@@ -12,10 +12,6 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Printable pages keep a light color scheme in night mode so document text, guides and borders remain legible.
 - Background color controls now match the surrounding dark inputs in night mode instead of showing a white control surface.
 
-## [1.0.18-beta.1] - 2026-09-17
-
-> Withdrawn. Its unlocked package was deleted and replaced by `1.0.18-beta.2`.
-
 ### Changed
 
 - Compacted the Builder property editor into balanced two-column controls so common attributes require less scrolling.
