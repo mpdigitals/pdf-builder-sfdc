@@ -51,8 +51,15 @@ const BLOCK_RUNTIME_KEYS = new Set([
 ]);
 
 const REGION_RUNTIME_KEYS = new Set(["className", "inlineStyle", "isEmpty"]);
+const DEFAULT_BORDER_COLOR = "#c9c9c9";
+const DEFAULT_TEXT_COLOR = "#181818";
+const DEFAULT_TEXT_BLOCK_HEIGHT = 40;
+const DEFAULT_TEXT_FONT_SIZE = 28;
 const DEFAULT_TABLE_HEIGHT = 120;
 const DEFAULT_RELATED_LIST_HEIGHT = 50;
+const DEFAULT_RELATED_LIST_BUILDER_ROWS = 1;
+const MAX_RELATED_LIST_BUILDER_ROWS = 10;
+const RELATED_LIST_BUILDER_ROW_HEIGHT = 25;
 const BUILDER_THEME_STORAGE_KEY = "pdfbuilder.builder-theme";
 const USER_MESSAGES = Object.freeze({
   PDF_BUILDER_LOAD_ERROR_TITLE: "PDF Builder could not be loaded",
@@ -454,19 +461,21 @@ export default class PDFBuilder extends LightningElement {
   }
 
   getBlockResizeHandles(type) {
-    if (type === "divider" || type === "verticalLine") {
-      return this.blockResizeHandles.filter(
-        (handle) =>
-          handle.direction === "n" ||
-          handle.direction === "s" ||
-          handle.direction === "e" ||
-          handle.direction === "w"
+    if (type === "divider") {
+      return this.blockResizeHandles.filter((handle) =>
+        ["e", "w"].includes(handle.direction)
+      );
+    }
+
+    if (type === "verticalLine") {
+      return this.blockResizeHandles.filter((handle) =>
+        ["n", "s"].includes(handle.direction)
       );
     }
 
     if (type === "relatedList") {
-      return this.blockResizeHandles.filter(
-        (handle) => handle.direction === "e" || handle.direction === "w"
+      return this.blockResizeHandles.filter((handle) =>
+        ["e", "w"].includes(handle.direction)
       );
     }
 
@@ -1018,7 +1027,7 @@ export default class PDFBuilder extends LightningElement {
       `min-height:${this.pageHeight}px`,
       `height:${this.pageHeight}px`,
       `padding:${this.documentModel.pagePadding}px`,
-      `background:${this.getRenderedPageBackground()}`,
+      `background:${this.getCanvasPageBackground()}`,
       `--body-min-height:${bodyMinHeight}px`
     ].join(";");
   }
@@ -1044,6 +1053,84 @@ export default class PDFBuilder extends LightningElement {
   get selectedElementBackgroundLabel() {
     return this.getBackgroundPickerLabel(
       this.selectedElement?.styles?.background
+    );
+  }
+
+  get selectedElementBorderColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.borderColor || DEFAULT_BORDER_COLOR
+    );
+  }
+
+  get selectedElementTextColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.color || DEFAULT_TEXT_COLOR
+    );
+  }
+
+  get selectedTableBorderColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.tableBorderColor || DEFAULT_BORDER_COLOR
+    );
+  }
+
+  get selectedTableHeaderBackgroundValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.tableHeaderRowColor
+    );
+  }
+
+  get selectedTableHeaderBackgroundLabel() {
+    return this.getBackgroundPickerLabel(
+      this.selectedElement?.styles?.tableHeaderRowColor
+    );
+  }
+
+  get selectedTableHeaderTextColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.tableHeaderTextColor || DEFAULT_TEXT_COLOR
+    );
+  }
+
+  get selectedTableOddBackgroundValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.tableOddRowColor
+    );
+  }
+
+  get selectedTableOddBackgroundLabel() {
+    return this.getBackgroundPickerLabel(
+      this.selectedElement?.styles?.tableOddRowColor
+    );
+  }
+
+  get selectedTableOddTextColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.tableOddTextColor || DEFAULT_TEXT_COLOR
+    );
+  }
+
+  get selectedTableEvenBackgroundValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.tableEvenRowColor
+    );
+  }
+
+  get selectedTableEvenBackgroundLabel() {
+    return this.getBackgroundPickerLabel(
+      this.selectedElement?.styles?.tableEvenRowColor
+    );
+  }
+
+  get selectedTableEvenTextColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.tableEvenTextColor || DEFAULT_TEXT_COLOR
+    );
+  }
+
+  get selectedLineColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedElement?.styles?.lineColor || DEFAULT_TEXT_COLOR
     );
   }
 
@@ -1083,6 +1170,30 @@ export default class PDFBuilder extends LightningElement {
     );
   }
 
+  get relatedListHeaderTextColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedBlock?.relatedListTextColor || DEFAULT_TEXT_COLOR
+    );
+  }
+
+  get relatedListOddTextColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedBlock?.relatedListOddTextColor || DEFAULT_TEXT_COLOR
+    );
+  }
+
+  get relatedListEvenTextColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedBlock?.relatedListEvenTextColor || DEFAULT_TEXT_COLOR
+    );
+  }
+
+  get relatedListGridColorValue() {
+    return this.getSafeColorInputValue(
+      this.selectedBlock?.relatedListGridColor || DEFAULT_BORDER_COLOR
+    );
+  }
+
   getBackgroundPickerLabel(value) {
     return String(value || "").toLowerCase() === "transparent"
       ? "No fill"
@@ -1097,6 +1208,22 @@ export default class PDFBuilder extends LightningElement {
     return !normalizedValue || normalizedValue === "transparent"
       ? "#ffffff"
       : value;
+  }
+
+  getCanvasPageBackground() {
+    const pageBackground = this.documentModel?.pageBackground;
+    const normalizedValue = String(pageBackground || "")
+      .trim()
+      .toLowerCase();
+
+    if (
+      this.isDarkTheme &&
+      (!normalizedValue || normalizedValue === "transparent")
+    ) {
+      return "#eef0f3";
+    }
+
+    return this.getRenderedPageBackground(pageBackground);
   }
 
   get header() {
@@ -1255,11 +1382,19 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get isCopyDisabled() {
-    return !this.selectedBlockId || Boolean(this.editingTextBlockId);
+    return (
+      !this.selectedBlockId ||
+      this.selectedBlock?.type === "relatedList" ||
+      Boolean(this.editingTextBlockId)
+    );
   }
 
   get isPasteDisabled() {
-    return !this.copiedBlock || Boolean(this.editingTextBlockId);
+    return (
+      !this.copiedBlock ||
+      this.copiedBlock?.type === "relatedList" ||
+      Boolean(this.editingTextBlockId)
+    );
   }
 
   get isUndoDisabled() {
@@ -1537,6 +1672,24 @@ export default class PDFBuilder extends LightningElement {
     return this.selectedBlock?.type === "relatedList";
   }
 
+  get showContainerProperties() {
+    if (!this.selectedBlock) {
+      return Boolean(this.selectedRegion);
+    }
+
+    return (
+      this.selectedBlock.type === "text" || this.selectedBlock.type === "field"
+    );
+  }
+
+  get containerSectionLabel() {
+    return "Appearance";
+  }
+
+  get showBlockActions() {
+    return Boolean(this.selectedBlock && !this.showRelatedListProperties);
+  }
+
   get relatedListSelectValue() {
     const relationshipName =
       this.selectedBlock?.relatedListRelationshipName || "";
@@ -1702,19 +1855,32 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get showElementPaddingProperty() {
-    return !this.showLineProperties && !this.showRelatedListProperties;
+    return this.showContainerProperties;
   }
 
   get showElementBackgroundProperty() {
-    return !this.showRelatedListProperties;
+    return this.showContainerProperties;
   }
 
   get isBorderWidthDisabled() {
     return this.selectedElement?.styles?.borderStyle === "none";
   }
 
+  get areBlockBorderDetailsDisabled() {
+    return Boolean(
+      ["text", "image"].includes(this.selectedBlock?.type) &&
+      this.isBorderWidthDisabled
+    );
+  }
+
   get showBlockSizeProperties() {
     return Boolean(this.selectedBlock);
+  }
+
+  get showBlockWidthProperty() {
+    return Boolean(
+      this.selectedBlock && this.selectedBlock.type !== "verticalLine"
+    );
   }
 
   get selectedBlockX() {
@@ -1734,7 +1900,9 @@ export default class PDFBuilder extends LightningElement {
 
   get showBlockHeightProperty() {
     return Boolean(
-      this.selectedBlock && this.selectedBlock.type !== "relatedList"
+      this.selectedBlock &&
+      this.selectedBlock.type !== "relatedList" &&
+      this.selectedBlock.type !== "divider"
     );
   }
 
@@ -2678,7 +2846,7 @@ export default class PDFBuilder extends LightningElement {
     const isModifierPressed = event.ctrlKey || event.metaKey;
 
     if (isModifierPressed && key === "c") {
-      if (!this.selectedBlockId) {
+      if (!this.selectedBlockId || this.selectedBlock?.type === "relatedList") {
         return;
       }
 
@@ -2698,7 +2866,7 @@ export default class PDFBuilder extends LightningElement {
     }
 
     if (isModifierPressed && key === "d") {
-      if (!this.selectedBlockId) {
+      if (!this.selectedBlockId || this.selectedBlock?.type === "relatedList") {
         return;
       }
 
@@ -4479,6 +4647,40 @@ export default class PDFBuilder extends LightningElement {
     });
   }
 
+  handleTableBackgroundNoFill(event) {
+    this.handleStyleChange({
+      target: {
+        dataset: { style: event.currentTarget.dataset.style },
+        value: "transparent"
+      }
+    });
+  }
+
+  handleElementColorReset(event) {
+    const styleName = event.currentTarget.dataset.style;
+    const resetValues = {
+      borderColor: DEFAULT_BORDER_COLOR,
+      color: DEFAULT_TEXT_COLOR,
+      tableBorderColor: DEFAULT_BORDER_COLOR,
+      tableHeaderTextColor: DEFAULT_TEXT_COLOR,
+      tableOddTextColor: DEFAULT_TEXT_COLOR,
+      tableEvenTextColor: DEFAULT_TEXT_COLOR,
+      lineColor: DEFAULT_TEXT_COLOR
+    };
+    const value = resetValues[styleName];
+
+    if (!value) {
+      return;
+    }
+
+    this.handleStyleChange({
+      target: {
+        dataset: { style: styleName },
+        value
+      }
+    });
+  }
+
   handleRegionVisibilityChange(event) {
     const flagName = event.target.dataset.visibility;
     const isVisible = event.target.checked;
@@ -4914,6 +5116,28 @@ export default class PDFBuilder extends LightningElement {
       target: {
         dataset: { key: event.currentTarget.dataset.key },
         value: "transparent"
+      }
+    });
+  }
+
+  handleRelatedListColorReset(event) {
+    const key = event.currentTarget.dataset.key;
+    const resetValues = {
+      relatedListTextColor: DEFAULT_TEXT_COLOR,
+      relatedListOddTextColor: DEFAULT_TEXT_COLOR,
+      relatedListEvenTextColor: DEFAULT_TEXT_COLOR,
+      relatedListGridColor: DEFAULT_BORDER_COLOR
+    };
+    const value = resetValues[key];
+
+    if (!value) {
+      return;
+    }
+
+    this.handleRelatedListColorChange({
+      target: {
+        dataset: { key },
+        value
       }
     });
   }
@@ -7019,7 +7243,7 @@ export default class PDFBuilder extends LightningElement {
 
     const block = this.findBlockById(this.selectedBlockId);
 
-    if (!block) {
+    if (!block || block.type === "relatedList") {
       return;
     }
 
@@ -7027,7 +7251,11 @@ export default class PDFBuilder extends LightningElement {
   }
 
   pasteCopiedBlock() {
-    if (!this.copiedBlock || this.editingTextBlockId) {
+    if (
+      !this.copiedBlock ||
+      this.copiedBlock.type === "relatedList" ||
+      this.editingTextBlockId
+    ) {
       return;
     }
 
@@ -7826,10 +8054,19 @@ export default class PDFBuilder extends LightningElement {
     }
 
     const content = this.getDefaultContent(type, field);
+    const hasNoContainerSpacing = [
+      "image",
+      "table",
+      "relatedList",
+      "divider",
+      "verticalLine"
+    ].includes(type);
     const styles = {
       background: "transparent",
-      padding:
-        this.documentModel?.globalElementPadding ?? this.defaultElementPadding,
+      padding: hasNoContainerSpacing
+        ? 0
+        : (this.documentModel?.globalElementPadding ??
+          this.defaultElementPadding),
       borderWidth: 0,
       borderStyle: "none",
       borderColor: "#c9c9c9",
@@ -7837,7 +8074,7 @@ export default class PDFBuilder extends LightningElement {
       color: "#181818",
       colorExplicit: false,
       fontFamily: "Arial, sans-serif",
-      fontSize: type === "text" ? 28 : 14,
+      fontSize: type === "text" ? DEFAULT_TEXT_FONT_SIZE : 14,
       fontWeight: "normal",
       fontStyle: "normal",
       textAlign: "left",
@@ -7847,6 +8084,13 @@ export default class PDFBuilder extends LightningElement {
       tableCellPadding: type === "table" ? 8 : null,
       tableBorderWidth: type === "table" ? 1 : null,
       tableBorderColor: type === "table" ? "#c9c9c9" : null,
+      tableBorderMode: type === "table" ? "all" : null,
+      tableHeaderRowColor: type === "table" ? "transparent" : null,
+      tableHeaderTextColor: type === "table" ? DEFAULT_TEXT_COLOR : null,
+      tableOddRowColor: type === "table" ? "transparent" : null,
+      tableOddTextColor: type === "table" ? DEFAULT_TEXT_COLOR : null,
+      tableEvenRowColor: type === "table" ? "transparent" : null,
+      tableEvenTextColor: type === "table" ? DEFAULT_TEXT_COLOR : null,
       tableCellVerticalAlign: type === "table" ? "top" : null,
       lineLength:
         type === "divider" ? null : type === "verticalLine" ? 120 : null,
@@ -7854,15 +8098,16 @@ export default class PDFBuilder extends LightningElement {
       lineStyle: type === "divider" || type === "verticalLine" ? "solid" : null,
       lineColor:
         type === "divider" || type === "verticalLine" ? "#181818" : null,
-      width: this.getInitialBlockWidth(type, content),
+      width:
+        type === "verticalLine" ? 1 : this.getInitialBlockWidth(type, content),
       widthRatio: null,
       height:
         type === "text"
-          ? 40
+          ? DEFAULT_TEXT_BLOCK_HEIGHT
           : type === "image"
             ? 140
             : type === "divider"
-              ? 12
+              ? 1
               : type === "verticalLine"
                 ? 120
                 : type === "relatedList"
@@ -7898,6 +8143,8 @@ export default class PDFBuilder extends LightningElement {
       relatedListEvenTextColor: "#181818",
       relatedListFontSize: 12,
       relatedListBorderMode: "all",
+      relatedListGridColor: DEFAULT_BORDER_COLOR,
+      relatedListBuilderRows: DEFAULT_RELATED_LIST_BUILDER_ROWS,
       styles
     });
   }
@@ -7916,7 +8163,7 @@ export default class PDFBuilder extends LightningElement {
     }
 
     if (type === "verticalLine") {
-      return 12;
+      return 1;
     }
 
     if (type === "divider") {
@@ -8402,16 +8649,32 @@ export default class PDFBuilder extends LightningElement {
       1,
       this.toNumber(block.styles?.lineThickness ?? 1)
     );
+    const relatedListBuilderRows = this.getRelatedListBuilderRowCount(block);
+    const hasNoContainer = [
+      "table",
+      "relatedList",
+      "divider",
+      "verticalLine"
+    ].includes(block.type);
+    const hasNoContainerBackgroundOrPadding =
+      hasNoContainer || block.type === "image";
     const styles = {
-      background: block.styles?.background || "transparent",
-      padding:
-        block.type === "divider" || block.type === "verticalLine"
-          ? 0
-          : this.toNumber(block.styles?.padding ?? 0),
-      borderWidth: this.toNumber(block.styles?.borderWidth ?? 0),
-      borderStyle: block.styles?.borderStyle || "none",
+      background: hasNoContainerBackgroundOrPadding
+        ? "transparent"
+        : block.styles?.background || "transparent",
+      padding: hasNoContainerBackgroundOrPadding
+        ? 0
+        : this.toNumber(block.styles?.padding ?? 0),
+      borderWidth: hasNoContainer
+        ? 0
+        : this.toNumber(block.styles?.borderWidth ?? 0),
+      borderStyle: hasNoContainer
+        ? "none"
+        : block.styles?.borderStyle || "none",
       borderColor: block.styles?.borderColor || "#c9c9c9",
-      borderRadius: this.toNumber(block.styles?.borderRadius ?? 0),
+      borderRadius: hasNoContainer
+        ? 0
+        : this.toNumber(block.styles?.borderRadius ?? 0),
       color: block.styles?.color || block.styles?.textColor || "#181818",
       colorExplicit: block.styles?.colorExplicit === true,
       fontFamily: block.styles?.fontFamily || "Arial, sans-serif",
@@ -8425,22 +8688,27 @@ export default class PDFBuilder extends LightningElement {
       tableCellPadding: this.toNumber(block.styles?.tableCellPadding ?? 8),
       tableBorderWidth: this.toNumber(block.styles?.tableBorderWidth ?? 1),
       tableBorderColor: block.styles?.tableBorderColor || "#c9c9c9",
+      tableBorderMode: block.styles?.tableBorderMode || "all",
+      tableHeaderRowColor: block.styles?.tableHeaderRowColor || "transparent",
+      tableHeaderTextColor:
+        block.styles?.tableHeaderTextColor || DEFAULT_TEXT_COLOR,
+      tableOddRowColor: block.styles?.tableOddRowColor || "transparent",
+      tableOddTextColor: block.styles?.tableOddTextColor || DEFAULT_TEXT_COLOR,
+      tableEvenRowColor: block.styles?.tableEvenRowColor || "transparent",
+      tableEvenTextColor:
+        block.styles?.tableEvenTextColor || DEFAULT_TEXT_COLOR,
       tableCellVerticalAlign: block.styles?.tableCellVerticalAlign || "top",
       lineLength: this.toOptionalNumber(block.styles?.lineLength),
       lineThickness,
       lineStyle: block.styles?.lineStyle || "solid",
       lineColor: block.styles?.lineColor || "#181818",
-      width:
-        block.type === "verticalLine"
-          ? (this.toOptionalNumber(block.styles?.width) ?? 12)
-          : normalizedWidth,
+      width: block.type === "verticalLine" ? lineThickness : normalizedWidth,
       widthRatio: horizontalGeometry.widthRatio,
       height:
         block.type === "divider"
-          ? (this.toOptionalNumber(block.styles?.height) ?? 12)
+          ? lineThickness
           : block.type === "relatedList"
-            ? (this.toOptionalNumber(block.styles?.height) ??
-              DEFAULT_RELATED_LIST_HEIGHT)
+            ? this.getRelatedListBuilderHeight(relatedListBuilderRows)
             : block.type === "table"
               ? (this.toOptionalNumber(block.styles?.height) ??
                 DEFAULT_TABLE_HEIGHT)
@@ -8504,6 +8772,11 @@ export default class PDFBuilder extends LightningElement {
         36
       ),
       relatedListBorderMode: block.relatedListBorderMode || "all",
+      relatedListGridColor:
+        block.relatedListGridColor ||
+        block.styles?.relatedListGridColor ||
+        DEFAULT_BORDER_COLOR,
+      relatedListBuilderRows,
       relatedListRelationshipName: block.relatedListRelationshipName || "",
       relatedListChildObjectApiName: block.relatedListChildObjectApiName || "",
       relatedListColumnCsv: (Array.isArray(block.relatedListColumns)
@@ -8573,7 +8846,8 @@ export default class PDFBuilder extends LightningElement {
 
   getRelatedListPreviewRows(block) {
     const columns = this.getRelatedListColumnLabels(block);
-    return Array.from({ length: 1 }, (_, rowIndex) => {
+    const rowCount = this.getRelatedListBuilderRowCount(block);
+    return Array.from({ length: rowCount }, (_, rowIndex) => {
       const textColor =
         rowIndex % 2 === 0
           ? block.relatedListOddTextColor ||
@@ -8593,7 +8867,7 @@ export default class PDFBuilder extends LightningElement {
         };`,
         cells: columns.map((column, cellIndex) => ({
           key: `preview-cell-${rowIndex}-${cellIndex}`,
-          value: rowIndex === 0 ? "Sample value" : "",
+          value: "Sample value",
           style: this.buildRelatedListCellStyle(
             block,
             textColor,
@@ -8602,6 +8876,26 @@ export default class PDFBuilder extends LightningElement {
         }))
       };
     });
+  }
+
+  getRelatedListBuilderRowCount(block) {
+    const value = this.toOptionalNumber(block?.relatedListBuilderRows);
+    return this.clampNumber(
+      Number.isFinite(value)
+        ? Math.round(value)
+        : DEFAULT_RELATED_LIST_BUILDER_ROWS,
+      DEFAULT_RELATED_LIST_BUILDER_ROWS,
+      MAX_RELATED_LIST_BUILDER_ROWS
+    );
+  }
+
+  getRelatedListBuilderHeight(rowCount) {
+    const normalizedRows = this.clampNumber(
+      Math.round(this.toNumber(rowCount)),
+      DEFAULT_RELATED_LIST_BUILDER_ROWS,
+      MAX_RELATED_LIST_BUILDER_ROWS
+    );
+    return (normalizedRows + 1) * RELATED_LIST_BUILDER_ROW_HEIGHT;
   }
 
   getRelatedListValueTextAlign(dataType) {
@@ -8630,23 +8924,34 @@ export default class PDFBuilder extends LightningElement {
       8,
       36
     );
-    const borderStyle = this.getRelatedListCellBorderStyle(
-      block.relatedListBorderMode || "all"
+    const borderStyle = this.getGridCellBorderStyle(
+      block.relatedListBorderMode || "all",
+      block.relatedListGridColor ||
+        block.styles?.relatedListGridColor ||
+        DEFAULT_BORDER_COLOR,
+      1
     );
     return `${borderStyle}padding:8px;color:${textColor};font-size:${fontSize}px;text-align:${textAlign};`;
   }
 
-  getRelatedListCellBorderStyle(borderMode) {
+  getGridCellBorderStyle(
+    borderMode,
+    gridColor = DEFAULT_BORDER_COLOR,
+    borderWidth = 1
+  ) {
+    const width = Math.max(0, this.toNumber(borderWidth));
+    if (width === 0 || borderMode === "none") {
+      return "border:none;";
+    }
+
     switch (borderMode) {
-      case "none":
-        return "border:none;";
       case "horizontal":
-        return "border-top:1px solid #c9c9c9;border-bottom:1px solid #c9c9c9;border-left:none;border-right:none;";
+        return `border-top:${width}px solid ${gridColor};border-bottom:${width}px solid ${gridColor};border-left:none;border-right:none;`;
       case "vertical":
-        return "border-left:1px solid #c9c9c9;border-right:1px solid #c9c9c9;border-top:none;border-bottom:none;";
+        return `border-left:${width}px solid ${gridColor};border-right:${width}px solid ${gridColor};border-top:none;border-bottom:none;`;
       case "all":
       default:
-        return "border:1px solid #c9c9c9;";
+        return `border:${width}px solid ${gridColor};`;
     }
   }
 
@@ -8839,15 +9144,31 @@ export default class PDFBuilder extends LightningElement {
     return "Arial, Helvetica, sans-serif";
   }
 
-  buildTableCellStyle(styles = {}, verticalAlignOverride = null) {
+  buildTableCellStyle(styles = {}, verticalAlignOverride = null, rowIndex = 0) {
     const borderWidth = this.toNumber(styles.tableBorderWidth ?? 1);
-    const borderStyle =
-      borderWidth > 0
-        ? `${borderWidth}px solid ${styles.tableBorderColor || "#c9c9c9"}`
-        : "0";
+    const borderStyle = this.getGridCellBorderStyle(
+      borderWidth > 0 ? styles.tableBorderMode || "all" : "none",
+      styles.tableBorderColor || DEFAULT_BORDER_COLOR,
+      borderWidth
+    );
+    const isHeader = rowIndex === 0;
+    const isOddBodyRow = Math.max(0, rowIndex - 1) % 2 === 0;
+    const backgroundColor = isHeader
+      ? styles.tableHeaderRowColor || "transparent"
+      : isOddBodyRow
+        ? styles.tableOddRowColor || "transparent"
+        : styles.tableEvenRowColor || "transparent";
+    const textColor = isHeader
+      ? styles.tableHeaderTextColor || DEFAULT_TEXT_COLOR
+      : isOddBodyRow
+        ? styles.tableOddTextColor || DEFAULT_TEXT_COLOR
+        : styles.tableEvenTextColor || DEFAULT_TEXT_COLOR;
 
     return [
-      `border:${borderStyle}`,
+      borderStyle,
+      `background-color:${backgroundColor}`,
+      `color:${textColor}`,
+      `font-weight:${isHeader ? "bold" : "normal"}`,
       `padding:${this.toNumber(styles.tableCellPadding)}px`,
       `vertical-align:${verticalAlignOverride || styles.tableCellVerticalAlign || "top"}`,
       "box-sizing:border-box",
@@ -8929,7 +9250,7 @@ export default class PDFBuilder extends LightningElement {
             key: `cell-${rowIndex}-${columnIndex}`,
             columnIndex,
             content,
-            style: this.buildTableCellStyle(styles, verticalAlign),
+            style: this.buildTableCellStyle(styles, verticalAlign, rowIndex),
             contentStyle: this.buildTableCellContentStyle(verticalAlign)
           };
         })
@@ -9369,9 +9690,6 @@ export default class PDFBuilder extends LightningElement {
         this.documentModel?.globalElementPadding ??
         this.defaultElementPadding
     );
-    const regionHeight = this.toNumber(
-      region?.styles?.height ?? this.getDefaultFixedRegionHeight(regionId)
-    );
     const availableWidth = Math.max(
       120,
       this.pageWidth -
@@ -9381,22 +9699,13 @@ export default class PDFBuilder extends LightningElement {
           2 -
         regionPadding * 2
     );
-    const availableHeight = Math.max(24, regionHeight - regionPadding * 2);
-    const maxFontSize = Math.max(
-      9,
-      Math.min(16, Math.floor(availableHeight * 0.32))
-    );
-    const currentFontSize = this.toNumber(block?.styles?.fontSize ?? 14);
-    const fittedFontSize = Math.min(currentFontSize, maxFontSize);
 
     return {
       ...block,
       styles: {
         ...baseStyles,
         width: Math.min(nextWidth, availableWidth),
-        widthRatio: null,
-        height: null,
-        fontSize: fittedFontSize
+        widthRatio: null
       }
     };
   }
@@ -10245,7 +10554,8 @@ export default class PDFBuilder extends LightningElement {
               "top";
             const cellStyle = this.buildTableCellStyle(
               block.styles || {},
-              cellVerticalAlign
+              cellVerticalAlign,
+              rowIndex
             );
             return `<td style="${cellStyle}">${sanitizeRichTextHtml(cellContent)}</td>`;
           })
@@ -10293,13 +10603,17 @@ export default class PDFBuilder extends LightningElement {
       36
     );
     const borderMode = block.relatedListBorderMode || "all";
+    const gridColor =
+      block.relatedListGridColor ||
+      block.styles?.relatedListGridColor ||
+      DEFAULT_BORDER_COLOR;
     const cellPadding = this.clampNumber(
       this.toNumber(block.styles?.tableCellPadding ?? 8),
       0,
       32
     );
 
-    return `[[DBRL|${relationshipName}|${columnCsv}|${zebra}|${odd}|${even}|${header}|${textColor}|${fontSize}|${oddTextColor}|${evenTextColor}|${borderMode}|${cellPadding}]]`;
+    return `[[DBRL|${relationshipName}|${columnCsv}|${zebra}|${odd}|${even}|${header}|${textColor}|${fontSize}|${oddTextColor}|${evenTextColor}|${borderMode}|${cellPadding}|${gridColor}]]`;
   }
 
   getRelatedListPreviewHtml(block, blockStyle) {
@@ -10329,10 +10643,16 @@ export default class PDFBuilder extends LightningElement {
       8,
       36
     );
-    const borderStyle = this.getRelatedListCellBorderStyle(
-      block.relatedListBorderMode || "all"
+    const borderStyle = this.getGridCellBorderStyle(
+      block.relatedListBorderMode || "all",
+      block.relatedListGridColor ||
+        block.styles?.relatedListGridColor ||
+        DEFAULT_BORDER_COLOR,
+      1
     );
-    const headerCellStyle = `${borderStyle}padding:6px 8px;font-size:${fontSize}px;color:${textColor};`;
+    const previewRowHeight = RELATED_LIST_BUILDER_ROW_HEIGHT;
+    const previewCellLayout = `height:${previewRowHeight}px;padding:0 8px;font-size:${fontSize}px;line-height:1.15;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
+    const headerCellStyle = `${borderStyle}${previewCellLayout}color:${textColor};`;
     const headerCells = (columnLabels.length ? columnLabels : columns)
       .map((column) => {
         const label = typeof column === "string" ? column : column?.label || "";
@@ -10344,20 +10664,24 @@ export default class PDFBuilder extends LightningElement {
     const bodyRows = previewRows
       .map((row) => {
         const rowTextColor = row.index % 2 === 0 ? oddTextColor : evenTextColor;
-        const cellStyle = `${borderStyle}padding:6px 8px;font-size:${fontSize}px;color:${rowTextColor};`;
+        const cellStyle = `${borderStyle}${previewCellLayout}color:${rowTextColor};`;
         const cells = row.cells
           .map((cell) => {
             const value = typeof cell === "string" ? cell : cell?.value || "";
-            return `<td style="${cell.style || `${cellStyle}text-align:left;`}">${this.escapeHtml(value)}</td>`;
+            const sourceCellStyle =
+              typeof cell === "string" || !cell?.style
+                ? `${cellStyle}text-align:left;`
+                : `${cell.style}${previewCellLayout}`;
+            return `<td style="${sourceCellStyle}">${this.escapeHtml(value)}</td>`;
           })
           .join("");
-        return `<tr style="${row.rowStyle}">${cells}</tr>`;
+        return `<tr style="height:${previewRowHeight}px;${row.rowStyle}">${cells}</tr>`;
       })
       .join("");
 
     return `<div style="${blockStyle};display:block;overflow:visible;">
-            <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-                <thead><tr style="background-color:${this.escapeHtml(headerColor)};">${headerCells}</tr></thead>
+            <table style="width:100%;height:${(previewRows.length + 1) * previewRowHeight}px;border-collapse:collapse;table-layout:fixed;">
+                <thead style="height:${previewRowHeight}px;"><tr style="height:${previewRowHeight}px;background-color:${this.escapeHtml(headerColor)};">${headerCells}</tr></thead>
                 <tbody>${bodyRows}</tbody>
             </table>
         </div>`;

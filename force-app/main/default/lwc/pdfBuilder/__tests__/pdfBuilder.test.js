@@ -257,6 +257,12 @@ describe("c-pdf-builder", () => {
       ".background-color-control"
     );
     const colorInput = colorControl.querySelector(".background-color-input");
+    const borderColorInput = element.shadowRoot.querySelector(
+      'input[data-style="borderColor"]'
+    );
+    const borderColorReset = element.shadowRoot.querySelector(
+      '.color-reset-button[data-style="borderColor"]'
+    );
 
     expect(toggleGrid.querySelectorAll(".checkbox-label")).toHaveLength(4);
     expect(controlGrid.querySelectorAll(".property-group")).toHaveLength(4);
@@ -266,8 +272,491 @@ describe("c-pdf-builder", () => {
     );
     expect(colorControl.textContent).toContain("No fill");
     expect(
+      borderColorInput.closest(".background-color-control")
+    ).not.toBeNull();
+    expect(borderColorReset.getAttribute("title")).toBe("Reset border color");
+    expect(
+      Array.from(element.shadowRoot.querySelectorAll("summary")).some(
+        (summary) => summary.textContent.trim() === "Container"
+      )
+    ).toBe(false);
+    expect(
+      Array.from(element.shadowRoot.querySelectorAll("summary")).some(
+        (summary) => summary.textContent.trim() === "Appearance"
+      )
+    ).toBe(true);
+    expect(
       element.shadowRoot.querySelector(".pdf-page").getAttribute("style")
     ).toContain("background:#ffffff");
+
+    const themeToggle = element.shadowRoot.querySelector(".theme-toggle-input");
+    themeToggle.checked = true;
+    themeToggle.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(".pdf-page").getAttribute("style")
+    ).toContain("background:#eef0f3");
+
+    colorInput.value = "#fff4e6";
+    colorInput.dispatchEvent(new CustomEvent("input"));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(".pdf-page").getAttribute("style")
+    ).toContain("background:#fff4e6");
+
+    borderColorInput.value = "#ff0000";
+    borderColorInput.dispatchEvent(new CustomEvent("input"));
+    await flushPromises();
+    element.shadowRoot
+      .querySelector('.color-reset-button[data-style="borderColor"]')
+      .click();
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector('input[data-style="borderColor"]').value
+    ).toBe("#c9c9c9");
+  });
+
+  it.each(["header", "footer"])(
+    "keeps the initial text size when adding text to the %s",
+    async (regionId) => {
+      const element = createElement("c-pdf-builder", {
+        is: PDFBuilder
+      });
+      document.body.appendChild(element);
+      await flushPromises();
+
+      const targetRegion = element.shadowRoot.querySelector(
+        `[data-region-id="${regionId}"]`
+      );
+      Object.defineProperty(targetRegion, "clientWidth", {
+        configurable: true,
+        value: 700
+      });
+      Object.defineProperty(targetRegion, "clientHeight", {
+        configurable: true,
+        value: 110
+      });
+      targetRegion.getBoundingClientRect = jest.fn(() => ({
+        top: 0,
+        bottom: 110,
+        left: 0,
+        right: 700,
+        width: 700,
+        height: 110
+      }));
+
+      const textTool = element.shadowRoot.querySelector('[data-type="text"]');
+      textTool.dispatchEvent(
+        new MouseEvent("mousedown", {
+          bubbles: true,
+          button: 0,
+          clientX: 750,
+          clientY: 20
+        })
+      );
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 100, clientY: 50 })
+      );
+      window.dispatchEvent(
+        new MouseEvent("mouseup", { clientX: 100, clientY: 50 })
+      );
+      await flushPromises();
+
+      const addedText = element.shadowRoot.querySelector(
+        `[data-region-id="${regionId}"] c-pdf-builder-block`
+      ).block;
+      expect(addedText.styles.height).toBe(40);
+      expect(addedText.styles.fontSize).toBe(28);
+    }
+  );
+
+  it("uses compact resettable color controls for every component attribute", async () => {
+    const content = createKeyboardShortcutTemplate();
+    content.body.sections[0].blocks = [
+      {
+        id: "color-text",
+        type: "text",
+        content: "Color text",
+        styles: { width: 180, height: 40, x: 0, y: 0, color: "#336699" }
+      },
+      {
+        id: "color-table",
+        type: "table",
+        content: "",
+        tableData: [["Header"], ["Odd"], ["Even"]],
+        styles: {
+          width: 240,
+          height: 100,
+          x: 0,
+          y: 60,
+          tableRows: 3,
+          tableColumns: 1,
+          tableBorderColor: "#336699",
+          tableBorderMode: "horizontal",
+          tableHeaderRowColor: "#112233",
+          tableHeaderTextColor: "#fefefe",
+          tableOddRowColor: "#ddeeff",
+          tableOddTextColor: "#223344",
+          tableEvenRowColor: "#ccddee",
+          tableEvenTextColor: "#334455"
+        }
+      },
+      {
+        id: "color-line",
+        type: "divider",
+        content: "",
+        styles: {
+          width: 240,
+          height: 12,
+          x: 0,
+          y: 180,
+          lineColor: "#336699",
+          lineThickness: 1,
+          lineStyle: "solid"
+        }
+      }
+    ];
+    getTemplate.mockResolvedValueOnce({
+      id: "a01000000000002AAA",
+      name: "Color controls",
+      objectApiName: "Account",
+      contentJson: JSON.stringify(content),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", { is: PDFBuilder });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    const assertCompactColorControl = async (
+      blockId,
+      styleName,
+      defaultColor
+    ) => {
+      element.shadowRoot
+        .querySelector(`[data-block-id="${blockId}"] c-pdf-builder-block`)
+        .dispatchEvent(
+          new CustomEvent("selectblock", {
+            detail: { blockId, regionId: "body-1" },
+            bubbles: true,
+            composed: true
+          })
+        );
+      await flushPromises();
+
+      const input = element.shadowRoot.querySelector(
+        `input[data-style="${styleName}"]`
+      );
+      expect(input.closest(".background-color-control")).not.toBeNull();
+      const resetButton = element.shadowRoot.querySelector(
+        `.color-reset-button[data-style="${styleName}"]`
+      );
+      expect(resetButton).not.toBeNull();
+      resetButton.click();
+      await flushPromises();
+      expect(
+        element.shadowRoot.querySelector(`input[data-style="${styleName}"]`)
+          .value
+      ).toBe(defaultColor);
+    };
+
+    await assertCompactColorControl("color-text", "color", "#181818");
+    await assertCompactColorControl(
+      "color-table",
+      "tableBorderColor",
+      "#c9c9c9"
+    );
+    await assertCompactColorControl(
+      "color-table",
+      "tableHeaderTextColor",
+      "#181818"
+    );
+    await assertCompactColorControl(
+      "color-table",
+      "tableOddTextColor",
+      "#181818"
+    );
+    await assertCompactColorControl(
+      "color-table",
+      "tableEvenTextColor",
+      "#181818"
+    );
+
+    const tableBlock = element.shadowRoot.querySelector(
+      '[data-block-id="color-table"] c-pdf-builder-block'
+    ).block;
+    const originalTableHeight = tableBlock.styles.height;
+    expect(tableBlock.styles.tableRows).toBe(3);
+    expect(originalTableHeight).toBeGreaterThan(0);
+    expect(tableBlock.tableRows[0].cells[0].style).toContain(
+      "background-color:#112233"
+    );
+    expect(tableBlock.tableRows[0].cells[0].style).toContain(
+      "font-weight:bold"
+    );
+    expect(tableBlock.tableRows[0].cells[0].style).toContain(
+      "border-top:1px solid #c9c9c9"
+    );
+    expect(tableBlock.tableRows[1].cells[0].style).toContain(
+      "background-color:#ddeeff"
+    );
+    expect(tableBlock.tableRows[1].cells[0].style).toContain("color:#181818");
+    expect(tableBlock.tableRows[2].cells[0].style).toContain(
+      "background-color:#ccddee"
+    );
+    expect(tableBlock.tableRows[2].cells[0].style).toContain("color:#181818");
+
+    ["tableHeaderRowColor", "tableOddRowColor", "tableEvenRowColor"].forEach(
+      (styleName) => {
+        const input = element.shadowRoot.querySelector(
+          `input[data-style="${styleName}"]`
+        );
+        expect(input.closest(".background-color-control")).not.toBeNull();
+        expect(
+          element.shadowRoot.querySelector(
+            `.background-no-fill-button[data-style="${styleName}"]`
+          )
+        ).not.toBeNull();
+      }
+    );
+
+    const bodyRegion = element.shadowRoot.querySelector(
+      '[data-region-id="body-1"]'
+    );
+    Object.defineProperty(bodyRegion, "clientWidth", {
+      configurable: true,
+      value: 700
+    });
+    Object.defineProperty(bodyRegion, "clientHeight", {
+      configurable: true,
+      value: 800
+    });
+    element.shadowRoot
+      .querySelector('[data-block-id="color-table"][data-resize-dir="s"]')
+      .dispatchEvent(
+        new MouseEvent("mousedown", {
+          bubbles: true,
+          clientX: 100,
+          clientY: 100
+        })
+      );
+    window.dispatchEvent(
+      new MouseEvent("mousemove", { clientX: 100, clientY: 180 })
+    );
+    await flushPromises();
+    window.dispatchEvent(new MouseEvent("mouseup"));
+
+    const resizedTableBlock = element.shadowRoot.querySelector(
+      '[data-block-id="color-table"] c-pdf-builder-block'
+    ).block;
+    expect(resizedTableBlock.styles.height).toBe(originalTableHeight + 80);
+    expect(resizedTableBlock.styles.tableRows).toBe(3);
+    expect(resizedTableBlock.tableRows).toHaveLength(3);
+
+    await assertCompactColorControl("color-line", "lineColor", "#181818");
+  });
+
+  it("shows appearance controls only where each block type needs them", async () => {
+    const content = createKeyboardShortcutTemplate();
+    const oldContainerStyles = {
+      background: "#ffeecc",
+      padding: 12,
+      borderWidth: 3,
+      borderStyle: "solid",
+      borderColor: "#336699",
+      borderRadius: 7
+    };
+    content.body.sections[0].blocks = [
+      {
+        id: "appearance-text",
+        type: "text",
+        content: "Text",
+        styles: {
+          ...oldContainerStyles,
+          width: 180,
+          height: 40,
+          x: 0,
+          y: 0
+        }
+      },
+      {
+        id: "appearance-image",
+        type: "image",
+        imageSrc:
+          "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==",
+        styles: {
+          ...oldContainerStyles,
+          width: 180,
+          height: 100,
+          x: 200,
+          y: 0
+        }
+      },
+      {
+        id: "appearance-table",
+        type: "table",
+        tableData: [["Header"], ["Value"]],
+        styles: {
+          ...oldContainerStyles,
+          width: 240,
+          height: 100,
+          x: 0,
+          y: 140,
+          tableRows: 2,
+          tableColumns: 1
+        }
+      },
+      {
+        id: "appearance-line",
+        type: "divider",
+        styles: {
+          ...oldContainerStyles,
+          width: 240,
+          height: 12,
+          x: 260,
+          y: 160,
+          lineThickness: 1,
+          lineStyle: "solid",
+          lineColor: "#181818"
+        }
+      }
+    ];
+    getTemplate.mockResolvedValueOnce({
+      id: "a01000000000002AAA",
+      name: "Appearance sections",
+      objectApiName: "Account",
+      contentJson: JSON.stringify(content),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", { is: PDFBuilder });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    const selectBlock = async (blockId) => {
+      element.shadowRoot
+        .querySelector(`[data-block-id="${blockId}"] c-pdf-builder-block`)
+        .dispatchEvent(
+          new CustomEvent("selectblock", {
+            detail: { blockId, regionId: "body-1" },
+            bubbles: true,
+            composed: true
+          })
+        );
+      await flushPromises();
+    };
+    const sectionLabels = () =>
+      Array.from(
+        element.shadowRoot.querySelectorAll("details.property-section summary")
+      ).map((summary) => summary.textContent.trim());
+    const assertBorderDetailsDisabled = async () => {
+      const borderStyle = element.shadowRoot.querySelector(
+        'select[data-style="borderStyle"]'
+      );
+      borderStyle.value = "none";
+      borderStyle.dispatchEvent(new CustomEvent("change"));
+      await flushPromises();
+
+      expect(
+        element.shadowRoot.querySelector('input[data-style="borderWidth"]')
+          .disabled
+      ).toBe(true);
+      expect(
+        element.shadowRoot.querySelector('input[data-style="borderColor"]')
+          .disabled
+      ).toBe(true);
+      expect(
+        element.shadowRoot.querySelector(
+          '.color-reset-button[data-style="borderColor"]'
+        ).disabled
+      ).toBe(true);
+      expect(
+        element.shadowRoot.querySelector('input[data-style="borderRadius"]')
+          .disabled
+      ).toBe(true);
+    };
+
+    await selectBlock("appearance-text");
+    expect(sectionLabels()).toContain("Appearance");
+    expect(sectionLabels()).not.toContain("Container");
+    expect(
+      element.shadowRoot.querySelector('input[data-style="background"]')
+    ).not.toBeNull();
+    expect(
+      element.shadowRoot.querySelector('input[data-style="padding"]')
+    ).not.toBeNull();
+    await assertBorderDetailsDisabled();
+
+    await selectBlock("appearance-image");
+    expect(sectionLabels()).toContain("Image");
+    expect(sectionLabels()).not.toContain("Appearance");
+    expect(sectionLabels()).not.toContain("Container");
+    expect(
+      element.shadowRoot.querySelector('input[data-style="background"]')
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('input[data-style="padding"]')
+    ).toBeNull();
+    const imageSection = Array.from(
+      element.shadowRoot.querySelectorAll("details.property-section")
+    ).find(
+      (section) =>
+        section.querySelector("summary")?.textContent.trim() === "Image"
+    );
+    expect(
+      imageSection.querySelector('select[data-style="borderStyle"]')
+    ).not.toBeNull();
+    expect(
+      imageSection.querySelector('input[data-style="borderWidth"]')
+    ).not.toBeNull();
+    expect(
+      imageSection.querySelector('input[data-style="borderColor"]')
+    ).not.toBeNull();
+    expect(
+      imageSection.querySelector('input[data-style="borderRadius"]')
+    ).not.toBeNull();
+    const imageBlock = element.shadowRoot.querySelector(
+      '[data-block-id="appearance-image"] c-pdf-builder-block'
+    ).block;
+    expect(imageBlock.styles.background).toBe("transparent");
+    expect(imageBlock.styles.padding).toBe(0);
+    expect(imageBlock.styles.borderWidth).toBe(3);
+    expect(imageBlock.styles.borderStyle).toBe("solid");
+    await assertBorderDetailsDisabled();
+
+    const assertBareBlock = async (blockId) => {
+      await selectBlock(blockId);
+      expect(sectionLabels()).not.toContain("Appearance");
+      expect(sectionLabels()).not.toContain("Container");
+      const block = element.shadowRoot.querySelector(
+        `[data-block-id="${blockId}"] c-pdf-builder-block`
+      ).block;
+      expect(block.styles.background).toBe("transparent");
+      expect(block.styles.padding).toBe(0);
+      expect(block.styles.borderWidth).toBe(0);
+      expect(block.styles.borderStyle).toBe("none");
+      expect(block.styles.borderRadius).toBe(0);
+    };
+
+    await assertBareBlock("appearance-table");
+    await assertBareBlock("appearance-line");
   });
 
   it("warns when inserting a variable without a text or table block", async () => {
@@ -455,11 +944,67 @@ describe("c-pdf-builder", () => {
     await flushPromises();
 
     expect(
+      Array.from(
+        element.shadowRoot.querySelectorAll(
+          '[data-block-id="related-list-1"][data-resize-dir]'
+        )
+      )
+        .map((handle) => handle.dataset.resizeDir)
+        .sort()
+    ).toEqual(["e", "w"]);
+
+    const fixedRelatedList = Array.from(
+      element.shadowRoot.querySelectorAll("c-pdf-builder-block")
+    ).find((blockComponent) => blockComponent.block.type === "relatedList");
+    expect(fixedRelatedList.block.relatedListBuilderRows).toBe(1);
+    expect(fixedRelatedList.block.relatedListPreviewRows).toHaveLength(1);
+    expect(fixedRelatedList.block.styles.height).toBe(50);
+
+    expect(
       element.shadowRoot.querySelector('input[data-style="background"]')
     ).toBeNull();
     expect(
       element.shadowRoot.querySelector('input[data-style="padding"]')
     ).toBeNull();
+    const propertySectionLabels = Array.from(
+      element.shadowRoot.querySelectorAll("details.property-section summary")
+    ).map((summary) => summary.textContent.trim());
+    expect(propertySectionLabels).not.toContain("Container");
+    expect(propertySectionLabels).not.toContain("Actions");
+
+    [
+      "relatedListTextColor",
+      "relatedListOddTextColor",
+      "relatedListEvenTextColor",
+      "relatedListGridColor"
+    ].forEach((colorKey) => {
+      const input = element.shadowRoot.querySelector(
+        `input[data-key="${colorKey}"]`
+      );
+      expect(input.closest(".background-color-control")).not.toBeNull();
+      expect(
+        element.shadowRoot.querySelector(
+          `.color-reset-button[data-key="${colorKey}"]`
+        )
+      ).not.toBeNull();
+    });
+
+    const gridColorInput = element.shadowRoot.querySelector(
+      'input[data-key="relatedListGridColor"]'
+    );
+    gridColorInput.value = "#123456";
+    gridColorInput.dispatchEvent(new CustomEvent("input"));
+    await flushPromises();
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "d", ctrlKey: true })
+    );
+    await flushPromises();
+    expect(
+      Array.from(
+        element.shadowRoot.querySelectorAll("c-pdf-builder-block")
+      ).filter((blockComponent) => blockComponent.block.type === "relatedList")
+    ).toHaveLength(1);
 
     const relatedListSection = element.shadowRoot.querySelector(
       'details[data-section="related-list"]'
@@ -496,6 +1041,18 @@ describe("c-pdf-builder", () => {
         cell.textContent.trim()
       )
     ).toEqual(["Sample value", "Sample value", "Sample value"]);
+    expect(
+      previewTable.querySelector("thead th").getAttribute("style")
+    ).toContain("#123456");
+    expect(previewTable.style.height).toBe("50px");
+    expect(previewTable.querySelector("thead tr").style.height).toBe("25px");
+    expect(previewTable.querySelector("tbody tr").style.height).toBe("25px");
+    expect(previewTable.querySelector("tbody td").style.padding).toBe(
+      "0px 8px"
+    );
+    expect(previewTable.querySelector("tbody td").style.whiteSpace).toBe(
+      "nowrap"
+    );
   });
 
   it("restores every saved Related List column when legacy API-name casing differs", async () => {
@@ -640,8 +1197,107 @@ describe("c-pdf-builder", () => {
       "Even row color",
       "Even row text color",
       "Font size",
-      "Grid lines"
+      "Grid lines",
+      "Grid line color"
     ]);
+  });
+
+  it("keeps Related List preview rows within the builder geometry", async () => {
+    const regionStyles = {
+      background: "#ffffff",
+      padding: 0,
+      borderWidth: 0,
+      borderStyle: "none",
+      borderColor: "#c9c9c9",
+      borderRadius: 0
+    };
+    getTemplate.mockResolvedValueOnce({
+      id: "a01000000000002AAA",
+      name: "Opportunity quotation",
+      objectApiName: "Quote",
+      contentJson: JSON.stringify({
+        pagePadding: 0,
+        globalElementPadding: 0,
+        showHeader: false,
+        showBody: true,
+        showFooter: false,
+        repeatHeaderOnEachPage: false,
+        repeatFooterOnEachPage: false,
+        manualPageCount: 0,
+        manualPages: [],
+        header: {
+          id: "header",
+          label: "Header",
+          styles: { ...regionStyles, height: 110 },
+          blocks: []
+        },
+        body: {
+          layout: "one",
+          sections: [
+            {
+              id: "body-1",
+              label: "Body",
+              styles: regionStyles,
+              blocks: [
+                {
+                  id: "quotation-services",
+                  type: "relatedList",
+                  content: "",
+                  relatedListColumns: ["Quantity", "Description", "Total"],
+                  relatedListBuilderRows: 2,
+                  relatedListBorderMode: "all",
+                  styles: { width: 600, height: 75, x: 100, y: 160 }
+                },
+                {
+                  id: "quotation-total",
+                  type: "text",
+                  content: "TOTAL AMOUNT",
+                  styles: { width: 600, height: 75, x: 100, y: 240 }
+                }
+              ]
+            }
+          ]
+        },
+        footer: {
+          id: "footer",
+          label: "Footer",
+          styles: { ...regionStyles, height: 80 },
+          blocks: []
+        }
+      }),
+      generatedHtml: ""
+    });
+
+    const element = createElement("c-pdf-builder", { is: PDFBuilder });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateSelect = element.shadowRoot.querySelector(
+      '[data-role="template-select"]'
+    );
+    templateSelect.value = "a01000000000002AAA";
+    templateSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    Array.from(element.shadowRoot.querySelectorAll("button"))
+      .find((button) => button.textContent.trim() === "Preview")
+      .click();
+    await flushPromises();
+
+    const previewSection = element.shadowRoot.querySelector(
+      ".preview-content .pdf-body section"
+    );
+    const previewTable = previewSection.querySelector("table");
+    const relatedListBlock = previewTable.parentElement;
+    const totalBlock = Array.from(previewSection.children).find((child) =>
+      child.textContent.includes("TOTAL AMOUNT")
+    );
+
+    expect(previewTable.querySelectorAll("tbody tr")).toHaveLength(2);
+    expect(previewTable.style.height).toBe("75px");
+    expect(parseFloat(relatedListBlock.style.top) + 75).toBeLessThanOrEqual(
+      parseFloat(totalBlock.style.top)
+    );
   });
 
   it("loads the selected template and its object without changing the template contract", async () => {
@@ -1290,7 +1946,7 @@ describe("c-pdf-builder", () => {
     expect(movedBlock.styles.y).toBe(185);
   });
 
-  it("keeps copied horizontal and vertical lines aligned on their fixed axis", async () => {
+  it("uses endpoint handles for lines and keeps copies aligned on their fixed axis", async () => {
     const regionStyles = {
       background: "#ffffff",
       padding: 8,
@@ -1331,7 +1987,7 @@ describe("c-pdf-builder", () => {
                   x: 120,
                   y: 160,
                   lineLength: 300,
-                  height: 1,
+                  height: 12,
                   lineThickness: 1,
                   lineStyle: "solid",
                   lineColor: "#181818"
@@ -1344,7 +2000,7 @@ describe("c-pdf-builder", () => {
                 styles: {
                   x: 240,
                   y: 280,
-                  width: 1,
+                  width: 12,
                   height: 120,
                   lineThickness: 1,
                   lineStyle: "solid",
@@ -1399,6 +2055,29 @@ describe("c-pdf-builder", () => {
 
     selectBlock("horizontal-line");
     await flushPromises();
+    expect(
+      element.shadowRoot.querySelector('input[data-style="lineLength"]')
+    ).toBeNull();
+    expect(
+      Array.from(
+        element.shadowRoot.querySelectorAll(
+          '[data-block-id="horizontal-line"][data-resize-dir]'
+        )
+      )
+        .map((handle) => handle.dataset.resizeDir)
+        .sort()
+    ).toEqual(["e", "w"]);
+    expect(
+      Array.from(element.shadowRoot.querySelectorAll("summary")).map(
+        (summary) => summary.textContent.trim()
+      )
+    ).toContain("Size");
+    expect(
+      element.shadowRoot.querySelector('input[data-style="width"]')
+    ).not.toBeNull();
+    expect(
+      element.shadowRoot.querySelector('input[data-style="height"]')
+    ).toBeNull();
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: "d", ctrlKey: true })
     );
@@ -1406,6 +2085,26 @@ describe("c-pdf-builder", () => {
 
     selectBlock("vertical-line");
     await flushPromises();
+    expect(
+      Array.from(
+        element.shadowRoot.querySelectorAll(
+          '[data-block-id="vertical-line"][data-resize-dir]'
+        )
+      )
+        .map((handle) => handle.dataset.resizeDir)
+        .sort()
+    ).toEqual(["n", "s"]);
+    expect(
+      Array.from(element.shadowRoot.querySelectorAll("summary")).map(
+        (summary) => summary.textContent.trim()
+      )
+    ).toContain("Size");
+    expect(
+      element.shadowRoot.querySelector('input[data-style="width"]')
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('input[data-style="height"]')
+    ).not.toBeNull();
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: "d", ctrlKey: true })
     );
@@ -1433,6 +2132,8 @@ describe("c-pdf-builder", () => {
       (component) => component.block.id === "vertical-line"
     );
 
+    expect(sourceHorizontal.block.styles.height).toBe(1);
+    expect(sourceVertical.block.styles.width).toBe(1);
     expect(horizontalCopy.block.styles.x).toBe(sourceHorizontal.block.styles.x);
     expect(horizontalCopy.block.styles.y).toBe(
       sourceHorizontal.block.styles.y + 16
@@ -1611,7 +2312,7 @@ describe("c-pdf-builder", () => {
     ).toBeNull();
   });
 
-  it("keeps an image container fitted to its aspect ratio and padding while resizing", async () => {
+  it("keeps a padding-free image fitted to its aspect ratio while resizing", async () => {
     const regionStyles = {
       background: "#ffffff",
       padding: 8,
@@ -1738,7 +2439,8 @@ describe("c-pdf-builder", () => {
       '[data-region-id="body-1"] c-pdf-builder-block'
     ).block;
     expect(resizedBlock.styles.width).toBe(340);
-    expect(resizedBlock.styles.height).toBe(182);
+    expect(resizedBlock.styles.height).toBe(172);
+    expect(resizedBlock.styles.padding).toBe(0);
     expect(resizedBlock.styles.heightManuallyResized).toBe(false);
     expect(resizedBlock.imageAspectRatio).toBe(2);
 

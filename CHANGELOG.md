@@ -4,14 +4,23 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.0.18-beta.3] - 2026-09-20
+
 ### Changed
 
-- Grouped Related List background and text colors by header, odd rows and even rows.
-- Refined the night-mode `No fill` reset and delete-button states to match the surrounding dark controls.
+- Simplified element properties: text regions use `Appearance`, while images, tables, Related Lists and lines expose only the controls that affect their content.
+- Reworked tables to share the Related List appearance model, with separate header, odd-row and even-row colors plus configurable grid style and color.
+- Reduced line selection to endpoint handles and orientation-aware size controls, without an extra visible container.
+- Disabled border width, color and radius controls for text and image elements when border style is `None`.
+- Removed Copy and Paste actions from Related Lists because a template supports only one Related List.
+- Refined color controls, property grouping, dark-mode placeholders, reset actions and the disabled delete state.
 
 ### Fixed
 
-- Unconfigured Related Lists now show the same three-column sample table in Preview as they do in the Builder.
+- Related List placeholders now render a complete bottom grid line and use matching row geometry in the Builder, Preview and generated PDF output.
+- Related Lists no longer overlap following content in preview layouts such as `MP Opportunity Service Quotation`.
+- Unconfigured Related Lists show the same three-column sample table in Preview as they do in the Builder.
+- New and migrated line, table and Related List styles remain sanitized and preserved through save, preview and server-side rendering.
 
 ## [1.0.18-beta.2] - 2026-09-17
 
@@ -183,7 +192,10 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.17...HEAD
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18-beta.3...HEAD
+[1.0.18-beta.3]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18-beta.2...v1.0.18-beta.3
+[1.0.18-beta.2]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18-beta.1...v1.0.18-beta.2
+[1.0.18-beta.1]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.17...v1.0.18-beta.1
 [1.0.17]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.5...v1.0.17
 [1.0.16-beta.5]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.4...v1.0.16-beta.5
 [1.0.16-beta.4]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.16-beta.3...v1.0.16-beta.4

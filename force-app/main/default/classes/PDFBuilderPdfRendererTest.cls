@@ -215,12 +215,16 @@ private class PDFBuilderPdfRendererTest {
       'Divider style must be preserved.'
     );
     Assert.isTrue(
-      rendered.contains('left:32px;top:89px;width:340px;'),
-      'Divider must be vertically centered in its configured container.'
+      rendered.contains('left:32px;top:80px;width:340px;'),
+      'Divider must render at its position without an outer container.'
     );
     Assert.isTrue(
       rendered.contains('width:2px;height:120px;background-color:#00A1A1;'),
       'Vertical line geometry and color must be preserved.'
+    );
+    Assert.isTrue(
+      rendered.contains('left:110px;top:290px;width:2px;height:120px;'),
+      'Vertical line must use only its stroke width, without an outer container.'
     );
     Assert.isTrue(
       rendered.contains('src="https://example.com/logo.png"'),
@@ -297,6 +301,10 @@ private class PDFBuilderPdfRendererTest {
     Assert.isFalse(
       result.bodyHtml.contains('[[DBRL|'),
       'Related List tokens must be fully resolved.'
+    );
+    Assert.isTrue(
+      result.bodyHtml.contains('#123456'),
+      'Related List grid lines must use the configured color.'
     );
     Assert.isTrue(
       result.footerHtml.contains('Renderer Account'),
@@ -422,11 +430,23 @@ private class PDFBuilderPdfRendererTest {
     Map<String, Object> tableStyles = (Map<String, Object>) tableBlock.get(
       'styles'
     );
+    tableStyles.put('background', '#ff00ff');
+    tableStyles.put('padding', 12);
+    tableStyles.put('borderWidth', 4);
+    tableStyles.put('borderStyle', 'solid');
+    tableStyles.put('borderRadius', 7);
     tableStyles.put('tableRows', 3);
     tableStyles.put('tableColumns', 3);
     tableStyles.put('tableCellPadding', 8);
     tableStyles.put('tableBorderWidth', 1);
     tableStyles.put('tableBorderColor', '#c9c9c9');
+    tableStyles.put('tableBorderMode', 'horizontal');
+    tableStyles.put('tableHeaderRowColor', '#123456');
+    tableStyles.put('tableHeaderTextColor', '#ffffff');
+    tableStyles.put('tableOddRowColor', '#abcdef');
+    tableStyles.put('tableOddTextColor', '#111111');
+    tableStyles.put('tableEvenRowColor', '#fedcba');
+    tableStyles.put('tableEvenTextColor', '#222222');
     tableStyles.put('tableCellVerticalAlign', 'middle');
     tableBlock.put(
       'tableData',
@@ -467,6 +487,28 @@ private class PDFBuilderPdfRendererTest {
     Assert.isTrue(
       result.bodyHtml.contains('overflow:hidden'),
       'Cell overflow must not cover adjacent columns.'
+    );
+    Assert.isTrue(
+      result.bodyHtml.contains('background-color:#123456') &&
+        result.bodyHtml.contains('color:#ffffff') &&
+        result.bodyHtml.contains('font-weight:bold'),
+      'The first current-table row must render as its visual header.'
+    );
+    Assert.isTrue(
+      result.bodyHtml.contains('background-color:#abcdef') &&
+      result.bodyHtml.contains('background-color:#fedcba'),
+      'Current-table body rows must preserve odd and even row colors.'
+    );
+    Assert.isTrue(
+      result.bodyHtml.contains('border-top:1px solid #c9c9c9') &&
+      result.bodyHtml.contains('border-left:none'),
+      'Current-table grid mode and color must be preserved.'
+    );
+    Assert.isTrue(
+      result.bodyHtml.contains(
+        'background-color:transparent;padding:0px;border:0px none'
+      ) && !result.bodyHtml.contains('background-color:#ff00ff'),
+      'A current table must render without an outer container.'
     );
   }
 
@@ -640,6 +682,7 @@ private class PDFBuilderPdfRendererTest {
     relatedList.put('relatedListEvenTextColor', '#181818');
     relatedList.put('relatedListFontSize', '12');
     relatedList.put('relatedListBorderMode', 'all');
+    relatedList.put('relatedListGridColor', '#123456');
 
     return new Map<String, Object>{
       'pagePadding' => 32,

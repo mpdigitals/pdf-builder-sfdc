@@ -169,6 +169,10 @@ private class PDFBuilderPdfFallbackTest {
       result.bodyHtml.contains('border-top:'),
       'The horizontal-border mode must be rendered.'
     );
+    Assert.isTrue(
+      result.bodyHtml.contains('#123456'),
+      'The configured grid-line color must be rendered.'
+    );
     Assert.isFalse(
       result.bodyHtml.contains('[[DBRL|'),
       'All Related List tokens must be resolved.'
@@ -574,6 +578,7 @@ private class PDFBuilderPdfFallbackTest {
       'relatedListEvenTextColor' => '#181818',
       'relatedListFontSize' => '11',
       'relatedListBorderMode' => borderMode,
+      'relatedListGridColor' => '#123456',
       'relatedListCellPadding' => 6,
       'styles' => new Map<String, Object>{
         'x' => 0,

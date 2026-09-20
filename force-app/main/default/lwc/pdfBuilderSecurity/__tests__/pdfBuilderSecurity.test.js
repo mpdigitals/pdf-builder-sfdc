@@ -176,5 +176,121 @@ describe("pdfBuilderSecurity", () => {
       expect(result.repeatHeaderOnEachPage).toBe(false);
       expect(result.repeatFooterOnEachPage).toBe(false);
     });
+
+    it("preserves only safe Related List grid colors", () => {
+      const result = sanitizeDocumentModel({
+        header: { blocks: [], styles: {} },
+        body: {
+          layout: "one",
+          sections: [
+            {
+              id: "body-1",
+              styles: {},
+              blocks: [
+                {
+                  id: "related-list-1",
+                  type: "relatedList",
+                  relatedListGridColor: "#123456",
+                  styles: { relatedListGridColor: "#123456" }
+                },
+                {
+                  id: "related-list-unsafe",
+                  type: "relatedList",
+                  relatedListGridColor: "red;position:fixed",
+                  styles: { relatedListGridColor: "red;position:fixed" }
+                }
+              ]
+            }
+          ]
+        },
+        footer: { blocks: [], styles: {} }
+      });
+
+      expect(result.body.sections[0].blocks[0].relatedListGridColor).toBe(
+        "#123456"
+      );
+      expect(
+        result.body.sections[0].blocks[0].styles.relatedListGridColor
+      ).toBe("#123456");
+      expect(result.body.sections[0].blocks[1].relatedListGridColor).toBeNull();
+      expect(
+        result.body.sections[0].blocks[1].styles.relatedListGridColor
+      ).toBeNull();
+    });
+
+    it("limits Related List builder sample rows to whole values from 1 to 10", () => {
+      const result = sanitizeDocumentModel({
+        header: { blocks: [], styles: {} },
+        body: {
+          layout: "one",
+          sections: [
+            {
+              id: "body-1",
+              styles: {},
+              blocks: [
+                {
+                  id: "related-list-valid",
+                  type: "relatedList",
+                  relatedListBuilderRows: 2.6,
+                  styles: {}
+                },
+                {
+                  id: "related-list-too-large",
+                  type: "relatedList",
+                  relatedListBuilderRows: 11,
+                  styles: {}
+                }
+              ]
+            }
+          ]
+        },
+        footer: { blocks: [], styles: {} }
+      });
+
+      expect(result.body.sections[0].blocks[0].relatedListBuilderRows).toBe(3);
+      expect(
+        result.body.sections[0].blocks[1].relatedListBuilderRows
+      ).toBeNull();
+    });
+
+    it("preserves safe manual table appearance settings", () => {
+      const result = sanitizeDocumentModel({
+        header: { blocks: [], styles: {} },
+        body: {
+          layout: "one",
+          sections: [
+            {
+              id: "body-1",
+              styles: {},
+              blocks: [
+                {
+                  id: "table-1",
+                  type: "table",
+                  styles: {
+                    tableBorderMode: "horizontal",
+                    tableHeaderRowColor: "#112233",
+                    tableHeaderTextColor: "#ffffff",
+                    tableOddRowColor: "transparent",
+                    tableOddTextColor: "#223344",
+                    tableEvenRowColor: "#ddeeff",
+                    tableEvenTextColor: "red;position:fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        footer: { blocks: [], styles: {} }
+      });
+
+      const styles = result.body.sections[0].blocks[0].styles;
+      expect(styles.tableBorderMode).toBe("horizontal");
+      expect(styles.tableHeaderRowColor).toBe("#112233");
+      expect(styles.tableHeaderTextColor).toBe("#ffffff");
+      expect(styles.tableOddRowColor).toBe("transparent");
+      expect(styles.tableOddTextColor).toBe("#223344");
+      expect(styles.tableEvenRowColor).toBe("#ddeeff");
+      expect(styles.tableEvenTextColor).toBeNull();
+    });
   });
 });

@@ -1658,16 +1658,18 @@
                 </template>
 
                 <template lwc:if={showBlockSizeProperties}>
-                  <div class="property-group">
-                    <label>Width</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={selectedElement.styles.width}
-                      data-style="width"
-                      onchange={handleStyleChange}
-                    />
-                  </div>
+                  <template lwc:if={showBlockWidthProperty}>
+                    <div class="property-group">
+                      <label>Width</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={selectedElement.styles.width}
+                        data-style="width"
+                        onchange={handleStyleChange}
+                      />
+                    </div>
+                  </template>
 
                   <template lwc:if={showBlockHeightProperty}>
                     <div class="property-group">
@@ -1686,99 +1688,121 @@
             </details>
           </template>
 
-          <details
-            class="property-section"
-            ontoggle={handlePropertySectionToggle}
-          >
-            <summary>Appearance</summary>
+          <template lwc:if={showContainerProperties}>
+            <details
+              class="property-section"
+              ontoggle={handlePropertySectionToggle}
+            >
+              <summary>{containerSectionLabel}</summary>
 
-            <div class="property-grid">
-              <template lwc:if={showElementBackgroundProperty}>
+              <div class="property-grid">
+                <template lwc:if={showElementBackgroundProperty}>
+                  <div class="property-group">
+                    <label>Background</label>
+                    <div class="background-color-control">
+                      <label class="background-color-choice">
+                        <span>{selectedElementBackgroundLabel}</span>
+                        <input
+                          class="background-color-input"
+                          type="color"
+                          value={selectedElementBackgroundValue}
+                          data-style="background"
+                          aria-label="Choose background color"
+                          oninput={handleStyleChange}
+                        />
+                      </label>
+                      <button
+                        class="background-no-fill-button"
+                        type="button"
+                        title="No fill"
+                        aria-label="Use no fill for background"
+                        onclick={handleElementBackgroundNoFill}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                </template>
+
+                <template lwc:if={showElementPaddingProperty}>
+                  <div class="property-group">
+                    <label>Padding</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={selectedElement.styles.padding}
+                      data-style="padding"
+                      onchange={handleStyleChange}
+                    />
+                  </div>
+                </template>
+
                 <div class="property-group">
-                  <label>Background</label>
+                  <label>Border style</label>
+                  <select data-style="borderStyle" onchange={handleStyleChange}>
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                    <option value="double">Double</option>
+                    <option value="none">None</option>
+                  </select>
+                </div>
+
+                <div class="property-group">
+                  <label>Border width</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={selectedElement.styles.borderWidth}
+                    data-style="borderWidth"
+                    disabled={isBorderWidthDisabled}
+                    onchange={handleStyleChange}
+                  />
+                </div>
+
+                <div class="property-group">
+                  <label>Border color</label>
                   <div class="background-color-control">
                     <label class="background-color-choice">
-                      <span>{selectedElementBackgroundLabel}</span>
+                      <span>Choose color</span>
                       <input
                         class="background-color-input"
                         type="color"
-                        value={selectedElementBackgroundValue}
-                        data-style="background"
-                        aria-label="Choose background color"
+                        value={selectedElementBorderColorValue}
+                        data-style="borderColor"
+                        aria-label="Choose border color"
+                        disabled={areBlockBorderDetailsDisabled}
                         oninput={handleStyleChange}
                       />
                     </label>
                     <button
-                      class="background-no-fill-button"
+                      class="color-reset-button"
                       type="button"
-                      title="No fill"
-                      aria-label="Use no fill for background"
-                      onclick={handleElementBackgroundNoFill}
+                      data-style="borderColor"
+                      title="Reset border color"
+                      aria-label="Reset border color to default"
+                      disabled={areBlockBorderDetailsDisabled}
+                      onclick={handleElementColorReset}
                     >
                       ×
                     </button>
                   </div>
                 </div>
-              </template>
 
-              <template lwc:if={showElementPaddingProperty}>
                 <div class="property-group">
-                  <label>Padding</label>
+                  <label>Border radius</label>
                   <input
                     type="number"
                     min="0"
-                    value={selectedElement.styles.padding}
-                    data-style="padding"
+                    value={selectedElement.styles.borderRadius}
+                    data-style="borderRadius"
+                    disabled={areBlockBorderDetailsDisabled}
                     onchange={handleStyleChange}
                   />
                 </div>
-              </template>
-
-              <div class="property-group">
-                <label>Border style</label>
-                <select data-style="borderStyle" onchange={handleStyleChange}>
-                  <option value="solid">Solid</option>
-                  <option value="dashed">Dashed</option>
-                  <option value="dotted">Dotted</option>
-                  <option value="double">Double</option>
-                  <option value="none">None</option>
-                </select>
               </div>
-
-              <div class="property-group">
-                <label>Border width</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={selectedElement.styles.borderWidth}
-                  data-style="borderWidth"
-                  disabled={isBorderWidthDisabled}
-                  onchange={handleStyleChange}
-                />
-              </div>
-
-              <div class="property-group">
-                <label>Border color</label>
-                <input
-                  type="color"
-                  value={selectedElement.styles.borderColor}
-                  data-style="borderColor"
-                  oninput={handleStyleChange}
-                />
-              </div>
-
-              <div class="property-group">
-                <label>Border radius</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={selectedElement.styles.borderRadius}
-                  data-style="borderRadius"
-                  onchange={handleStyleChange}
-                />
-              </div>
-            </div>
-          </details>
+            </details>
+          </template>
 
           <template lwc:if={showTextProperties}>
             <details
@@ -1790,13 +1814,30 @@
               <div class="property-grid">
                 <div class="property-group">
                   <label>Text color</label>
-                  <input
-                    type="color"
-                    value={selectedElement.styles.color}
-                    data-style="color"
-                    onclick={handlePropertyColorClick}
-                    oninput={handleStyleChange}
-                  />
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedElementTextColorValue}
+                        data-style="color"
+                        aria-label="Choose text color"
+                        onclick={handlePropertyColorClick}
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-style="color"
+                      title="Reset text color"
+                      aria-label="Reset text color to default"
+                      onclick={handleElementColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
 
                 <div class="property-group">
@@ -1929,6 +1970,70 @@
                   />
                 </div>
 
+                <div class="property-group">
+                  <label>Border style</label>
+                  <select data-style="borderStyle" onchange={handleStyleChange}>
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                    <option value="double">Double</option>
+                    <option value="none">None</option>
+                  </select>
+                </div>
+
+                <div class="property-group">
+                  <label>Border width</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={selectedElement.styles.borderWidth}
+                    data-style="borderWidth"
+                    disabled={isBorderWidthDisabled}
+                    onchange={handleStyleChange}
+                  />
+                </div>
+
+                <div class="property-group">
+                  <label>Border color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedElementBorderColorValue}
+                        data-style="borderColor"
+                        aria-label="Choose image border color"
+                        disabled={areBlockBorderDetailsDisabled}
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-style="borderColor"
+                      title="Reset image border color"
+                      aria-label="Reset image border color to default"
+                      disabled={areBlockBorderDetailsDisabled}
+                      onclick={handleElementColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+
+                <div class="property-group">
+                  <label>Border radius</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={selectedElement.styles.borderRadius}
+                    data-style="borderRadius"
+                    disabled={areBlockBorderDetailsDisabled}
+                    onchange={handleStyleChange}
+                  />
+                </div>
+
                 <div class="property-group property-span-full">
                   <label>Upload image</label>
                   <input
@@ -2002,6 +2107,168 @@
                 </div>
 
                 <div class="property-group">
+                  <label>Header color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>{selectedTableHeaderBackgroundLabel}</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedTableHeaderBackgroundValue}
+                        data-style="tableHeaderRowColor"
+                        aria-label="Choose table header background color"
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="background-no-fill-button"
+                      type="button"
+                      data-style="tableHeaderRowColor"
+                      title="No fill"
+                      aria-label="Use no fill for table header background"
+                      onclick={handleTableBackgroundNoFill}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+
+                <div class="property-group">
+                  <label>Header text color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedTableHeaderTextColorValue}
+                        data-style="tableHeaderTextColor"
+                        aria-label="Choose table header text color"
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-style="tableHeaderTextColor"
+                      title="Reset table header text color"
+                      aria-label="Reset table header text color to default"
+                      onclick={handleElementColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+
+                <div class="property-group">
+                  <label>Odd row color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>{selectedTableOddBackgroundLabel}</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedTableOddBackgroundValue}
+                        data-style="tableOddRowColor"
+                        aria-label="Choose table odd row background color"
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="background-no-fill-button"
+                      type="button"
+                      data-style="tableOddRowColor"
+                      title="No fill"
+                      aria-label="Use no fill for table odd row background"
+                      onclick={handleTableBackgroundNoFill}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+
+                <div class="property-group">
+                  <label>Odd row text color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedTableOddTextColorValue}
+                        data-style="tableOddTextColor"
+                        aria-label="Choose table odd row text color"
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-style="tableOddTextColor"
+                      title="Reset table odd row text color"
+                      aria-label="Reset table odd row text color to default"
+                      onclick={handleElementColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+
+                <div class="property-group">
+                  <label>Even row color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>{selectedTableEvenBackgroundLabel}</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedTableEvenBackgroundValue}
+                        data-style="tableEvenRowColor"
+                        aria-label="Choose table even row background color"
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="background-no-fill-button"
+                      type="button"
+                      data-style="tableEvenRowColor"
+                      title="No fill"
+                      aria-label="Use no fill for table even row background"
+                      onclick={handleTableBackgroundNoFill}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+
+                <div class="property-group">
+                  <label>Even row text color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedTableEvenTextColorValue}
+                        data-style="tableEvenTextColor"
+                        aria-label="Choose table even row text color"
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-style="tableEvenTextColor"
+                      title="Reset table even row text color"
+                      aria-label="Reset table even row text color to default"
+                      onclick={handleElementColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+
+                <div class="property-group">
                   <label>Cell padding</label>
                   <input
                     type="number"
@@ -2024,13 +2291,43 @@
                 </div>
 
                 <div class="property-group">
-                  <label>Cell border color</label>
-                  <input
-                    type="color"
-                    value={selectedElement.styles.tableBorderColor}
-                    data-style="tableBorderColor"
-                    oninput={handleStyleChange}
-                  />
+                  <label>Grid lines</label>
+                  <select
+                    data-style="tableBorderMode"
+                    onchange={handleStyleChange}
+                  >
+                    <option value="all">All lines</option>
+                    <option value="none">No lines</option>
+                    <option value="horizontal">Horizontal only</option>
+                    <option value="vertical">Vertical only</option>
+                  </select>
+                </div>
+
+                <div class="property-group">
+                  <label>Grid line color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedTableBorderColorValue}
+                        data-style="tableBorderColor"
+                        aria-label="Choose table grid line color"
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-style="tableBorderColor"
+                      title="Reset table grid line color"
+                      aria-label="Reset table grid line color to default"
+                      onclick={handleElementColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
               </div>
             </details>
@@ -2116,12 +2413,29 @@
 
                 <div class="property-group">
                   <label>Header text color</label>
-                  <input
-                    type="color"
-                    data-key="relatedListTextColor"
-                    value={selectedBlock.relatedListTextColor}
-                    oninput={handleRelatedListColorChange}
-                  />
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        data-key="relatedListTextColor"
+                        value={relatedListHeaderTextColorValue}
+                        aria-label="Choose header text color"
+                        oninput={handleRelatedListColorChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-key="relatedListTextColor"
+                      title="Reset header text color"
+                      aria-label="Reset header text color to default"
+                      onclick={handleRelatedListColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
 
                 <div class="property-group">
@@ -2153,12 +2467,29 @@
 
                 <div class="property-group">
                   <label>Odd row text color</label>
-                  <input
-                    type="color"
-                    data-key="relatedListOddTextColor"
-                    value={selectedBlock.relatedListOddTextColor}
-                    oninput={handleRelatedListColorChange}
-                  />
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        data-key="relatedListOddTextColor"
+                        value={relatedListOddTextColorValue}
+                        aria-label="Choose odd row text color"
+                        oninput={handleRelatedListColorChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-key="relatedListOddTextColor"
+                      title="Reset odd row text color"
+                      aria-label="Reset odd row text color to default"
+                      onclick={handleRelatedListColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
 
                 <div class="property-group">
@@ -2190,12 +2521,29 @@
 
                 <div class="property-group">
                   <label>Even row text color</label>
-                  <input
-                    type="color"
-                    data-key="relatedListEvenTextColor"
-                    value={selectedBlock.relatedListEvenTextColor}
-                    oninput={handleRelatedListColorChange}
-                  />
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        data-key="relatedListEvenTextColor"
+                        value={relatedListEvenTextColorValue}
+                        aria-label="Choose even row text color"
+                        oninput={handleRelatedListColorChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-key="relatedListEvenTextColor"
+                      title="Reset even row text color"
+                      aria-label="Reset even row text color to default"
+                      onclick={handleRelatedListColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
 
                 <div class="property-group">
@@ -2222,6 +2570,33 @@
                     <option value="vertical">Vertical only</option>
                   </select>
                 </div>
+
+                <div class="property-group">
+                  <label>Grid line color</label>
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        data-key="relatedListGridColor"
+                        value={relatedListGridColorValue}
+                        aria-label="Choose grid line color"
+                        oninput={handleRelatedListColorChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-key="relatedListGridColor"
+                      title="Reset grid line color"
+                      aria-label="Reset grid line color to default"
+                      onclick={handleRelatedListColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
               </div>
             </details>
           </template>
@@ -2234,17 +2609,6 @@
               <summary>Line</summary>
 
               <div class="property-grid">
-                <div class="property-group">
-                  <label>Line length</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={selectedElement.styles.lineLength}
-                    data-style="lineLength"
-                    onchange={handleStyleChange}
-                  />
-                </div>
-
                 <div class="property-group">
                   <label>Line thickness</label>
                   <input
@@ -2268,18 +2632,35 @@
 
                 <div class="property-group">
                   <label>Line color</label>
-                  <input
-                    type="color"
-                    value={selectedElement.styles.lineColor}
-                    data-style="lineColor"
-                    oninput={handleStyleChange}
-                  />
+                  <div class="background-color-control">
+                    <label class="background-color-choice">
+                      <span>Choose color</span>
+                      <input
+                        class="background-color-input"
+                        type="color"
+                        value={selectedLineColorValue}
+                        data-style="lineColor"
+                        aria-label="Choose line color"
+                        oninput={handleStyleChange}
+                      />
+                    </label>
+                    <button
+                      class="color-reset-button"
+                      type="button"
+                      data-style="lineColor"
+                      title="Reset line color"
+                      aria-label="Reset line color to default"
+                      onclick={handleElementColorReset}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
               </div>
             </details>
           </template>
 
-          <template lwc:if={selectedBlock}>
+          <template lwc:if={showBlockActions}>
             <details
               class="property-section"
               ontoggle={handlePropertySectionToggle}

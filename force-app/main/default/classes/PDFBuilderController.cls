@@ -3180,6 +3180,18 @@ public with sharing class PDFBuilderController {
       regionHeight
     );
 
+    // Lines have no outer container: their cross-axis size is the stroke.
+    // This also normalizes documents saved with the old 12px selection box.
+    Integer lineThickness = Math.max(
+      1,
+      getIntegerStyleValue(styles, 'lineThickness', 1)
+    );
+    if (type == 'divider') {
+      height = lineThickness;
+    } else if (type == 'verticalLine') {
+      width = lineThickness;
+    }
+
     // Keep block geometry inside its region to avoid Visualforce PDF clipping artifacts.
     x = Math.max(0, Math.min(x, Math.max(0, regionWidth - 1)));
     if (type == 'image') {
@@ -3259,14 +3271,10 @@ public with sharing class PDFBuilderController {
         '</div>';
     }
     if (type == 'divider') {
-      Integer lineThickness = Math.max(
-        1,
-        getIntegerStyleValue(styles, 'lineThickness', 1)
-      );
       // Do not rely on flex, margins or table vertical alignment here. Salesforce's
       // Flying Saucer PDF renderer can place those at the block's top edge when
       // the containing region is absolutely positioned. Emit the line at its
-      // resolved final coordinate instead, matching the builder's centered line.
+      // resolved final coordinate instead, matching the builder's line geometry.
       // Absolute line coordinates are resolved by Flying Saucer from the
       // printable page edge, not from the body canvas. Restore the builder's
       // body origin so a divider at x=0 starts after the page padding.
@@ -3304,10 +3312,6 @@ public with sharing class PDFBuilderController {
         '"></div>';
     }
     if (type == 'verticalLine') {
-      Integer lineThickness = Math.max(
-        1,
-        getIntegerStyleValue(styles, 'lineThickness', 1)
-      );
       String lineColor = normalizePdfStyleValue(
         getStyleValue(styles, 'lineColor'),
         '#181818'
@@ -3460,6 +3464,20 @@ public with sharing class PDFBuilderController {
       getStyleValue(styles, 'borderColor'),
       '#c9c9c9'
     );
+    Boolean hasNoContainer =
+      type == 'table' ||
+      type == 'relatedList' ||
+      type == 'divider' ||
+      type == 'verticalLine';
+    if (hasNoContainer || type == 'image') {
+      background = 'transparent';
+      padding = 0;
+    }
+    if (hasNoContainer) {
+      borderWidth = 0;
+      borderStyle = 'none';
+      borderRadius = 0;
+    }
     Integer horizontalChrome = (padding * 2) + (borderWidth * 2);
     Integer verticalChrome = (padding * 2) + (borderWidth * 2);
     Integer cssWidth = Math.max(1, width - horizontalChrome);
@@ -4332,7 +4350,7 @@ public with sharing class PDFBuilderController {
           '<td valign="' +
           verticalAlign +
           '" style="' +
-          buildPdfCurrentTableCellStyle(styles, verticalAlign) +
+          buildPdfCurrentTableCellStyle(styles, verticalAlign, rowIndex) +
           '">' +
           (String.isBlank(cellContent)
             ? '&nbsp;'
@@ -4372,7 +4390,8 @@ public with sharing class PDFBuilderController {
 
   private static String buildPdfCurrentTableCellStyle(
     Map<String, Object> styles,
-    String verticalAlign
+    String verticalAlign,
+    Integer rowIndex
   ) {
     Integer borderWidth = getConstrainedIntegerStyle(
       styles,
@@ -4392,23 +4411,65 @@ public with sharing class PDFBuilderController {
       getStyleValue(styles, 'tableBorderColor'),
       '#c9c9c9'
     );
-    String border = borderWidth == 0
-      ? '0'
-      : String.valueOf(borderWidth) + 'px solid ' + borderColor;
-    List<String> declarations = new List<String>{
-      'border:' + border,
-      'padding:' +
-      cellPadding +
-      'px',
-      'vertical-align:' + verticalAlign,
-      'box-sizing:border-box',
-      'min-width:0',
-      'max-width:100%',
-      'white-space:normal',
-      'overflow:hidden',
-      'overflow-wrap:anywhere',
-      'word-break:break-word'
-    };
+    String borderMode = getStyleValue(styles, 'tableBorderMode');
+    if (
+      borderMode != 'none' &&
+      borderMode != 'horizontal' &&
+      borderMode != 'vertical' &&
+      borderMode != 'all'
+    ) {
+      borderMode = 'all';
+    }
+    String border = String.valueOf(borderWidth) + 'px solid ' + borderColor;
+    List<String> declarations = new List<String>();
+    if (borderWidth == 0 || borderMode == 'none') {
+      declarations.add('border:none');
+    } else if (borderMode == 'horizontal') {
+      declarations.add('border-top:' + border);
+      declarations.add('border-bottom:' + border);
+      declarations.add('border-left:none');
+      declarations.add('border-right:none');
+    } else if (borderMode == 'vertical') {
+      declarations.add('border-left:' + border);
+      declarations.add('border-right:' + border);
+      declarations.add('border-top:none');
+      declarations.add('border-bottom:none');
+    } else {
+      declarations.add('border:' + border);
+    }
+
+    Boolean isHeader = rowIndex == 0;
+    Boolean isOddBodyRow = Math.mod(Math.max(0, rowIndex - 1), 2) == 0;
+    String backgroundColor = isHeader
+      ? getStyleValue(styles, 'tableHeaderRowColor')
+      : isOddBodyRow
+          ? getStyleValue(styles, 'tableOddRowColor')
+          : getStyleValue(styles, 'tableEvenRowColor');
+    String textColor = isHeader
+      ? getStyleValue(styles, 'tableHeaderTextColor')
+      : isOddBodyRow
+          ? getStyleValue(styles, 'tableOddTextColor')
+          : getStyleValue(styles, 'tableEvenTextColor');
+    declarations.add(
+      'background-color:' + normalizePdfColorLiteral(backgroundColor, '#ffffff')
+    );
+    declarations.add('color:' + normalizePdfColorLiteral(textColor, '#181818'));
+    declarations.add('font-weight:' + (isHeader ? 'bold' : 'normal'));
+    declarations.addAll(
+      new List<String>{
+        'padding:' +
+        cellPadding +
+        'px',
+        'vertical-align:' + verticalAlign,
+        'box-sizing:border-box',
+        'min-width:0',
+        'max-width:100%',
+        'white-space:normal',
+        'overflow:hidden',
+        'overflow-wrap:anywhere',
+        'word-break:break-word'
+      }
+    );
     addDeclaration(
       declarations,
       'text-align',
@@ -4964,6 +5025,13 @@ public with sharing class PDFBuilderController {
     if (String.isBlank(borderMode)) {
       borderMode = 'all';
     }
+    String gridColor = getStringValue(block, 'relatedListGridColor');
+    if (String.isBlank(gridColor)) {
+      gridColor = getStyleValue(styles, 'relatedListGridColor');
+    }
+    if (String.isBlank(gridColor)) {
+      gridColor = '#c9c9c9';
+    }
     String cellPadding = getStyleValue(styles, 'tableCellPadding');
     if (String.isBlank(cellPadding)) {
       cellPadding = '8';
@@ -4993,6 +5061,8 @@ public with sharing class PDFBuilderController {
       borderMode +
       '|' +
       cellPadding +
+      '|' +
+      gridColor +
       ']]';
   }
 
@@ -5074,6 +5144,10 @@ public with sharing class PDFBuilderController {
           cellPadding = 8;
         }
       }
+      String gridColor = tokenParts.size() > 12 &&
+        !String.isBlank(tokenParts[12])
+        ? tokenParts[12]
+        : '#c9c9c9';
 
       String tableHtml = buildRelatedListTableHtml(
         recordId,
@@ -5090,6 +5164,7 @@ public with sharing class PDFBuilderController {
         evenTextColor,
         borderMode,
         cellPadding,
+        gridColor,
         applyPdfFontScale
       );
 
@@ -5146,6 +5221,7 @@ public with sharing class PDFBuilderController {
     String evenTextColor,
     String borderMode,
     Integer cellPadding,
+    String gridColor,
     Boolean applyPdfFontScale
   ) {
     Map<String, Schema.SObjectType> objectMap = Schema.getGlobalDescribe();
@@ -5254,6 +5330,7 @@ public with sharing class PDFBuilderController {
       evenTextColor,
       normalizedTextColor
     );
+    String normalizedGridColor = normalizePdfColorLiteral(gridColor, '#c9c9c9');
     Integer normalizedFontSize = fontSize == null
       ? 12
       : Math.max(8, Math.min(36, fontSize));
@@ -5291,7 +5368,12 @@ public with sharing class PDFBuilderController {
         fieldDescribe.getType()
       );
       String headerCellStyle =
-        getRelatedListCellBorderStyle(borderMode, true, columnIndex == 0) +
+        getRelatedListCellBorderStyle(
+          borderMode,
+          true,
+          columnIndex == 0,
+          normalizedGridColor
+        ) +
         cellPaddingStyle +
         'color:' +
         escapeHtml(normalizedTextColor) +
@@ -5344,7 +5426,12 @@ public with sharing class PDFBuilderController {
             renderedFontSize +
             ';';
         String rowCellStyle =
-          getRelatedListCellBorderStyle(borderMode, false, columnIndex == 0) +
+          getRelatedListCellBorderStyle(
+            borderMode,
+            false,
+            columnIndex == 0,
+            normalizedGridColor
+          ) +
           cellPaddingStyle +
           rowBaseStyle +
           'background-color:' +
@@ -5380,7 +5467,12 @@ public with sharing class PDFBuilderController {
 
     if (rows.isEmpty()) {
       String emptyStyle =
-        getRelatedListCellBorderStyle(borderMode, false, true) +
+        getRelatedListCellBorderStyle(
+          borderMode,
+          false,
+          true,
+          normalizedGridColor
+        ) +
         cellPaddingStyle +
         'font-size:' +
         renderedFontSize +
@@ -5395,7 +5487,12 @@ public with sharing class PDFBuilderController {
 
     if (rowsTruncated) {
       String truncationStyle =
-        getRelatedListCellBorderStyle(borderMode, false, true) +
+        getRelatedListCellBorderStyle(
+          borderMode,
+          false,
+          true,
+          normalizedGridColor
+        ) +
         cellPaddingStyle +
         'font-size:' +
         renderedFontSize +
@@ -5440,7 +5537,8 @@ public with sharing class PDFBuilderController {
   private static String getRelatedListCellBorderStyle(
     String borderMode,
     Boolean isFirstRow,
-    Boolean isFirstColumn
+    Boolean isFirstColumn,
+    String gridColor
   ) {
     String normalized = String.isBlank(borderMode)
       ? 'all'
@@ -5450,23 +5548,31 @@ public with sharing class PDFBuilderController {
       return 'border:none;';
     }
     if (normalized == 'horizontal') {
-      String top = isFirstRow ? '1px solid #c9c9c9' : 'none';
+      String top = isFirstRow ? '1px solid ' + gridColor : 'none';
       return 'border-top:' +
         top +
-        ';border-bottom:1px solid #c9c9c9;border-left:none;border-right:none;';
+        ';border-bottom:1px solid ' +
+        gridColor +
+        ';border-left:none;border-right:none;';
     }
     if (normalized == 'vertical') {
-      String left = isFirstColumn ? '1px solid #c9c9c9' : 'none';
+      String left = isFirstColumn ? '1px solid ' + gridColor : 'none';
       return 'border-left:' +
         left +
-        ';border-right:1px solid #c9c9c9;border-top:none;border-bottom:none;';
+        ';border-right:1px solid ' +
+        gridColor +
+        ';border-top:none;border-bottom:none;';
     }
 
-    String top = isFirstRow ? '1px solid #c9c9c9' : 'none';
-    String left = isFirstColumn ? '1px solid #c9c9c9' : 'none';
+    String top = isFirstRow ? '1px solid ' + gridColor : 'none';
+    String left = isFirstColumn ? '1px solid ' + gridColor : 'none';
     return 'border-top:' +
       top +
-      ';border-right:1px solid #c9c9c9;border-bottom:1px solid #c9c9c9;border-left:' +
+      ';border-right:1px solid ' +
+      gridColor +
+      ';border-bottom:1px solid ' +
+      gridColor +
+      ';border-left:' +
       left +
       ';';
   }

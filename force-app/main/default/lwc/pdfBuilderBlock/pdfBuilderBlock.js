@@ -90,13 +90,37 @@ export default class PDFBuilderBlock extends LightningElement {
     return classes.join(" ").trim();
   }
 
+  get blockInlineStyle() {
+    const inlineStyle = String(this.block?.inlineStyle || "");
+    if (!this.block?.isRelatedList) {
+      return inlineStyle;
+    }
+
+    const borderMode = this.block?.relatedListBorderMode || "all";
+    const showsHorizontalGrid =
+      borderMode === "all" || borderMode === "horizontal";
+    const borderColor =
+      this.block?.relatedListGridColor ||
+      this.block?.styles?.relatedListGridColor ||
+      "#c9c9c9";
+    if (!showsHorizontalGrid) {
+      return inlineStyle;
+    }
+
+    return `${inlineStyle};border-bottom:1px solid ${borderColor};`;
+  }
+
   get relatedListHeaderStyle() {
     const color = this.block?.relatedListHeaderRowColor || "transparent";
     return `background-color:${color};`;
   }
 
   get hasTableBottomBorder() {
-    return this.getTableBorderWidth() > 0;
+    const borderMode = this.block?.styles?.tableBorderMode || "all";
+    return (
+      this.getTableBorderWidth() > 0 &&
+      (borderMode === "all" || borderMode === "horizontal")
+    );
   }
 
   get tableBottomBorderStyle() {

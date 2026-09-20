@@ -367,6 +367,69 @@ describe("c-pdf-builder-block", () => {
     expect(element.shadowRoot.querySelector(".table-bottom-border")).toBeNull();
   });
 
+  it("closes a Related List with a real bottom border in its grid color", async () => {
+    const element = createElement("c-pdf-builder-block", {
+      is: PDFBuilderBlock
+    });
+    element.block = {
+      id: "related-list-1",
+      type: "relatedList",
+      isRelatedList: true,
+      className: "pdf-block table-block related-list-block",
+      inlineStyle: "--block-padding:0px",
+      relatedListBorderMode: "all",
+      relatedListGridColor: "#123456",
+      relatedListHeaderRowColor: "transparent",
+      relatedListColumnLabels: [
+        { key: "column-1", label: "Column 1", style: "" }
+      ],
+      relatedListPreviewRows: [
+        {
+          key: "row-1",
+          rowStyle: "",
+          cells: [{ key: "cell-1", value: "Sample value", style: "" }]
+        }
+      ],
+      styles: {}
+    };
+
+    document.body.appendChild(element);
+    await Promise.resolve();
+
+    const relatedList = element.shadowRoot.querySelector(
+      ".pdf-block.related-list-block"
+    );
+    expect(relatedList.style.borderBottomWidth).toBe("1px");
+    expect(relatedList.style.borderBottomStyle).toBe("solid");
+    expect(relatedList.style.borderBottomColor).toBe("#123456");
+  });
+
+  it("does not close a Related List using vertical-only grid lines", async () => {
+    const element = createElement("c-pdf-builder-block", {
+      is: PDFBuilderBlock
+    });
+    element.block = {
+      id: "related-list-1",
+      type: "relatedList",
+      isRelatedList: true,
+      className: "pdf-block table-block related-list-block",
+      inlineStyle: "--block-padding:0px",
+      relatedListBorderMode: "vertical",
+      relatedListGridColor: "#123456",
+      relatedListColumnLabels: [],
+      relatedListPreviewRows: [],
+      styles: {}
+    };
+
+    document.body.appendChild(element);
+    await Promise.resolve();
+
+    const relatedList = element.shadowRoot.querySelector(
+      ".pdf-block.related-list-block"
+    );
+    expect(relatedList.style.borderBottom).toBe("");
+  });
+
   it("releases table-cell focus when editing is stopped", async () => {
     const element = createElement("c-pdf-builder-block", {
       is: PDFBuilderBlock

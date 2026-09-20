@@ -131,6 +131,8 @@ const BLOCK_KEYS = new Set([
   "relatedListEvenTextColor",
   "relatedListFontSize",
   "relatedListBorderMode",
+  "relatedListGridColor",
+  "relatedListBuilderRows",
   "styles"
 ]);
 
@@ -154,6 +156,13 @@ const STYLE_KEYS = new Set([
   "tableCellPadding",
   "tableBorderWidth",
   "tableBorderColor",
+  "tableBorderMode",
+  "tableHeaderRowColor",
+  "tableHeaderTextColor",
+  "tableOddRowColor",
+  "tableOddTextColor",
+  "tableEvenRowColor",
+  "tableEvenTextColor",
   "tableCellVerticalAlign",
   "lineLength",
   "lineThickness",
@@ -167,6 +176,9 @@ const STYLE_KEYS = new Set([
   "xRatio",
   "y",
   "relatedListTextColor",
+  "relatedListOddTextColor",
+  "relatedListEvenTextColor",
+  "relatedListGridColor",
   "relatedListFontSize"
 ]);
 
@@ -591,11 +603,38 @@ function sanitizeStyles(source = {}) {
       styles.tableBorderColor,
       undefined
     );
+  [
+    "tableHeaderRowColor",
+    "tableHeaderTextColor",
+    "tableOddRowColor",
+    "tableOddTextColor",
+    "tableEvenRowColor",
+    "tableEvenTextColor"
+  ].forEach((key) => {
+    if (key in styles) {
+      styles[key] = normalizeColor(styles[key], undefined);
+    }
+  });
   if ("lineColor" in styles)
     styles.lineColor = normalizeColor(styles.lineColor, undefined);
   if ("relatedListTextColor" in styles)
     styles.relatedListTextColor = normalizeColor(
       styles.relatedListTextColor,
+      undefined
+    );
+  if ("relatedListOddTextColor" in styles)
+    styles.relatedListOddTextColor = normalizeColor(
+      styles.relatedListOddTextColor,
+      undefined
+    );
+  if ("relatedListEvenTextColor" in styles)
+    styles.relatedListEvenTextColor = normalizeColor(
+      styles.relatedListEvenTextColor,
+      undefined
+    );
+  if ("relatedListGridColor" in styles)
+    styles.relatedListGridColor = normalizeColor(
+      styles.relatedListGridColor,
       undefined
     );
   if (styles.background === undefined && source.background === "transparent")
@@ -637,6 +676,11 @@ function sanitizeStyles(source = {}) {
     delete styles.borderStyle;
   if ("lineStyle" in styles && !BORDER_STYLES.has(styles.lineStyle))
     delete styles.lineStyle;
+  if (
+    "tableBorderMode" in styles &&
+    !RELATED_LIST_BORDERS.has(styles.tableBorderMode)
+  )
+    delete styles.tableBorderMode;
   if ("textAlign" in styles && !TEXT_ALIGNS.has(styles.textAlign))
     delete styles.textAlign;
   if ("verticalAlign" in styles && !VERTICAL_ALIGNS.has(styles.verticalAlign))
@@ -731,6 +775,17 @@ function sanitizeBlock(source = {}) {
     block.relatedListEvenTextColor,
     undefined
   );
+  block.relatedListGridColor = normalizeColor(
+    block.relatedListGridColor,
+    undefined
+  );
+  const relatedListBuilderRows = finiteNumber(
+    block.relatedListBuilderRows,
+    1,
+    10
+  );
+  block.relatedListBuilderRows =
+    relatedListBuilderRows === null ? null : Math.round(relatedListBuilderRows);
   block.relatedListFontSize = finiteNumber(block.relatedListFontSize, 8, 36);
   block.relatedListBorderMode = RELATED_LIST_BORDERS.has(
     block.relatedListBorderMode

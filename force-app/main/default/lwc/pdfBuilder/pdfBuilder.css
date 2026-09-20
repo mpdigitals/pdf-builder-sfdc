@@ -999,6 +999,16 @@
   overflow: hidden;
 }
 
+.background-color-control:has(.background-color-input:disabled) {
+  opacity: 0.55;
+}
+
+.background-color-control:has(.background-color-input:disabled)
+  .background-color-choice,
+.background-color-control .color-reset-button:disabled {
+  cursor: not-allowed;
+}
+
 .property-group .background-color-choice {
   display: flex;
   align-items: center;
@@ -1039,7 +1049,8 @@
   border-radius: 3px;
 }
 
-.background-no-fill-button {
+.background-no-fill-button,
+.color-reset-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1051,6 +1062,12 @@
   border-left: 1px solid #c9c9c9;
   color: #5c5c5c;
   background-color: #ffffff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.background-no-fill-button {
   background-image:
     linear-gradient(45deg, #ececec 25%, transparent 25%),
     linear-gradient(-45deg, #ececec 25%, transparent 25%),
@@ -1062,13 +1079,12 @@
     4px -4px,
     -4px 0;
   background-size: 8px 8px;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
 }
 
 .background-no-fill-button:hover,
-.background-no-fill-button:focus-visible {
+.background-no-fill-button:focus-visible,
+.color-reset-button:hover,
+.color-reset-button:focus-visible {
   color: #014486;
   box-shadow: inset 0 0 0 1px #0176d3;
 }
@@ -1620,6 +1636,16 @@
 .block-shell.selected-block-shell {
   outline: 2px solid #0176d3;
   outline-offset: 2px;
+}
+
+/* Lines use endpoint handles instead of a rectangular selection container. */
+.block-shell.divider-shell:hover,
+.block-shell.divider-shell.selected-block-shell,
+.block-shell.divider-shell.is-positioning,
+.block-shell.vertical-line-shell:hover,
+.block-shell.vertical-line-shell.selected-block-shell,
+.block-shell.vertical-line-shell.is-positioning {
+  outline: none;
 }
 
 .block-shell.selected-block-shell {
@@ -2297,6 +2323,15 @@
   background: #101d36;
 }
 
+.builder:has(.theme-toggle-input:checked) .toolbar-input::placeholder,
+.builder:has(.theme-toggle-input:checked) .sidebar-input::placeholder,
+.builder:has(.theme-toggle-input:checked) .property-group input::placeholder,
+.builder:has(.theme-toggle-input:checked) .link-input::placeholder,
+.builder:has(.theme-toggle-input:checked) .image-files-search::placeholder {
+  color: #aebfda;
+  opacity: 1;
+}
+
 .builder:has(.theme-toggle-input:checked) .toolbar-input:focus,
 .builder:has(.theme-toggle-input:checked) .sidebar-input:focus,
 .builder:has(.theme-toggle-input:checked) .property-group input:focus,
@@ -2494,10 +2529,14 @@
   background: #101d36;
 }
 
-.builder:has(.theme-toggle-input:checked) .background-no-fill-button {
+.builder:has(.theme-toggle-input:checked) .background-no-fill-button,
+.builder:has(.theme-toggle-input:checked) .color-reset-button {
   border-left-color: #344c78;
   color: #dce8fb;
   background-color: #101d36;
+}
+
+.builder:has(.theme-toggle-input:checked) .background-no-fill-button {
   background-image:
     linear-gradient(45deg, #20375a 25%, transparent 25%),
     linear-gradient(-45deg, #20375a 25%, transparent 25%),
@@ -2507,7 +2546,9 @@
 
 .builder:has(.theme-toggle-input:checked) .background-no-fill-button:hover,
 .builder:has(.theme-toggle-input:checked)
-  .background-no-fill-button:focus-visible {
+  .background-no-fill-button:focus-visible,
+.builder:has(.theme-toggle-input:checked) .color-reset-button:hover,
+.builder:has(.theme-toggle-input:checked) .color-reset-button:focus-visible {
   color: #ffffff;
   box-shadow: inset 0 0 0 1px #74abff;
 }
