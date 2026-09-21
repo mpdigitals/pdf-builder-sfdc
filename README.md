@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://app.codacy.com/gh/mpdigitals/pdf-builder-sfdc/dashboard"><img src="https://app.codacy.com/project/badge/Grade/30cd2cc87bc44f6cbc299ffb0e519094" alt="Codacy quality grade"></a>
-  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/badge/release-v1.0.17-2da44e" alt="Current release"></a>
+  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/badge/release-v1.0.18-2da44e" alt="Current release"></a>
 </p>
 
 <p align="center">
@@ -76,14 +76,14 @@ support.
 
 ### Recommended: unlocked package
 
-Install the current unlocked package (`v1.0.17`). It is a released Salesforce
+Install the current unlocked package (`v1.0.18`). It is a released Salesforce
 package version. Validate it in a sandbox or Developer Edition before wider
 use, then install the same package in production when ready.
 
 | Target                          | Installation link                                                                                                               |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Sandbox                         | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG)                        |
-| Developer Edition or Production | [Install in Developer Edition or Production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZQvhIAG) |
+| Sandbox                         | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZU4rIAG)                        |
+| Developer Edition or Production | [Install in Developer Edition or Production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZU4rIAG) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
@@ -93,7 +93,7 @@ The same version can also be installed with Salesforce CLI:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZQvhIAG \
+  --package 04tQy000000ZU4rIAG \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
@@ -188,7 +188,7 @@ When an author changes the template object, the Builder detects merge fields or 
 | ------------ | --------------------------------------------------------------------------------------------------------------- |
 | Text         | Rich text, static copy, and merge fields with font, color, alignment, spacing, border, and background controls. |
 | Image        | Images uploaded to or selected from Salesforce Files, plus packaged static-resource images.                     |
-| Line         | Configurable horizontal divider with length, color, style, and thickness.                                       |
+| Line         | Horizontal or vertical divider with endpoint resizing, color, style, and thickness controls.                    |
 | Vertical     | Configurable vertical divider.                                                                                  |
 | Table        | Static rows and columns with cell padding, borders, and vertical alignment.                                     |
 | Related List | Dynamic child records with selectable and reorderable columns, zebra colors, font sizing, and border modes.     |
@@ -201,7 +201,7 @@ Elements can be moved and resized on the canvas. Undo and redo preserve the edit
 
 Related List column selections are restored from saved templates even when legacy API-name casing differs. Values use field-aware alignment: numeric, currency and percentage values align right; dates and booleans align centrally; text remains left-aligned.
 
-Selected elements can also be copied, pasted, or deleted from their contextual controls.
+Text, image, table, and line elements can also be copied, pasted, or deleted from their contextual controls. Related Lists can be deleted but are not copied because each template supports one Related List.
 
 <p align="center">
   <img src="docs/images/copy-paste-actions.png" alt="Copy and paste element actions" width="52%">

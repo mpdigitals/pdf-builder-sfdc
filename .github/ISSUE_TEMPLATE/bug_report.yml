@@ -10,7 +10,7 @@ body:
     id: version
     attributes:
       label: PDF Builder version
-      placeholder: "For example, 1.0.17"
+      placeholder: "For example, 1.0.18"
     validations:
       required: true
   - type: dropdown
