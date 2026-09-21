@@ -4,6 +4,28 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.0.18] - 2026-09-21
+
+### Changed
+
+- Compacted the property editor into balanced two-column controls with consistent color pickers and reset actions.
+- Increased the initial text block height to 40 pixels and its initial font size to 28 pixels.
+- Simplified element properties: text and page regions use `Appearance`, while images, tables, Related Lists and lines expose only relevant controls.
+- Reworked tables to share the Related List appearance model, including separate header, odd-row and even-row colors plus configurable grid style and color.
+- Reduced line selection to endpoint handles and orientation-aware size controls without an extra visible container.
+- Disabled border width, color and radius controls for text and image elements when border style is `None`.
+- Removed Copy and Paste actions from Related Lists because a template supports only one Related List.
+- Enlarged the Preview workspace and refined night-mode controls, placeholders and disabled actions.
+
+### Fixed
+
+- Applied the configured page color directly to every browser Preview page, with or without a Record ID, so it cannot fall back to white under Lightning style scoping.
+- Pages configured with `No fill` render as white paper in the Builder, Preview and generated output while retaining their transparent saved value.
+- Related List placeholders render a complete bottom grid line with matching row geometry in the Builder, Preview and generated PDF.
+- Related Lists no longer overlap following content in layouts such as `MP Opportunity Service Quotation`.
+- Unconfigured Related Lists show the same three-column sample table in the Builder and Preview.
+- New and migrated line, table and Related List styles remain sanitized and preserved through save, preview and server-side rendering.
+
 ## [1.0.18-beta.3] - 2026-09-20
 
 ### Changed
@@ -192,7 +214,8 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18-beta.3...HEAD
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18...HEAD
+[1.0.18]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.17...v1.0.18
 [1.0.18-beta.3]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18-beta.2...v1.0.18-beta.3
 [1.0.18-beta.2]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18-beta.1...v1.0.18-beta.2
 [1.0.18-beta.1]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.17...v1.0.18-beta.1

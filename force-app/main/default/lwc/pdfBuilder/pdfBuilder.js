@@ -7531,7 +7531,15 @@ export default class PDFBuilder extends LightningElement {
       this.markRecordPreviewRelatedLists(previewContainer);
       previewContainer
         .querySelectorAll(".preview-inline-root .pdf-page")
-        .forEach((page) => this.fixRecordPreviewPageSize(page));
+        .forEach((page) => {
+          // The preview HTML is inserted dynamically inside the component's
+          // shadow root. Salesforce can scope or discard the embedded style
+          // rule that carries the authored page color, leaving the component
+          // stylesheet's white default in control. Reapply the model value as
+          // an inline style so record-free preview matches Builder and PDF.
+          page.style.background = this.getRenderedPageBackground();
+          this.fixRecordPreviewPageSize(page);
+        });
       // A preview without record data has the same fixed components as the
       // builder. Its HTML is already divided with the builder pagination
       // model, so running the record-aware DOM paginator here would measure
@@ -7685,6 +7693,10 @@ export default class PDFBuilder extends LightningElement {
           ? "primary"
           : "overflow";
       page.style.padding = `0 ${pagePadding}px`;
+      // Keep the authored page color on the actual preview page element.
+      // Relying only on a dynamically injected style rule lets the static
+      // `.pdf-page` white background win in Lightning's scoped shadow DOM.
+      page.style.background = pageBackground;
 
       if (showPageHeader) {
         appendHtml(page, previewFlow?.headerHtml);

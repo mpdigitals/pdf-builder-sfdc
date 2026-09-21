@@ -10,6 +10,7 @@ import getTemplates from "@salesforce/apex/PDFBuilderController.getTemplates";
 import getTemplate from "@salesforce/apex/PDFBuilderController.getTemplate";
 import saveTemplate from "@salesforce/apex/PDFBuilderController.saveTemplate";
 import renderGeneratedHtmlForPreview from "@salesforce/apex/PDFBuilderController.renderGeneratedHtmlForPreview";
+import renderPdfFlowForRecordPreview from "@salesforce/apex/PDFBuilderController.renderPdfFlowForRecordPreview";
 
 jest.mock(
   "@salesforce/apex/PDFBuilderController.getConfiguration",
@@ -835,6 +836,72 @@ describe("c-pdf-builder", () => {
     expect(
       element.shadowRoot.querySelector(".preview-content").textContent
     ).toContain("Organization preview");
+  });
+
+  it("keeps the configured page color in preview without a record", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const pageColorInput = element.shadowRoot.querySelector(
+      'input[aria-label="Choose page background color"]'
+    );
+    pageColorInput.value = "#ff0000";
+    pageColorInput.dispatchEvent(new CustomEvent("input"));
+    await flushPromises();
+
+    Array.from(element.shadowRoot.querySelectorAll("button"))
+      .find((button) => button.textContent.trim() === "Preview")
+      .click();
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(".preview-content .pdf-page").style
+        .background
+    ).toBe("rgb(255, 0, 0)");
+  });
+
+  it("keeps the configured page color in record-aware preview", async () => {
+    renderPdfFlowForRecordPreview.mockResolvedValue({
+      headerHtml: "",
+      bodyHtml: '<div style="height:200px;">Record preview</div>',
+      footerHtml: ""
+    });
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    element.recordId = "001000000000001AAA";
+
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const objectSelect = element.shadowRoot.querySelector(
+      '[data-role="object-select"]'
+    );
+    objectSelect.value = "Account";
+    objectSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    const pageColorInput = element.shadowRoot.querySelector(
+      'input[aria-label="Choose page background color"]'
+    );
+    pageColorInput.value = "#ff0000";
+    pageColorInput.dispatchEvent(new CustomEvent("input"));
+    await flushPromises();
+
+    Array.from(element.shadowRoot.querySelectorAll("button"))
+      .find((button) => button.textContent.trim() === "Preview")
+      .click();
+    await flushPromises();
+
+    expect(renderPdfFlowForRecordPreview).toHaveBeenCalled();
+    expect(
+      element.shadowRoot.querySelector(".preview-content .pdf-page").style
+        .background
+    ).toBe("rgb(255, 0, 0)");
   });
 
   it("clears and disables region repetition when its region is hidden", async () => {

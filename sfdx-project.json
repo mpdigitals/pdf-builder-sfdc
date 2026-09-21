@@ -6,7 +6,7 @@
       "package": "PDF Builder",
       "versionName": "Version 1.0.18",
       "versionNumber": "1.0.18.NEXT",
-      "versionDescription": "Beta improvements for element appearance controls, table styling and Related List layout",
+      "versionDescription": "Stable release with compact appearance controls, table and Related List styling, and consistent preview rendering",
       "apexTestAccess": {
         "permissionSets": ["PDFBuilderUser"]
       }
