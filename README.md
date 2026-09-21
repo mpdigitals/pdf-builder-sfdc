@@ -225,10 +225,12 @@ The layout supports:
 
 Header and footer resizing respects the bounds of their existing elements, whether the size is changed by dragging or by entering a number, so fixed-region content cannot be clipped accidentally.
 
-<p align="center">
-  <img src="docs/images/page-layout-settings.png" alt="PDF page layout, header, footer, padding, page color, and body-section settings" width="48%">
-  <img src="docs/images/appearance-settings.png" alt="PDF body appearance, background, padding, and border settings" width="48%">
-</p>
+<table align="center" border="2" cellpadding="4" cellspacing="0">
+  <tr>
+    <td align="center" valign="top" width="50%" bgcolor="#57606a"><img src="docs/images/page-layout-settings.png" alt="PDF page layout, header, footer, padding, page color, and body-section settings" width="100%"></td>
+    <td align="center" valign="top" width="50%" bgcolor="#57606a"><img src="docs/images/appearance-settings.png" alt="PDF body appearance, background, padding, and border settings" width="100%"></td>
+  </tr>
+</table>
 
 ## Dynamic data
 
