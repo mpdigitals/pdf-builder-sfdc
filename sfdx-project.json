@@ -4,12 +4,20 @@
       "path": "force-app",
       "default": true,
       "package": "PDF Builder",
-      "versionName": "Version 1.0.18",
-      "versionNumber": "1.0.18.NEXT",
-      "versionDescription": "Stable release with compact appearance controls, table and Related List styling, and consistent preview rendering",
+      "versionName": "Version 1.1.0 Beta 1",
+      "versionNumber": "1.1.0.NEXT",
+      "versionDescription": "Beta release with an optional Salesforce Models API guided template wizard and a modernized responsive Builder workspace",
       "apexTestAccess": {
         "permissionSets": ["PDFBuilderUser"]
       }
+    },
+    {
+      "path": "ai-extension",
+      "package": "PDF Builder AI",
+      "versionName": "Version 1.0.0 Beta 1",
+      "versionNumber": "1.0.0.NEXT",
+      "default": false,
+      "versionDescription": "Optional Salesforce Models API adapter for PDF Builder"
     }
   ],
   "name": "PDFBuilder",
@@ -45,6 +53,11 @@
     "PDF Builder@1.0.17-5": "04tQy000000ZQvhIAG",
     "PDF Builder@1.0.18-2-main": "04tQy000000ZSizIAG",
     "PDF Builder@1.0.18-3-main": "04tQy000000ZTvBIAW",
-    "PDF Builder@1.0.18-4-main": "04tQy000000ZU4rIAG"
+    "PDF Builder@1.0.18-4-main": "04tQy000000ZU4rIAG",
+    "PDF Builder@1.1.0-1": "04tQy000000ZbfpIAC",
+    "PDF Builder AI": "0HoQy00000026ZBKAY",
+    "PDF Builder@1.1.0-2": "04tQy000000ZbhRIAS",
+    "PDF Builder AI@1.0.0-1": "04tQy000000Zbj3IAC",
+    "PDF Builder AI@1.0.0-2": "04tQy000000ZbkfIAC"
   }
 }

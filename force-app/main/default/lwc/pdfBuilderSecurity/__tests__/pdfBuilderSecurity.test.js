@@ -110,6 +110,7 @@ describe("pdfBuilderSecurity", () => {
               styles: {
                 color: "#181818",
                 fontSize: 14,
+                widthFitContent: true,
                 textAlign: "expression(alert(1))",
                 position: "fixed"
               }
@@ -128,6 +129,7 @@ describe("pdfBuilderSecurity", () => {
       );
       expect(result.header.blocks[0].content).toContain("<b>Allowed</b>");
       expect(result.header.blocks[0].content).not.toContain(activeScheme);
+      expect(result.header.blocks[0].styles.widthFitContent).toBe(true);
       expect(result.header.blocks[0].styles).not.toHaveProperty("textAlign");
       expect(result.body.layout).toBe("one");
     });

@@ -166,6 +166,29 @@ private class PDFBuilderControllerTest {
       settings.supportedImageTypes.contains('PNG'),
       'Supported image types must include PNG.'
     );
+    Assert.isTrue(
+      settings.aiWizardEnabled,
+      'The default metadata record must enable the AI Wizard.'
+    );
+    Assert.areEqual(
+      'sfdc_ai__DefaultOpenAIGPT4OmniMini',
+      settings.aiModelApiName,
+      'The AI model must come from Custom Metadata.'
+    );
+    Assert.isTrue(
+      settings.aiPromptInstructions.contains('Required shape:'),
+      'The model contract must come from Custom Metadata.'
+    );
+    Assert.areEqual(
+      4000,
+      settings.aiMaxPromptLength,
+      'The maximum AI prompt length must come from Custom Metadata.'
+    );
+    Assert.areEqual(
+      24000,
+      settings.aiMaxContextLength,
+      'The maximum AI context length must come from Custom Metadata.'
+    );
   }
 
   /**
@@ -202,6 +225,15 @@ private class PDFBuilderControllerTest {
     Assert.isFalse(
       settings.includeCustomObjects,
       'The custom-object setting must preserve an explicit false value.'
+    );
+
+    metadataRecord.EnableAIWizard__c = false;
+    metadataRecord.AIModelApiName__c = null;
+    metadataRecord.AIProviderLabel__c = null;
+    settings = PDFBuilderConfiguration.buildSettings(metadataRecord);
+    Assert.isFalse(
+      settings.aiWizardEnabled,
+      'Disabling AI must not require a configured model or provider label.'
     );
 
     metadataRecord.PageWidthPx__c = 0;

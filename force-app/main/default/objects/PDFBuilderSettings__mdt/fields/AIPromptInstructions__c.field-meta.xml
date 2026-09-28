@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AIPromptInstructions__c</fullName>
+    <description
+  >System instructions that define the JSON contract and supported PDF Builder capabilities for Salesforce AI.</description>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>AI Prompt Instructions</label>
+    <length>32768</length>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <visibleLines>20</visibleLines>
+</CustomField>

@@ -2,6 +2,8 @@
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>PDFBuilderConfiguration</members>
+        <members>PDFBuilderAIService</members>
+        <members>PDFBuilderAIServiceTest</members>
         <members>PDFBuilderController</members>
         <members>PDFBuilderControllerTest</members>
         <members>PDFBuilderDescribeService</members>
@@ -46,7 +48,13 @@
         <members>pdfBuilderSecurity</members>
         <members>pdfBuilderUtils</members>
         <members>pdfBuilderGenerator</members>
+        <members>pdfBuilderWizard</members>
+        <members>pdfBuilderWizardModel</members>
         <name>LightningComponentBundle</name>
+    </types>
+    <types>
+        <members>PDFBuilderUseAIWizard</members>
+        <name>CustomPermission</name>
     </types>
     <types>
         <members>PDFBuilderSettings__mdt-PDF Builder Settings Layout</members>

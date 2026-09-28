@@ -40,6 +40,15 @@
           <button class="toolbar-button" onclick={showHtml}>HTML</button>
 
           <button class="toolbar-button" onclick={openPreview}>Preview</button>
+
+          <button
+            class="toolbar-button wizard-launch-button"
+            onclick={handleOpenWizard}
+            disabled={isAIWizardLaunchDisabled}
+            title={aiWizardButtonTitle}
+          >
+            {aiWizardButtonLabel}
+          </button>
         </div>
 
         <div class="toolbar-template">
@@ -263,14 +272,20 @@
             <div class="delete-confirm-copy">
               <h2 id="unsaved-changes-title">{unsavedChangesDialogTitle}</h2>
               <p id="unsaved-changes-description">
-                <template lwc:if={canSaveUnsavedTemplateChanges}>
-                  Changes to <strong>{unsavedChangesTemplateLabel}</strong> have
-                  not been saved. Save them before leaving this template?
+                <template lwc:if={isPendingWizardUnsavedAction}>
+                  The current draft has unsaved changes. Save it before starting
+                  a new guided draft, discard it, or cancel.
                 </template>
                 <template lwc:else>
-                  This template cannot be saved because
-                  {unsavedChangesCannotSaveReason}. Do you want to leave without
-                  saving your changes?
+                  <template lwc:if={canSaveUnsavedTemplateChanges}>
+                    Changes to <strong>{unsavedChangesTemplateLabel}</strong>
+                    have not been saved. Save them before leaving this template?
+                  </template>
+                  <template lwc:else>
+                    This template cannot be saved because
+                    {unsavedChangesCannotSaveReason}. Do you want to leave
+                    without saving your changes?
+                  </template>
                 </template>
               </p>
             </div>
@@ -302,7 +317,7 @@
                   disabled={isTemplateBusy}
                   onclick={handleSaveUnsavedTemplateChanges}
                 >
-                  Save changes
+                  {unsavedSaveButtonLabel}
                 </button>
               </template>
             </div>
@@ -697,6 +712,22 @@
         </div>
       </template>
 
+      <template lwc:if={isWizardOpen}>
+        <c-pdf-builder-wizard
+          object-options={objectOptions}
+          configuration={builderConfiguration}
+          ai-unavailable={isAIWizardUnavailable}
+          ai-unavailable-message={aiUnavailableMessage}
+          dark-theme={isDarkTheme}
+          initial-object-api-name={selectedObjectApiName}
+          onwizardpreview={handleWizardPreview}
+          onwizardpreviewstart={handleWizardPreviewStart}
+          onwizardcomplete={handleWizardComplete}
+          onwizardcancel={handleWizardCancel}
+          onaiunavailable={handleAIUnavailable}
+        ></c-pdf-builder-wizard>
+      </template>
+
       <aside class="sidebar" style={sidebarStyle}>
         <section class="sidebar-section">
           <label class="sidebar-label">Elements</label>
@@ -774,7 +805,7 @@
                   <circle cx="19.5" cy="12" r="1" fill="currentColor"></circle>
                 </svg>
               </span>
-              <span>Line</span>
+              <span>Horizontal Line</span>
             </div>
 
             <div
@@ -792,7 +823,7 @@
                   <circle cx="12" cy="19.5" r="1" fill="currentColor"></circle>
                 </svg>
               </span>
-              <span>Vertical</span>
+              <span>Vertical Line</span>
             </div>
 
             <div
@@ -1098,6 +1129,7 @@
                       ontextfocus={handleTextFocus}
                       ontextblur={handleTextBlur}
                       onrichtextstatechange={handleRichTextStateChange}
+                      onblockrendered={handleBlockRendered}
                       onblockresizestart={handleBlockResizeStart}
                       onimagedoubleclick={handleImageDoubleClick}
                     >
@@ -1168,6 +1200,7 @@
                           ontextfocus={handleTextFocus}
                           ontextblur={handleTextBlur}
                           onrichtextstatechange={handleRichTextStateChange}
+                          onblockrendered={handleBlockRendered}
                           onblockresizestart={handleBlockResizeStart}
                           onimagedoubleclick={handleImageDoubleClick}
                         >
@@ -1230,6 +1263,7 @@
                       ontextfocus={handleTextFocus}
                       ontextblur={handleTextBlur}
                       onrichtextstatechange={handleRichTextStateChange}
+                      onblockrendered={handleBlockRendered}
                       onblockresizestart={handleBlockResizeStart}
                       onimagedoubleclick={handleImageDoubleClick}
                     >
@@ -1330,6 +1364,7 @@
                         ontextfocus={handleTextFocus}
                         ontextblur={handleTextBlur}
                         onrichtextstatechange={handleRichTextStateChange}
+                        onblockrendered={handleBlockRendered}
                         onblockresizestart={handleBlockResizeStart}
                         onimagedoubleclick={handleImageDoubleClick}
                       ></c-pdf-builder-block>
@@ -1374,6 +1409,7 @@
                           ontextfocus={handleTextFocus}
                           ontextblur={handleTextBlur}
                           onrichtextstatechange={handleRichTextStateChange}
+                          onblockrendered={handleBlockRendered}
                           onblockresizestart={handleBlockResizeStart}
                           onimagedoubleclick={handleImageDoubleClick}
                         ></c-pdf-builder-block>
@@ -1432,6 +1468,7 @@
                         ontextfocus={handleTextFocus}
                         ontextblur={handleTextBlur}
                         onrichtextstatechange={handleRichTextStateChange}
+                        onblockrendered={handleBlockRendered}
                         onblockresizestart={handleBlockResizeStart}
                         onimagedoubleclick={handleImageDoubleClick}
                       ></c-pdf-builder-block>

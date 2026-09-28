@@ -69,6 +69,35 @@ export default class PDFBuilderBlock extends LightningElement {
     return width > 0 && height > 0 ? width / height : null;
   }
 
+  @api
+  isRenderComplete() {
+    if (this.block?.isText || this.block?.isField) {
+      const editableElement = this.template.querySelector(
+        "[data-text-style-id]"
+      );
+      if (!editableElement) {
+        return false;
+      }
+      return (
+        getSanitizedInnerHtml(editableElement) ===
+        this.normalizeRichTextContent(this._block.content || "")
+      );
+    }
+
+    if (this.block?.isTable) {
+      const cells = Array.from(
+        this.template.querySelectorAll(".table-cell-editable")
+      );
+      const expectedCells = (this.block?.tableRows || []).reduce(
+        (total, row) => total + (row.cells || []).length,
+        0
+      );
+      return expectedCells === cells.length;
+    }
+
+    return true;
+  }
+
   get textContentEditable() {
     return this.isEditing ? "true" : "false";
   }
@@ -144,6 +173,11 @@ export default class PDFBuilderBlock extends LightningElement {
   renderedCallback() {
     this.syncEditableText();
     this.syncTableCells();
+    this.dispatchEvent(
+      new CustomEvent("blockrendered", {
+        detail: { blockId: this.block?.id || "" }
+      })
+    );
   }
 
   @api

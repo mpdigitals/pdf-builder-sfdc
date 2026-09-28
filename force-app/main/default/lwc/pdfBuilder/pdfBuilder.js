@@ -11,7 +11,9 @@ import {
   sanitizeDocumentModel,
   sanitizeRichTextHtml
 } from "c/pdfBuilderSecurity";
+import { buildWizardDocumentModel } from "c/pdfBuilderWizardModel";
 import getConfiguration from "@salesforce/apex/PDFBuilderController.getConfiguration";
+import getAIAvailability from "@salesforce/apex/PDFBuilderAIService.getAvailability";
 import getObjects from "@salesforce/apex/PDFBuilderController.getObjects";
 import getFields from "@salesforce/apex/PDFBuilderController.getFields";
 import getRelatedLists from "@salesforce/apex/PDFBuilderController.getRelatedLists";
@@ -117,6 +119,9 @@ const USER_MESSAGES = Object.freeze({
   UNSAVED_LEAVE: "Leave without saving",
   UNSAVED_SAVE_TITLE: "Save changes?",
   UNSAVED_LEAVE_TITLE: "Leave without saving?",
+  WIZARD_UNSAVED_TITLE: "Save or discard this draft?",
+  WIZARD_UNSAVED_DISCARD: "Discard and continue",
+  WIZARD_UNSAVED_SAVE: "Save and continue",
   TEMPLATE_DELETING: "Deleting template…",
   TEMPLATE_LOADING: "Loading template…",
   TEMPLATE_SAVING: "Saving template…",
@@ -281,6 +286,16 @@ export default class PDFBuilder extends LightningElement {
   isPreviewGenerating = false;
   isHtmlOpen = false;
   isPreviewOpen = false;
+  isWizardOpen = false;
+  isAIWizardAvailable = false;
+  aiUnavailableMessage = "Salesforce AI is not available in this org.";
+  aiProviderLabel = "Salesforce AI";
+  wizardOriginalState;
+  isWizardPreviewRenderPending = false;
+  isWizardPreviewAckScheduled = false;
+  wizardExpectedRenderBlockIds = new Set();
+  wizardRenderedBlockIds = new Set();
+  wizardPreviewSettleTimer;
   isFullscreen = false;
   isDarkTheme = false;
   objectOptions = [];
@@ -316,7 +331,9 @@ export default class PDFBuilder extends LightningElement {
   pendingDeleteTemplateId = null;
   pendingDeleteTemplateLabel = "";
   pendingTemplateSelectionId = null;
+  pendingUnsavedAction = null;
   savedTemplateSnapshot = "";
+  wizardDraftBaseState = null;
   richTextState = {
     bold: false,
     italic: false,
@@ -383,10 +400,42 @@ export default class PDFBuilder extends LightningElement {
     return [
       "builder",
       "builder-responsive",
-      this.isFullscreen ? "builder-fullscreen" : ""
+      this.isFullscreen ? "builder-fullscreen" : "",
+      this.isWizardOpen ? "wizard-open" : ""
     ]
       .filter(Boolean)
       .join(" ");
+  }
+
+  get builderConfiguration() {
+    return {
+      pageWidth: this.pageWidth,
+      pageHeight: this.pageHeight,
+      defaultPagePadding: this.defaultPagePadding,
+      defaultElementPadding: this.defaultElementPadding,
+      defaultHeaderHeight: this.defaultHeaderHeight,
+      defaultFooterHeight: this.defaultFooterHeight,
+      aiProviderLabel: this.aiProviderLabel,
+      aiUnavailableMessage: this.aiUnavailableMessage
+    };
+  }
+
+  get isAIWizardLaunchDisabled() {
+    return this.isWizardOpen;
+  }
+
+  get isAIWizardUnavailable() {
+    return !this.isAIWizardAvailable;
+  }
+
+  get aiWizardButtonLabel() {
+    return "✨ AI Wizard";
+  }
+
+  get aiWizardButtonTitle() {
+    return this.isAIWizardAvailable
+      ? "Create a new template with guided visual proposals"
+      : `Open guided setup. AI prompts are unavailable: ${this.aiUnavailableMessage}`;
   }
 
   get builderStyle() {
@@ -547,6 +596,10 @@ export default class PDFBuilder extends LightningElement {
     }
 
     this.applyActiveDragGridAndGuides();
+
+    if (this.isWizardPreviewRenderPending) {
+      this.tryCompleteWizardPreviewRender();
+    }
   }
 
   syncObjectSelect() {
@@ -832,6 +885,11 @@ export default class PDFBuilder extends LightningElement {
   }
 
   disconnectedCallback() {
+    if (this.wizardPreviewSettleTimer) {
+      window.clearTimeout(this.wizardPreviewSettleTimer);
+      this.wizardPreviewSettleTimer = null;
+    }
+
     if (this.guidanceFeedbackTimer) {
       window.clearTimeout(this.guidanceFeedbackTimer);
       this.guidanceFeedbackTimer = null;
@@ -2208,10 +2266,17 @@ export default class PDFBuilder extends LightningElement {
       this.applyConfiguration(configuration);
       this.isConfigurationReady = true;
 
-      const [objects, templates] = await Promise.all([
+      const [availability, objects, templates] = await Promise.all([
+        getAIAvailability().catch(() => ({
+          available: false,
+          message:
+            configuration.aiUnavailableMessage || this.aiUnavailableMessage,
+          providerLabel: configuration.aiProviderLabel || this.aiProviderLabel
+        })),
         getObjects(),
         getTemplates()
       ]);
+      this.applyAIAvailability(availability);
       this.objectOptions = objects || [];
       this.templateOptions = formatTemplateOptions(templates);
 
@@ -2240,6 +2305,14 @@ export default class PDFBuilder extends LightningElement {
     if (!this.documentModel || shouldRefreshEmptyDocument) {
       this.documentModel = this.createDefaultDocument();
     }
+  }
+
+  applyAIAvailability(availability = {}) {
+    this.isAIWizardAvailable = availability.available === true;
+    this.aiUnavailableMessage =
+      String(availability.message || "").trim() || this.aiUnavailableMessage;
+    this.aiProviderLabel =
+      String(availability.providerLabel || "").trim() || this.aiProviderLabel;
   }
 
   isEmptyUnsavedDocument() {
@@ -2418,6 +2491,7 @@ export default class PDFBuilder extends LightningElement {
 
     if (this.hasUnsavedTemplateChanges()) {
       this.pendingTemplateSelectionId = templateId;
+      this.pendingUnsavedAction = "template";
       this.isUnsavedChangesConfirmOpen = true;
       return;
     }
@@ -2442,6 +2516,18 @@ export default class PDFBuilder extends LightningElement {
   }
 
   handleDiscardUnsavedTemplateChanges() {
+    if (this.isPendingWizardUnsavedAction) {
+      const state = this.wizardDraftBaseState;
+      this.closeUnsavedChangesConfirmation();
+      if (state) {
+        this.restoreWizardState(state);
+      } else {
+        this.restoreSavedTemplateSnapshot();
+      }
+      this.openWizard();
+      return;
+    }
+
     const templateId = this.pendingTemplateSelectionId;
     this.closeUnsavedChangesConfirmation();
     this.applyTemplateSelection(templateId);
@@ -2452,6 +2538,7 @@ export default class PDFBuilder extends LightningElement {
       return;
     }
 
+    const isWizardAction = this.isPendingWizardUnsavedAction;
     const templateId = this.pendingTemplateSelectionId;
     const wasSaved = await this.handleSaveTemplate();
     if (!wasSaved) {
@@ -2459,12 +2546,17 @@ export default class PDFBuilder extends LightningElement {
     }
 
     this.closeUnsavedChangesConfirmation();
+    if (isWizardAction) {
+      this.openWizard();
+      return;
+    }
     this.applyTemplateSelection(templateId);
   }
 
   closeUnsavedChangesConfirmation() {
     this.isUnsavedChangesConfirmOpen = false;
     this.pendingTemplateSelectionId = null;
+    this.pendingUnsavedAction = null;
   }
 
   get unsavedChangesTemplateLabel() {
@@ -2495,15 +2587,31 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get unsavedDiscardButtonLabel() {
+    if (this.isPendingWizardUnsavedAction) {
+      return USER_MESSAGES.WIZARD_UNSAVED_DISCARD;
+    }
     return this.canSaveUnsavedTemplateChanges
       ? USER_MESSAGES.UNSAVED_DISCARD
       : USER_MESSAGES.UNSAVED_LEAVE;
   }
 
   get unsavedChangesDialogTitle() {
+    if (this.isPendingWizardUnsavedAction) {
+      return USER_MESSAGES.WIZARD_UNSAVED_TITLE;
+    }
     return this.canSaveUnsavedTemplateChanges
       ? USER_MESSAGES.UNSAVED_SAVE_TITLE
       : USER_MESSAGES.UNSAVED_LEAVE_TITLE;
+  }
+
+  get unsavedSaveButtonLabel() {
+    return this.isPendingWizardUnsavedAction
+      ? USER_MESSAGES.WIZARD_UNSAVED_SAVE
+      : "Save changes";
+  }
+
+  get isPendingWizardUnsavedAction() {
+    return this.pendingUnsavedAction === "wizard";
   }
 
   resetTemplateEditor() {
@@ -2776,6 +2884,7 @@ export default class PDFBuilder extends LightningElement {
 
   markTemplateEditorSaved() {
     this.savedTemplateSnapshot = this.getTemplateEditorSnapshot();
+    this.wizardDraftBaseState = null;
   }
 
   hasUnsavedTemplateChanges() {
@@ -2785,6 +2894,275 @@ export default class PDFBuilder extends LightningElement {
       currentSnapshot &&
       currentSnapshot !== this.savedTemplateSnapshot
     );
+  }
+
+  handleOpenWizard() {
+    if (this.hasUnsavedTemplateChanges()) {
+      this.pendingUnsavedAction = "wizard";
+      this.isUnsavedChangesConfirmOpen = true;
+      return;
+    }
+
+    this.openWizard();
+  }
+
+  handleAIUnavailable(event) {
+    this.applyAIAvailability({
+      available: false,
+      message: event.detail?.message,
+      providerLabel: this.aiProviderLabel
+    });
+  }
+
+  openWizard() {
+    this.stopTextEditing();
+    this.closeLinkPopover();
+    this.clearPreviewState();
+    this.wizardOriginalState = this.captureWizardState();
+    this.wizardDraftBaseState = null;
+    this.isWizardOpen = true;
+    this.clearSelection();
+  }
+
+  restoreSavedTemplateSnapshot() {
+    if (!this.savedTemplateSnapshot) {
+      this.resetTemplateEditor();
+      return;
+    }
+
+    try {
+      const snapshot = JSON.parse(this.savedTemplateSnapshot);
+      this.stopTextEditing();
+      this.closeLinkPopover();
+      this.clearPreviewState();
+      this.templateName = String(snapshot.templateName || "");
+      this.loadedTemplateName = this.templateName;
+      this.selectedObjectApiName = String(snapshot.objectApiName || "");
+      this.templateRecordTypeScope = String(snapshot.recordTypeScope || "ALL");
+      this.isTemplateDefault = Boolean(snapshot.isDefault);
+      this.templateStatus = "";
+      this.documentModel = this.decorateDocument(
+        snapshot.documentModel || this.createDefaultDocument()
+      );
+      this.history = [];
+      this.future = [];
+      this.clearSelection();
+      this.wizardDraftBaseState = null;
+      Promise.resolve().then(() => {
+        this.syncObjectSelect();
+        this.syncTemplateSelect();
+        this.syncBuilderSelects();
+      });
+    } catch {
+      this.resetTemplateEditor();
+    }
+  }
+
+  captureWizardState() {
+    return {
+      documentModel: JSON.stringify(
+        this.stripRuntimeState(
+          this.documentModel || this.createDefaultDocument()
+        )
+      ),
+      templateName: this.templateName,
+      loadedTemplateName: this.loadedTemplateName,
+      selectedObjectApiName: this.selectedObjectApiName,
+      selectedTemplateId: this.selectedTemplateId,
+      templateRecordTypeScope: this.templateRecordTypeScope,
+      isTemplateDefault: this.isTemplateDefault,
+      templateStatus: this.templateStatus,
+      selectedBlockId: this.selectedBlockId,
+      selectedRegionId: this.selectedRegionId,
+      selectedKind: this.selectedKind,
+      history: [...this.history],
+      future: [...this.future],
+      savedTemplateSnapshot: this.savedTemplateSnapshot
+    };
+  }
+
+  buildWizardDocument(recipe) {
+    return this.decorateDocument(
+      buildWizardDocumentModel({
+        recipe,
+        configuration: this.builderConfiguration,
+        createDefaultDocument: () => this.createDefaultDocument(),
+        createBlock: (type, field) =>
+          this.createBlock(type, field, { skipRelatedListLimit: true })
+      })
+    );
+  }
+
+  applyWizardRecipe(recipe) {
+    this.documentModel = this.buildWizardDocument(recipe);
+    this.templateName = String(recipe.templateName || "");
+    this.selectedObjectApiName = String(recipe.objectApiName || "");
+    this.templateRecordTypeScope = String(recipe.recordTypeScope || "ALL");
+    this.isTemplateDefault = Boolean(recipe.isDefault);
+    this.selectedBlockId = null;
+    this.selectedRegionId = "body-1";
+    this.selectedKind = "region";
+  }
+
+  handleWizardPreview(event) {
+    if (!this.isWizardOpen || !event.detail) {
+      return;
+    }
+    this.applyWizardRecipe(event.detail);
+    if (this.isWizardPreviewRenderPending) {
+      this.wizardExpectedRenderBlockIds = this.getWizardRenderBlockIds();
+    }
+  }
+
+  handleWizardPreviewStart() {
+    this.isWizardPreviewRenderPending = true;
+    this.wizardExpectedRenderBlockIds = new Set();
+    this.wizardRenderedBlockIds = new Set();
+  }
+
+  getWizardRenderBlockIds() {
+    const blockIds = [];
+    if (this.documentModel?.showHeader) {
+      blockIds.push(
+        ...(this.documentModel.header?.blocks || []).map((block) => block.id)
+      );
+    }
+    (this.documentModel?.body?.sections || []).forEach((section) => {
+      blockIds.push(...(section.blocks || []).map((block) => block.id));
+    });
+    if (this.documentModel?.showFooter) {
+      blockIds.push(
+        ...(this.documentModel.footer?.blocks || []).map((block) => block.id)
+      );
+    }
+    return new Set(blockIds.filter(Boolean));
+  }
+
+  handleBlockRendered(event) {
+    if (!this.isWizardPreviewRenderPending) {
+      return;
+    }
+    const blockId = event.detail?.blockId;
+    if (blockId) {
+      this.wizardRenderedBlockIds.add(blockId);
+    }
+    this.tryCompleteWizardPreviewRender();
+  }
+
+  tryCompleteWizardPreviewRender() {
+    if (!this.isWizardPreviewRenderPending) {
+      return;
+    }
+    const allBlocksRendered = [...this.wizardExpectedRenderBlockIds].every(
+      (blockId) => this.wizardRenderedBlockIds.has(blockId)
+    );
+    if (!allBlocksRendered) {
+      return;
+    }
+    this.isWizardPreviewRenderPending = false;
+    this.scheduleWizardPreviewAcknowledgement();
+  }
+
+  scheduleWizardPreviewAcknowledgement() {
+    if (this.isWizardPreviewAckScheduled) {
+      return;
+    }
+    this.isWizardPreviewAckScheduled = true;
+    const scheduleFrame =
+      typeof window.requestAnimationFrame === "function"
+        ? window.requestAnimationFrame.bind(window)
+        : (callback) => window.setTimeout(callback, 16);
+    scheduleFrame(() =>
+      scheduleFrame(() => {
+        this.wizardPreviewSettleTimer = window.setTimeout(() => {
+          this.wizardPreviewSettleTimer = null;
+          scheduleFrame(() => {
+            if (!this.areWizardBlocksFullyRendered()) {
+              this.isWizardPreviewAckScheduled = false;
+              this.scheduleWizardPreviewAcknowledgement();
+              return;
+            }
+            this.isWizardPreviewAckScheduled = false;
+            this.template
+              .querySelector("c-pdf-builder-wizard")
+              ?.notifyPreviewRendered();
+          });
+        }, 600);
+      })
+    );
+  }
+
+  areWizardBlocksFullyRendered() {
+    const blockComponents = Array.from(
+      this.template.querySelectorAll("c-pdf-builder-block")
+    );
+    return [...this.wizardExpectedRenderBlockIds].every((blockId) =>
+      blockComponents.some(
+        (component) =>
+          component.block?.id === blockId && component.isRenderComplete()
+      )
+    );
+  }
+
+  handleWizardCancel() {
+    const state = this.wizardOriginalState;
+    this.isWizardOpen = false;
+    this.wizardOriginalState = null;
+    if (!state) {
+      return;
+    }
+
+    this.restoreWizardState(state);
+  }
+
+  restoreWizardState(state) {
+    this.templateName = state.templateName;
+    this.loadedTemplateName = state.loadedTemplateName;
+    this.selectedObjectApiName = state.selectedObjectApiName;
+    this.selectedTemplateId = state.selectedTemplateId;
+    this.templateRecordTypeScope = state.templateRecordTypeScope;
+    this.isTemplateDefault = state.isTemplateDefault;
+    this.templateStatus = state.templateStatus;
+    this.selectedBlockId = state.selectedBlockId;
+    this.selectedRegionId = state.selectedRegionId;
+    this.selectedKind = state.selectedKind;
+    this.documentModel = this.decorateDocument(JSON.parse(state.documentModel));
+    this.history = state.history;
+    this.future = state.future;
+    this.savedTemplateSnapshot = state.savedTemplateSnapshot;
+    this.wizardDraftBaseState = null;
+    Promise.resolve().then(() => {
+      this.syncObjectSelect();
+      this.syncTemplateSelect();
+      this.syncBuilderSelects();
+    });
+  }
+
+  async handleWizardComplete(event) {
+    if (!event.detail) {
+      return;
+    }
+
+    const draftBaseState = this.wizardOriginalState;
+    this.applyWizardRecipe(event.detail);
+    this.selectedTemplateId = null;
+    this.loadedTemplateName = "";
+    this.templateStatus = "Guided draft ready";
+    this.history = [];
+    this.future = [];
+    this.isWizardOpen = false;
+    this.wizardOriginalState = null;
+    this.wizardDraftBaseState = draftBaseState;
+    await Promise.all([
+      this.loadFieldsForSelectedObject(),
+      this.loadRelatedListsForSelectedObject(),
+      this.loadRecordTypeOptionsForSelectedObject()
+    ]);
+    Promise.resolve().then(() => {
+      this.syncObjectSelect();
+      this.syncTemplateSelect();
+      this.syncBuilderSelects();
+    });
   }
 
   saveHistory() {
@@ -6239,6 +6617,9 @@ export default class PDFBuilder extends LightningElement {
 
           nextStyles.width = nextWidth;
           nextStyles.widthRatio = null;
+          if (fromWest || fromEast) {
+            nextStyles.widthFitContent = false;
+          }
           if (item.type === "image") {
             nextStyles.heightManuallyResized = false;
           } else if (fromNorth || fromSouth) {
@@ -8054,8 +8435,12 @@ export default class PDFBuilder extends LightningElement {
     };
   }
 
-  createBlock(type, field = null) {
-    if (type === "relatedList" && this.hasRelatedListBlock()) {
+  createBlock(type, field = null, options = {}) {
+    if (
+      type === "relatedList" &&
+      !options.skipRelatedListLimit &&
+      this.hasRelatedListBlock()
+    ) {
       this.templateStatus = "";
       this.showToast(
         USER_MESSAGES.RELATED_LIST_NOT_ADDED_TITLE,
@@ -8652,9 +9037,12 @@ export default class PDFBuilder extends LightningElement {
         block,
         availableWidth
       );
-      normalizedWidth = Number.isFinite(normalizedWidth)
-        ? this.clampNumber(normalizedWidth, 32, availableWidth)
-        : preferredWidth;
+      normalizedWidth =
+        block.styles?.widthFitContent === true
+          ? null
+          : Number.isFinite(normalizedWidth)
+            ? this.clampNumber(normalizedWidth, 32, availableWidth)
+            : preferredWidth;
     }
 
     const lineThickness = Math.max(
@@ -8716,6 +9104,7 @@ export default class PDFBuilder extends LightningElement {
       lineColor: block.styles?.lineColor || "#181818",
       width: block.type === "verticalLine" ? lineThickness : normalizedWidth,
       widthRatio: horizontalGeometry.widthRatio,
+      widthFitContent: block.styles?.widthFitContent === true,
       height:
         block.type === "divider"
           ? lineThickness
@@ -8831,7 +9220,10 @@ export default class PDFBuilder extends LightningElement {
     }
 
     return columns.map((columnApiName, index) => {
-      const option = (this.relatedListFieldOptions || []).find(
+      const option = [
+        ...(this.relatedListFieldOptions || []),
+        ...(block.relatedListColumnDefinitions || [])
+      ].find(
         (field) =>
           String(field.apiName || "").toLowerCase() ===
           String(columnApiName || "").toLowerCase()

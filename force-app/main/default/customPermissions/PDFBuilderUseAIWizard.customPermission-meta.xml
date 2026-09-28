@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isLicensed>false</isLicensed>
+    <label>Use PDF Builder AI Wizard</label>
+    <description
+  >Allows a user to send template design instructions and accessible schema metadata to Salesforce Models API.</description>
+</CustomPermission>

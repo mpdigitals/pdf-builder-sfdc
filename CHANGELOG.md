@@ -4,6 +4,30 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.1.0-beta.1] - 2026-09-28
+
+### Added
+
+- Added an optional four-step guided template wizard that combines deterministic controls with Salesforce Models API instructions.
+- Added configurable AI model, provider label, prompt contract, availability message, and prompt/context limits through `PDFBuilderSettings.Default` Custom Metadata.
+- Added a dedicated `PDFBuilderUseAIWizard` custom permission and an unavailable-state placeholder when Models API or the required entitlement is not available.
+- Added deterministic validation and normalization for AI proposals, including supported-key allowlists, Salesforce metadata validation, bounded inputs and outputs, and safe rich-text handling.
+- Added an optional `PDF Builder AI` adapter package so the core Builder installs and remains usable in orgs where Agentforce or Models API isn't enabled.
+
+### Changed
+
+- Modernized the Builder toolbar, side panels, property groups, controls, element palette, canvas workspace, and guided wizard while preserving responsive behavior and document styling.
+- Reworked AI-generated layouts into the same canonical editable block model used by manual Builder controls so subsequent edits remain synchronized.
+- Improved AI retries and proposal recovery so invalid JSON responses provide actionable feedback and complete layouts are applied on the first successful response.
+- Renamed the divider palette actions to `Horizontal Line` and `Vertical Line` and clarified destructive-action styling in the template toolbar.
+
+### Security
+
+- The AI service sends only bounded template state and accessible schema metadata; it does not query or send Salesforce record values.
+- AI access requires the feature setting, the package custom permission, Models API availability, and the running user's Salesforce entitlements.
+- The core package discovers the optional Models API adapter through the standard Apex `Callable` contract, avoiding compile-time `aiplatform` dependencies in non-AI orgs.
+- User instructions and current recipe data are isolated as untrusted prompt sections, while every generated proposal is parsed and validated before it can modify the template.
+
 ## [1.0.18] - 2026-09-21
 
 ### Changed
@@ -214,7 +238,8 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18...HEAD
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.1.0-beta.1...HEAD
+[1.1.0-beta.1]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18...v1.1.0-beta.1
 [1.0.18]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.17...v1.0.18
 [1.0.18-beta.3]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18-beta.2...v1.0.18-beta.3
 [1.0.18-beta.2]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18-beta.1...v1.0.18-beta.2

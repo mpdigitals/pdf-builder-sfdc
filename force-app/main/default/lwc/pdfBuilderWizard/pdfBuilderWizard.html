@@ -1,0 +1,1238 @@
+<template>
+  <section class={wizardClass} aria-label="PDF Builder guided setup">
+    <header class="wizard-header">
+      <div>
+        <span class="wizard-eyebrow">Guided setup</span>
+        <h2>{title}</h2>
+        <span class="wizard-step-count">{stepIndicator}</span>
+      </div>
+      <button
+        class="wizard-close"
+        type="button"
+        title="Cancel guided setup"
+        aria-label="Cancel guided setup"
+        onclick={handleCancel}
+      >
+        ×
+      </button>
+    </header>
+
+    <div class="wizard-progress" aria-hidden="true">
+      <span style={progressStyle}></span>
+    </div>
+
+    <nav class="wizard-step-rail" aria-label="Wizard steps">
+      <template for:each={stepItems} for:item="step">
+        <span key={step.key} class={step.className} title={step.label}
+          >{step.number}</span
+        >
+      </template>
+    </nav>
+
+    <main class="wizard-content">
+      <template lwc:if={showAIInput}>
+        <section class="prompt-card">
+          <div class="prompt-heading">
+            <div>
+              <span class="prompt-kicker">✨ Describe this section</span>
+              <p>Use AI, the controls below, or combine both.</p>
+            </div>
+            <span class="prompt-status">{promptStatusLabel}</span>
+          </div>
+          <textarea
+            class="prompt-input"
+            data-role="prompt-input"
+            rows="3"
+            maxlength={aiMaxPromptLength}
+            placeholder={promptPlaceholder}
+            oninput={handlePromptInput}
+          ></textarea>
+          <div class="prompt-actions">
+            <button
+              class="prompt-button"
+              type="button"
+              onclick={handleApplyPrompt}
+              disabled={promptButtonDisabled}
+            >
+              {promptButtonLabel}
+            </button>
+            <span>{aiProviderAttribution}</span>
+          </div>
+          <template lwc:if={promptNotice}>
+            <div class="prompt-notice" role="status">{promptNotice}</div>
+          </template>
+        </section>
+      </template>
+
+      <template lwc:if={showAIUnavailable}>
+        <section class="ai-unavailable-card" role="status">
+          <span class="ai-unavailable-icon" aria-hidden="true">✨</span>
+          <div>
+            <h3>Salesforce AI unavailable</h3>
+            <p>{resolvedAIUnavailableMessage}</p>
+            <p class="ai-unavailable-guidance">
+              You can continue configuring this section with the manual controls
+              below.
+            </p>
+          </div>
+        </section>
+      </template>
+
+      <template lwc:if={isBusy}>
+        <div class="wizard-loading" role="status">
+          <span class="wizard-spinner" aria-hidden="true"></span>
+          {loadingMessage}
+        </div>
+      </template>
+
+      <template lwc:if={errorMessage}>
+        <div
+          class="wizard-error"
+          data-role="wizard-error"
+          role="alert"
+          tabindex="-1"
+        >
+          {errorMessage}
+        </div>
+      </template>
+
+      <template lwc:if={isContextStep}>
+        <section class="wizard-step-section">
+          <p class="step-intro">
+            Identify the template and the Salesforce records it applies to.
+          </p>
+          <div class="form-grid">
+            <label class="wizard-field full-width">
+              <span>Template name</span>
+              <input
+                type="text"
+                value={recipe.templateName}
+                data-field="templateName"
+                maxlength="80"
+                oninput={handleInput}
+              />
+            </label>
+
+            <label class="wizard-field full-width">
+              <span>Salesforce object</span>
+              <select data-field="objectApiName" onchange={handleObjectChange}>
+                <option value="">Select object</option>
+                <template for:each={objectOptions} for:item="objectOption">
+                  <option
+                    key={objectOption.apiName}
+                    value={objectOption.apiName}
+                  >
+                    {objectOption.label}
+                  </option>
+                </template>
+              </select>
+            </label>
+
+            <label class="wizard-field full-width">
+              <span>Record type</span>
+              <select data-field="recordTypeScope" onchange={handleInput}>
+                <template for:each={recordTypeOptions} for:item="recordType">
+                  <option key={recordType.value} value={recordType.value}>
+                    {recordType.label}
+                  </option>
+                </template>
+              </select>
+            </label>
+
+            <label class="wizard-check full-width">
+              <input
+                type="checkbox"
+                checked={recipe.isDefault}
+                data-field="isDefault"
+                onchange={handleCheckbox}
+              />
+              <span>{defaultTemplateLabel}</span>
+            </label>
+          </div>
+
+          <div class="subsection-heading">
+            <h3>Document structure</h3>
+            <p>Choose the regions the generated document will contain.</p>
+          </div>
+
+          <div class="structure-options">
+            <label class="wizard-check structure-option">
+              <input
+                type="checkbox"
+                checked={recipe.showHeader}
+                data-field="showHeader"
+                onchange={handleCheckbox}
+              />
+              <span>
+                <strong>Header</strong>
+                <small>Information shown above the main content</small>
+              </span>
+            </label>
+
+            <label class="wizard-check structure-option">
+              <input
+                type="checkbox"
+                checked={recipe.showFooter}
+                data-field="showFooter"
+                onchange={handleCheckbox}
+              />
+              <span>
+                <strong>Footer</strong>
+                <small>Information shown below the main content</small>
+              </span>
+            </label>
+          </div>
+
+          <div class="subsection-heading">
+            <h3>Overall appearance</h3>
+            <p>Set the visual foundation; each section can refine it later.</p>
+          </div>
+
+          <div class="form-grid">
+            <label class="wizard-field">
+              <span>Body layout</span>
+              <select data-field="bodyLayout" onchange={handleInput}>
+                <option value="one">One column</option>
+                <option value="two">Two columns</option>
+              </select>
+            </label>
+
+            <label class="wizard-field">
+              <span>Font</span>
+              <select data-field="fontFamily" onchange={handleInput}>
+                <template for:each={fontOptions} for:item="fontOption">
+                  <option key={fontOption.value} value={fontOption.value}>
+                    {fontOption.label}
+                  </option>
+                </template>
+              </select>
+            </label>
+
+            <label class="wizard-field">
+              <span>Page padding</span>
+              <input
+                type="number"
+                min="0"
+                max="96"
+                value={recipe.pagePadding}
+                data-field="pagePadding"
+                oninput={handleInput}
+              />
+            </label>
+
+            <label class="wizard-field">
+              <span>Element padding</span>
+              <input
+                type="number"
+                min="0"
+                max="48"
+                value={recipe.elementPadding}
+                data-field="elementPadding"
+                oninput={handleInput}
+              />
+            </label>
+
+            <label class="wizard-field">
+              <span>Primary color</span>
+              <span class="wizard-color-control">
+                <input
+                  type="color"
+                  value={recipe.primaryColor}
+                  data-field="primaryColor"
+                  oninput={handleColorInput}
+                />
+                <span>{recipe.primaryColor}</span>
+              </span>
+            </label>
+
+            <label class="wizard-field">
+              <span>Text color</span>
+              <span class="wizard-color-control">
+                <input
+                  type="color"
+                  value={recipe.textColor}
+                  data-field="textColor"
+                  oninput={handleColorInput}
+                />
+                <span>{recipe.textColor}</span>
+              </span>
+            </label>
+
+            <label class="wizard-field">
+              <span>Page color</span>
+              <span class="wizard-color-control">
+                <input
+                  type="color"
+                  value={pageColorValue}
+                  data-field="pageBackground"
+                  oninput={handleColorInput}
+                />
+                <span>{pageColorValue}</span>
+              </span>
+            </label>
+
+            <label class="wizard-check compact-check">
+              <input
+                type="checkbox"
+                checked={pageHasNoFill}
+                onchange={handlePageNoFill}
+              />
+              <span>No fill</span>
+            </label>
+          </div>
+        </section>
+      </template>
+
+      <template lwc:if={isHeaderStep}>
+        <section class="wizard-step-section">
+          <div class="section-heading">
+            <div>
+              <h3>Header</h3>
+              <p>{selectedHeaderFieldCount} record fields selected</p>
+            </div>
+          </div>
+
+          <template lwc:if={showHeaderSettings}>
+            <section class="wizard-feature-card">
+              <div class="feature-card-heading">
+                <div>
+                  <h3>Content</h3>
+                  <p>Choose what appears in the header.</p>
+                </div>
+                <span>{selectedHeaderFieldCount} fields</span>
+              </div>
+
+              <div class="form-grid">
+                <label class="wizard-check full-width">
+                  <input
+                    type="checkbox"
+                    checked={recipe.repeatHeaderOnEachPage}
+                    data-field="repeatHeaderOnEachPage"
+                    onchange={handleCheckbox}
+                  />
+                  <span>Repeat header on every page</span>
+                </label>
+
+                <label class="wizard-check full-width">
+                  <input
+                    type="checkbox"
+                    checked={recipe.includeOrganizationName}
+                    data-field="includeOrganizationName"
+                    onchange={handleCheckbox}
+                  />
+                  <span>Include organization name</span>
+                </label>
+
+                <label class="wizard-check full-width">
+                  <input
+                    type="checkbox"
+                    checked={recipe.includeHeaderImage}
+                    data-field="includeHeaderImage"
+                    onchange={handleCheckbox}
+                  />
+                  <span>Reserve space for a logo or image</span>
+                </label>
+
+                <template lwc:if={showHeaderImageSettings}>
+                  <label class="wizard-field full-width">
+                    <span>Image URL</span>
+                    <input
+                      type="url"
+                      value={recipe.imageUrl}
+                      placeholder="Select a Salesforce File later if preferred"
+                      data-field="imageUrl"
+                      oninput={handleInput}
+                    />
+                  </label>
+
+                  <label class="wizard-field">
+                    <span>Image alignment</span>
+                    <select
+                      data-field="headerImageAlignment"
+                      onchange={handleInput}
+                    >
+                      <option value="left">Left</option>
+                      <option value="center">Center</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </label>
+
+                  <label class="wizard-field">
+                    <span>Image size</span>
+                    <select data-field="imageSize" onchange={handleInput}>
+                      <option value="medium">Medium</option>
+                      <option value="large">Large</option>
+                    </select>
+                  </label>
+                </template>
+              </div>
+
+              <div class="selection-panel nested-panel">
+                <div class="selection-heading">
+                  <strong>Record information</strong>
+                  <span>{selectedHeaderFieldCount} selected</span>
+                </div>
+                <input
+                  class="selection-search"
+                  type="search"
+                  placeholder="Search header fields"
+                  value={fieldSearchTerm}
+                  oninput={handleFieldSearch}
+                />
+                <div class="selection-list">
+                  <template lwc:if={hasFields}>
+                    <template for:each={filteredFieldItems} for:item="field">
+                      <label key={field.apiName} class="selection-option">
+                        <input
+                          type="checkbox"
+                          checked={field.headerSelected}
+                          data-value={field.apiName}
+                          onchange={handleHeaderFieldToggle}
+                        />
+                        <span>
+                          <strong>{field.label}</strong>
+                          <small>{field.apiName}</small>
+                        </span>
+                      </label>
+                    </template>
+                  </template>
+                  <template lwc:else>
+                    <p class="empty-state">No fields found.</p>
+                  </template>
+                </div>
+              </div>
+            </section>
+
+            <section class="wizard-feature-card">
+              <div class="feature-card-heading">
+                <div>
+                  <h3>Appearance</h3>
+                  <p>Style the header region and its content box separately.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <label class="wizard-field">
+                  <span>Header background</span>
+                  <span class="wizard-color-control">
+                    <input
+                      type="color"
+                      value={headerBackgroundColorValue}
+                      data-field="headerBackground"
+                      oninput={handleColorInput}
+                    />
+                    <span>{headerBackgroundColorValue}</span>
+                  </span>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Text color</span>
+                  <span class="wizard-color-control">
+                    <input
+                      type="color"
+                      value={recipe.headerTextColor}
+                      data-field="headerTextColor"
+                      oninput={handleColorInput}
+                    />
+                    <span>{recipe.headerTextColor}</span>
+                  </span>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Content box background</span>
+                  <span class="wizard-color-control">
+                    <input
+                      type="color"
+                      value={headerContentBackgroundColorValue}
+                      data-field="headerContentBackground"
+                      oninput={handleColorInput}
+                    />
+                    <span>{headerContentBackgroundColorValue}</span>
+                  </span>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Content box padding</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="48"
+                    value={recipe.headerContentPadding}
+                    data-field="headerContentPadding"
+                    oninput={handleInput}
+                  />
+                </label>
+
+                <label class="wizard-field">
+                  <span>Content box size</span>
+                  <select
+                    data-field="headerContentSizeMode"
+                    onchange={handleInput}
+                  >
+                    <option value="content">Fit content</option>
+                    <option value="fullWidth">Full width</option>
+                  </select>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Content box border</span>
+                  <select
+                    data-field="headerContentBorderStyle"
+                    onchange={handleHeaderContentBorderStyle}
+                  >
+                    <option value="none">None</option>
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                  </select>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Border width</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="12"
+                    value={recipe.headerContentBorderWidth}
+                    data-field="headerContentBorderWidth"
+                    oninput={handleInput}
+                    disabled={headerContentBorderDisabled}
+                  />
+                </label>
+
+                <label class="wizard-field">
+                  <span>Border color</span>
+                  <span class="wizard-color-control">
+                    <input
+                      type="color"
+                      value={headerContentBorderColorValue}
+                      data-field="headerContentBorderColor"
+                      oninput={handleColorInput}
+                      disabled={headerContentBorderDisabled}
+                    />
+                    <span>{headerContentBorderColorValue}</span>
+                  </span>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Corner radius</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="48"
+                    value={recipe.headerContentBorderRadius}
+                    data-field="headerContentBorderRadius"
+                    oninput={handleInput}
+                    disabled={headerContentBorderDisabled}
+                  />
+                </label>
+              </div>
+            </section>
+          </template>
+        </section>
+      </template>
+
+      <template lwc:if={isBodyStep}>
+        <section class="wizard-step-section">
+          <p class="step-intro">
+            Build the main content with Salesforce data, editable AI-written
+            text boxes, and optionally one Related List.
+          </p>
+
+          <section class="wizard-feature-card">
+            <div class="feature-card-heading">
+              <div>
+                <h3>Content</h3>
+                <p>Choose the title, layout, and Salesforce fields.</p>
+              </div>
+              <span>{selectedBodyFieldCount} fields</span>
+            </div>
+
+            <div class="form-grid">
+              <label class="wizard-check full-width">
+                <input
+                  type="checkbox"
+                  checked={recipe.includeBodyTitle}
+                  data-field="includeBodyTitle"
+                  onchange={handleCheckbox}
+                />
+                <span>Add a title to the body</span>
+              </label>
+
+              <template lwc:if={showBodyTitleSettings}>
+                <label class="wizard-field full-width">
+                  <span>Body title</span>
+                  <input
+                    type="text"
+                    value={recipe.documentTitle}
+                    data-field="documentTitle"
+                    maxlength="160"
+                    oninput={handleInput}
+                  />
+                </label>
+              </template>
+
+              <label class="wizard-field">
+                <span>Layout</span>
+                <select
+                  data-field="bodyLayout"
+                  onchange={handleInput}
+                  disabled={bodyLayoutDisabled}
+                >
+                  <option value="one">One column</option>
+                  <option value="two">Two columns</option>
+                </select>
+              </label>
+
+              <label class="wizard-field">
+                <span>Field display</span>
+                <select data-field="fieldDisplayMode" onchange={handleInput}>
+                  <option value="value">Value only</option>
+                  <option value="labelOnly">Label only</option>
+                  <option value="labelAndValue">Label + value</option>
+                </select>
+              </label>
+            </div>
+
+            <input
+              class="selection-search body-field-search"
+              type="search"
+              placeholder="Search body fields"
+              value={fieldSearchTerm}
+              oninput={handleFieldSearch}
+            />
+            <div class="selection-list">
+              <template lwc:if={hasFields}>
+                <template for:each={filteredFieldItems} for:item="field">
+                  <label key={field.apiName} class="selection-option">
+                    <input
+                      type="checkbox"
+                      checked={field.bodySelected}
+                      data-value={field.apiName}
+                      onchange={handleBodyFieldToggle}
+                    />
+                    <span>
+                      <strong>{field.label}</strong>
+                      <small>{field.apiName}</small>
+                    </span>
+                  </label>
+                </template>
+              </template>
+              <template lwc:else>
+                <p class="empty-state">No fields found.</p>
+              </template>
+            </div>
+          </section>
+
+          <section class="wizard-feature-card">
+            <div class="feature-card-heading">
+              <div>
+                <h3>Field box & appearance</h3>
+                <p>Keep fields separate or place them in one styled box.</p>
+              </div>
+            </div>
+
+            <label class="wizard-check full-width">
+              <input
+                type="checkbox"
+                checked={recipe.groupBodyFields}
+                data-field="groupBodyFields"
+                onchange={handleBodyGroupingChange}
+              />
+              <span>Place all selected fields in one text box</span>
+            </label>
+
+            <template lwc:if={showBodyContentBoxSettings}>
+              <label class="wizard-check full-width feature-control">
+                <input
+                  type="checkbox"
+                  checked={recipe.includeOrganizationBodyBox}
+                  data-field="includeOrganizationBodyBox"
+                  onchange={handleOrganizationBodyBoxChange}
+                />
+                <span>
+                  Add organization information in a second box beside the record
+                  fields
+                </span>
+              </label>
+
+              <div class="form-grid feature-card-grid">
+                <label class="wizard-field">
+                  <span>Box background</span>
+                  <span class="wizard-color-control">
+                    <input
+                      type="color"
+                      value={bodyContentBackgroundColorValue}
+                      data-field="bodyContentBackground"
+                      oninput={handleColorInput}
+                    />
+                    <span>{bodyContentBackgroundColorValue}</span>
+                  </span>
+                </label>
+
+                <label class="wizard-check compact-check">
+                  <input
+                    type="checkbox"
+                    checked={bodyContentHasNoFill}
+                    onchange={handleBodyContentNoFill}
+                  />
+                  <span>No fill</span>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Text color</span>
+                  <span class="wizard-color-control">
+                    <input
+                      type="color"
+                      value={recipe.textColor}
+                      data-field="textColor"
+                      oninput={handleColorInput}
+                    />
+                    <span>{recipe.textColor}</span>
+                  </span>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Padding</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="48"
+                    value={recipe.bodyContentPadding}
+                    data-field="bodyContentPadding"
+                    oninput={handleInput}
+                  />
+                </label>
+
+                <label class="wizard-field">
+                  <span>Border style</span>
+                  <select
+                    data-field="bodyContentBorderStyle"
+                    onchange={handleBodyContentBorderStyle}
+                  >
+                    <option value="none">None</option>
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                  </select>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Border width</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="12"
+                    value={recipe.bodyContentBorderWidth}
+                    data-field="bodyContentBorderWidth"
+                    oninput={handleInput}
+                    disabled={bodyContentBorderDisabled}
+                  />
+                </label>
+
+                <label class="wizard-field">
+                  <span>Border color</span>
+                  <span class="wizard-color-control">
+                    <input
+                      type="color"
+                      value={bodyContentBorderColorValue}
+                      data-field="bodyContentBorderColor"
+                      oninput={handleColorInput}
+                      disabled={bodyContentBorderDisabled}
+                    />
+                    <span>{bodyContentBorderColorValue}</span>
+                  </span>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Corner radius</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="48"
+                    value={recipe.bodyContentBorderRadius}
+                    data-field="bodyContentBorderRadius"
+                    oninput={handleInput}
+                    disabled={bodyContentBorderDisabled}
+                  />
+                </label>
+              </div>
+            </template>
+          </section>
+
+          <section class="wizard-feature-card">
+            <div class="feature-card-heading">
+              <div>
+                <h3>Related List</h3>
+                <p>Choose the relationship, columns, and table appearance.</p>
+              </div>
+              <label class="switch-check">
+                <input
+                  type="checkbox"
+                  checked={recipe.includeRelatedList}
+                  onchange={handleRelatedListToggle}
+                />
+                <span>Include</span>
+              </label>
+            </div>
+
+            <template lwc:if={recipe.includeRelatedList}>
+              <template lwc:if={hasRelatedLists}>
+                <div
+                  class="suggestion-chips"
+                  aria-label="Suggested Related Lists"
+                >
+                  <template
+                    for:each={suggestedRelatedListItems}
+                    for:item="relatedList"
+                  >
+                    <button
+                      key={relatedList.relationshipName}
+                      class={relatedList.className}
+                      type="button"
+                      data-value={relatedList.relationshipName}
+                      onclick={handleRelatedListSuggestion}
+                    >
+                      {relatedList.label}
+                    </button>
+                  </template>
+                </div>
+              </template>
+              <template lwc:else>
+                <p class="empty-state">
+                  Select an object to see available Related Lists.
+                </p>
+              </template>
+
+              <template lwc:if={showRelatedListConfiguration}>
+                <label class="wizard-field full-width feature-control">
+                  <span>Relationship</span>
+                  <select
+                    data-field="relatedListRelationshipName"
+                    onchange={handleRelatedListSelect}
+                  >
+                    <template
+                      for:each={relatedListItems}
+                      for:item="relatedList"
+                    >
+                      <option
+                        key={relatedList.relationshipName}
+                        value={relatedList.relationshipName}
+                      >
+                        {relatedList.label}
+                      </option>
+                    </template>
+                  </select>
+                </label>
+
+                <div class="related-object-info">
+                  <span>Related object</span>
+                  <strong>{recipe.relatedListChildObjectApiName}</strong>
+                </div>
+
+                <div class="selection-panel nested-panel">
+                  <div class="selection-heading">
+                    <strong>Columns</strong>
+                    <span>{selectedRelatedListColumnCount} selected</span>
+                  </div>
+                  <div class="selection-list related-columns">
+                    <template lwc:if={hasRelatedListFields}>
+                      <template
+                        for:each={relatedListFieldItems}
+                        for:item="field"
+                      >
+                        <label key={field.apiName} class="selection-option">
+                          <input
+                            type="checkbox"
+                            checked={field.selected}
+                            data-value={field.apiName}
+                            onchange={handleRelatedListFieldToggle}
+                          />
+                          <span>
+                            <strong>{field.label}</strong>
+                            <small>{field.apiName}</small>
+                          </span>
+                        </label>
+                      </template>
+                    </template>
+                    <template lwc:else>
+                      <p class="empty-state">No accessible fields found.</p>
+                    </template>
+                  </div>
+                </div>
+
+                <div class="subsection-heading compact-subsection">
+                  <h3>Table appearance</h3>
+                </div>
+
+                <div class="form-grid related-style-grid">
+                  <label class="wizard-field">
+                    <span>Header background</span>
+                    <span class="wizard-color-control">
+                      <input
+                        type="color"
+                        value={recipe.relatedListHeaderRowColor}
+                        data-field="relatedListHeaderRowColor"
+                        oninput={handleColorInput}
+                      />
+                      <span>{recipe.relatedListHeaderRowColor}</span>
+                    </span>
+                  </label>
+
+                  <label class="wizard-field">
+                    <span>Header text</span>
+                    <span class="wizard-color-control">
+                      <input
+                        type="color"
+                        value={recipe.relatedListHeaderTextColor}
+                        data-field="relatedListHeaderTextColor"
+                        oninput={handleColorInput}
+                      />
+                      <span>{recipe.relatedListHeaderTextColor}</span>
+                    </span>
+                  </label>
+
+                  <label class="wizard-field">
+                    <span>Odd row background</span>
+                    <span class="wizard-color-control">
+                      <input
+                        type="color"
+                        value={relatedListOddRowColorValue}
+                        data-field="relatedListOddRowColor"
+                        oninput={handleColorInput}
+                      />
+                      <span>{relatedListOddRowColorValue}</span>
+                    </span>
+                  </label>
+
+                  <label class="wizard-field">
+                    <span>Odd row text</span>
+                    <span class="wizard-color-control">
+                      <input
+                        type="color"
+                        value={recipe.relatedListOddTextColor}
+                        data-field="relatedListOddTextColor"
+                        oninput={handleColorInput}
+                      />
+                      <span>{recipe.relatedListOddTextColor}</span>
+                    </span>
+                  </label>
+
+                  <label class="wizard-field">
+                    <span>Even row background</span>
+                    <span class="wizard-color-control">
+                      <input
+                        type="color"
+                        value={relatedListEvenRowColorValue}
+                        data-field="relatedListEvenRowColor"
+                        oninput={handleColorInput}
+                      />
+                      <span>{relatedListEvenRowColorValue}</span>
+                    </span>
+                  </label>
+
+                  <label class="wizard-field">
+                    <span>Even row text</span>
+                    <span class="wizard-color-control">
+                      <input
+                        type="color"
+                        value={recipe.relatedListEvenTextColor}
+                        data-field="relatedListEvenTextColor"
+                        oninput={handleColorInput}
+                      />
+                      <span>{recipe.relatedListEvenTextColor}</span>
+                    </span>
+                  </label>
+
+                  <label class="wizard-field">
+                    <span>Grid lines</span>
+                    <select
+                      data-field="relatedListBorderMode"
+                      onchange={handleInput}
+                    >
+                      <option value="none">No lines</option>
+                      <option value="horizontal">Horizontal</option>
+                      <option value="vertical">Vertical</option>
+                      <option value="all">All lines</option>
+                    </select>
+                  </label>
+
+                  <label class="wizard-field">
+                    <span>Grid color</span>
+                    <span class="wizard-color-control">
+                      <input
+                        type="color"
+                        value={recipe.relatedListGridColor}
+                        data-field="relatedListGridColor"
+                        oninput={handleColorInput}
+                      />
+                      <span>{recipe.relatedListGridColor}</span>
+                    </span>
+                  </label>
+
+                  <label class="wizard-field">
+                    <span>Font size</span>
+                    <input
+                      type="number"
+                      min="8"
+                      max="36"
+                      value={recipe.relatedListFontSize}
+                      data-field="relatedListFontSize"
+                      oninput={handleInput}
+                    />
+                  </label>
+
+                  <label class="wizard-check compact-check">
+                    <input
+                      type="checkbox"
+                      checked={recipe.relatedListZebraEnabled}
+                      data-field="relatedListZebraEnabled"
+                      onchange={handleCheckbox}
+                    />
+                    <span>Alternating rows</span>
+                  </label>
+
+                  <label class="wizard-check compact-check full-width">
+                    <input
+                      type="checkbox"
+                      checked={recipe.includeBodyDivider}
+                      data-field="includeBodyDivider"
+                      onchange={handleCheckbox}
+                    />
+                    <span>Add a horizontal separator below the list</span>
+                  </label>
+
+                  <label class="wizard-check compact-check full-width">
+                    <input
+                      type="checkbox"
+                      checked={recipe.includeRelatedListTotal}
+                      data-field="includeRelatedListTotal"
+                      onchange={handleCheckbox}
+                    />
+                    <span>Add the total amount below the list</span>
+                  </label>
+
+                  <template lwc:if={showRelatedListTotalSettings}>
+                    <label class="wizard-field">
+                      <span>Total label</span>
+                      <input
+                        type="text"
+                        value={recipe.relatedListTotalLabel}
+                        data-field="relatedListTotalLabel"
+                        oninput={handleInput}
+                      />
+                    </label>
+
+                    <label class="wizard-field">
+                      <span>Total field</span>
+                      <select
+                        data-field="relatedListTotalFieldApiName"
+                        onchange={handleInput}
+                      >
+                        <option value="">Select amount field</option>
+                        <template for:each={totalFieldOptions} for:item="field">
+                          <option key={field.apiName} value={field.apiName}>
+                            {field.label}
+                          </option>
+                        </template>
+                      </select>
+                    </label>
+                  </template>
+                </div>
+              </template>
+            </template>
+          </section>
+        </section>
+      </template>
+
+      <template lwc:if={isFooterStep}>
+        <section class="wizard-step-section">
+          <div class="section-heading">
+            <div>
+              <h3>Footer</h3>
+              <p>Finish the design and review the generated structure.</p>
+            </div>
+          </div>
+
+          <template lwc:if={showFooterSettings}>
+            <section class="wizard-feature-card">
+              <div class="feature-card-heading">
+                <div>
+                  <h3>Content & behavior</h3>
+                  <p>Choose the footer content and where it repeats.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <label class="wizard-check full-width">
+                  <input
+                    type="checkbox"
+                    checked={recipe.repeatFooterOnEachPage}
+                    data-field="repeatFooterOnEachPage"
+                    onchange={handleCheckbox}
+                  />
+                  <span>Repeat footer on every page</span>
+                </label>
+
+                <label class="wizard-check full-width">
+                  <input
+                    type="checkbox"
+                    checked={recipe.includeFooterOrganizationName}
+                    data-field="includeFooterOrganizationName"
+                    onchange={handleCheckbox}
+                  />
+                  <span>Include organization name</span>
+                </label>
+
+                <label class="wizard-field full-width">
+                  <span>Footer text</span>
+                  <input
+                    type="text"
+                    value={recipe.footerText}
+                    data-field="footerText"
+                    oninput={handleInput}
+                  />
+                </label>
+
+                <label class="wizard-field full-width">
+                  <span>Secondary footer text</span>
+                  <input
+                    type="text"
+                    value={recipe.footerSecondaryText}
+                    data-field="footerSecondaryText"
+                    oninput={handleInput}
+                  />
+                </label>
+
+                <label class="wizard-check full-width">
+                  <input
+                    type="checkbox"
+                    checked={recipe.footerShowDivider}
+                    data-field="footerShowDivider"
+                    onchange={handleCheckbox}
+                  />
+                  <span>Add a top separator line</span>
+                </label>
+              </div>
+            </section>
+
+            <section class="wizard-feature-card">
+              <div class="feature-card-heading">
+                <div>
+                  <h3>Appearance</h3>
+                  <p>Set alignment, background, and text color.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <label class="wizard-field">
+                  <span>Alignment</span>
+                  <select data-field="footerAlignment" onchange={handleInput}>
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                  </select>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Background</span>
+                  <span class="wizard-color-control">
+                    <input
+                      type="color"
+                      value={footerBackgroundColorValue}
+                      data-field="footerBackground"
+                      oninput={handleColorInput}
+                    />
+                    <span>{footerBackgroundColorValue}</span>
+                  </span>
+                </label>
+
+                <label class="wizard-field">
+                  <span>Text color</span>
+                  <span class="wizard-color-control">
+                    <input
+                      type="color"
+                      value={recipe.footerTextColor}
+                      data-field="footerTextColor"
+                      oninput={handleColorInput}
+                    />
+                    <span>{recipe.footerTextColor}</span>
+                  </span>
+                </label>
+
+                <template lwc:if={recipe.footerShowDivider}>
+                  <label class="wizard-field">
+                    <span>Separator color</span>
+                    <span class="wizard-color-control">
+                      <input
+                        type="color"
+                        value={recipe.footerDividerColor}
+                        data-field="footerDividerColor"
+                        oninput={handleColorInput}
+                      />
+                      <span>{recipe.footerDividerColor}</span>
+                    </span>
+                  </label>
+                </template>
+              </div>
+            </section>
+          </template>
+
+          <aside class="review-card">
+            <h3>Template summary</h3>
+            <dl>
+              <div>
+                <dt>Name</dt>
+                <dd>{recipe.templateName}</dd>
+              </div>
+              <div>
+                <dt>Object</dt>
+                <dd>{selectedObjectLabel}</dd>
+              </div>
+              <div>
+                <dt>Body fields</dt>
+                <dd>{selectedBodyFieldCount}</dd>
+              </div>
+              <div>
+                <dt>Related List</dt>
+                <dd>{selectedRelatedListLabel}</dd>
+              </div>
+            </dl>
+          </aside>
+        </section>
+      </template>
+    </main>
+
+    <footer class="wizard-footer">
+      <button
+        class="wizard-button secondary"
+        type="button"
+        onclick={handleBack}
+        disabled={backButtonDisabled}
+      >
+        Back
+      </button>
+
+      <template lwc:if={isLastStep}>
+        <button
+          class="wizard-button primary"
+          type="button"
+          onclick={handleComplete}
+          disabled={isBusy}
+        >
+          Create template
+        </button>
+      </template>
+      <template lwc:else>
+        <button
+          class="wizard-button primary"
+          type="button"
+          onclick={handleNext}
+          disabled={isBusy}
+        >
+          Next
+        </button>
+      </template>
+    </footer>
+  </section>
+</template>

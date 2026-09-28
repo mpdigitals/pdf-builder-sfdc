@@ -1,6 +1,7 @@
 import { createElement } from "@lwc/engine-dom";
 import PDFBuilder from "c/pdfBuilder";
 import getConfiguration from "@salesforce/apex/PDFBuilderController.getConfiguration";
+import getAIAvailability from "@salesforce/apex/PDFBuilderAIService.getAvailability";
 import getObjects from "@salesforce/apex/PDFBuilderController.getObjects";
 import getFields from "@salesforce/apex/PDFBuilderController.getFields";
 import getRelatedLists from "@salesforce/apex/PDFBuilderController.getRelatedLists";
@@ -11,9 +12,15 @@ import getTemplate from "@salesforce/apex/PDFBuilderController.getTemplate";
 import saveTemplate from "@salesforce/apex/PDFBuilderController.saveTemplate";
 import renderGeneratedHtmlForPreview from "@salesforce/apex/PDFBuilderController.renderGeneratedHtmlForPreview";
 import renderPdfFlowForRecordPreview from "@salesforce/apex/PDFBuilderController.renderPdfFlowForRecordPreview";
+import { createDefaultWizardRecipe } from "c/pdfBuilderWizardModel";
 
 jest.mock(
   "@salesforce/apex/PDFBuilderController.getConfiguration",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/PDFBuilderAIService.getAvailability",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -82,8 +89,17 @@ jest.mock(
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
+jest.mock(
+  "@salesforce/apex/PDFBuilderAIService.generateWizardProposal",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
 
 const flushPromises = async () => {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
@@ -163,6 +179,11 @@ const createKeyboardShortcutTemplate = () => {
 
 describe("c-pdf-builder", () => {
   beforeEach(() => {
+    getAIAvailability.mockResolvedValue({
+      available: true,
+      message: null,
+      providerLabel: "Salesforce Models API · GPT-4o mini"
+    });
     getConfiguration.mockResolvedValue({
       pageWidth: 794,
       pageHeight: 1123,
@@ -241,6 +262,246 @@ describe("c-pdf-builder", () => {
       "Quote proposal (QUO)"
     ]);
     expect(element.shadowRoot.querySelector(".application-logo")).toBeNull();
+  });
+
+  it("opens the guided wizard and restores the editor when it is cancelled", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    element.shadowRoot
+      .querySelector(".wizard-launch-button")
+      .dispatchEvent(new MouseEvent("click"));
+    await flushPromises();
+
+    const wizard = element.shadowRoot.querySelector("c-pdf-builder-wizard");
+    expect(wizard).not.toBeNull();
+    expect(
+      element.shadowRoot
+        .querySelector(".builder")
+        .classList.contains("wizard-open")
+    ).toBe(true);
+
+    wizard.dispatchEvent(new CustomEvent("wizardcancel"));
+    await flushPromises();
+
+    expect(element.shadowRoot.querySelector("c-pdf-builder-wizard")).toBeNull();
+    expect(
+      element.shadowRoot
+        .querySelector(".builder")
+        .classList.contains("wizard-open")
+    ).toBe(false);
+    expect(
+      element.shadowRoot.querySelector('[data-role="object-select"]').value
+    ).toBe("");
+  });
+
+  it("keeps guided setup available while disabling its AI prompt", async () => {
+    getAIAvailability.mockResolvedValue({
+      available: false,
+      message: "Enable Agentforce and Models API access.",
+      providerLabel: "Salesforce Models API"
+    });
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const wizardButton = element.shadowRoot.querySelector(
+      ".wizard-launch-button"
+    );
+    expect(wizardButton.disabled).toBe(false);
+    expect(wizardButton.textContent.trim()).toBe("✨ AI Wizard");
+    expect(wizardButton.title).toContain(
+      "Enable Agentforce and Models API access."
+    );
+    expect(element.shadowRoot.querySelector(".top-toolbar")).not.toBeNull();
+
+    wizardButton.click();
+    await flushPromises();
+    const wizard = element.shadowRoot.querySelector("c-pdf-builder-wizard");
+    expect(wizard).not.toBeNull();
+    expect(wizard.aiUnavailable).toBe(true);
+  });
+
+  it("acknowledges a wizard preview only after the builder has rendered it", async () => {
+    jest.useFakeTimers();
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    element.shadowRoot.querySelector(".wizard-launch-button").click();
+    await flushPromises();
+
+    const wizard = element.shadowRoot.querySelector("c-pdf-builder-wizard");
+    const notifyPreviewRendered = jest.spyOn(wizard, "notifyPreviewRendered");
+    const animationFrames = [];
+    const animationFrameSpy = jest
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((callback) => {
+        animationFrames.push(callback);
+        return animationFrames.length;
+      });
+    wizard.dispatchEvent(new CustomEvent("wizardpreviewstart"));
+    wizard.dispatchEvent(
+      new CustomEvent("wizardpreview", {
+        detail: {
+          ...createDefaultWizardRecipe(),
+          templateName: "Rendered draft",
+          objectApiName: "Account"
+        }
+      })
+    );
+    expect(notifyPreviewRendered).not.toHaveBeenCalled();
+
+    await flushPromises();
+
+    expect(notifyPreviewRendered).not.toHaveBeenCalled();
+    animationFrames.shift()();
+    expect(notifyPreviewRendered).not.toHaveBeenCalled();
+    animationFrames.shift()();
+    expect(notifyPreviewRendered).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(600);
+    expect(notifyPreviewRendered).not.toHaveBeenCalled();
+    animationFrames.shift()();
+    expect(notifyPreviewRendered).toHaveBeenCalledTimes(1);
+    animationFrameSpy.mockRestore();
+    jest.useRealTimers();
+  });
+
+  it("creates an editable draft with fields and one Related List from the wizard", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    element.shadowRoot
+      .querySelector(".wizard-launch-button")
+      .dispatchEvent(new MouseEvent("click"));
+    await flushPromises();
+
+    const wizard = element.shadowRoot.querySelector("c-pdf-builder-wizard");
+    wizard.dispatchEvent(
+      new CustomEvent("wizardcomplete", {
+        detail: {
+          ...createDefaultWizardRecipe({
+            defaultPagePadding: 32,
+            defaultElementPadding: 8
+          }),
+          templateName: "AI account summary",
+          documentTitle: "Account summary",
+          objectApiName: "Account",
+          headerContentSizeMode: "content",
+          bodyFields: [{ label: "Account Name", apiName: "Name" }],
+          includeRelatedList: true,
+          relatedListRelationshipName: "Contacts",
+          relatedListChildObjectApiName: "Contact",
+          relatedListLabel: "Contacts",
+          relatedListColumns: ["Name", "Email"]
+        }
+      })
+    );
+    await flushPromises();
+
+    const blockTypes = Array.from(
+      element.shadowRoot.querySelectorAll("c-pdf-builder-block")
+    ).map((block) => block.block.type);
+    expect(element.shadowRoot.querySelector("c-pdf-builder-wizard")).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('input[placeholder="Template name"]')
+        .value
+    ).toBe("AI account summary");
+    expect(blockTypes).toContain("field");
+    expect(blockTypes.filter((type) => type === "relatedList")).toHaveLength(1);
+    const headerText = element.shadowRoot.querySelector(
+      '[data-region-id="header"] c-pdf-builder-block'
+    ).block;
+    expect(headerText.styles.width).toBeNull();
+    expect(headerText.styles.widthFitContent).toBe(true);
+    expect(headerText.styles.height).toBeNull();
+    expect(headerText.inlineStyle).toContain("--block-width:auto");
+    expect(headerText.inlineStyle).toContain("--block-height:auto");
+    expect(getFields).toHaveBeenLastCalledWith({
+      objectApiName: "Account",
+      searchTerm: ""
+    });
+  });
+
+  it("offers to save, discard, or keep an unsaved wizard draft", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    element.shadowRoot.querySelector(".wizard-launch-button").click();
+    await flushPromises();
+
+    element.shadowRoot.querySelector("c-pdf-builder-wizard").dispatchEvent(
+      new CustomEvent("wizardcomplete", {
+        detail: {
+          ...createDefaultWizardRecipe({
+            defaultPagePadding: 32,
+            defaultElementPadding: 8
+          }),
+          templateName: "Unsaved guided draft",
+          objectApiName: "Account"
+        }
+      })
+    );
+    await flushPromises();
+
+    element.shadowRoot.querySelector(".wizard-launch-button").click();
+    await flushPromises();
+
+    let confirmation = element.shadowRoot.querySelector(
+      ".unsaved-changes-confirm"
+    );
+    expect(confirmation).not.toBeNull();
+    expect(confirmation.querySelector("h2").textContent).toBe(
+      "Save or discard this draft?"
+    );
+    expect(confirmation.querySelector("p").textContent).toContain(
+      "Save it before starting a new guided draft, discard it, or cancel."
+    );
+    expect(
+      confirmation.querySelector('[data-role="unsaved-discard"]').textContent
+    ).toBe("Discard and continue");
+    expect(
+      confirmation.querySelector('[data-role="unsaved-save"]').textContent
+    ).toBe("Save and continue");
+
+    confirmation.querySelector('[data-role="unsaved-cancel"]').click();
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(".unsaved-changes-confirm")
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('input[placeholder="Template name"]')
+        .value
+    ).toBe("Unsaved guided draft");
+
+    element.shadowRoot.querySelector(".wizard-launch-button").click();
+    await flushPromises();
+    confirmation = element.shadowRoot.querySelector(".unsaved-changes-confirm");
+    confirmation.querySelector('[data-role="unsaved-discard"]').click();
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector("c-pdf-builder-wizard")
+    ).not.toBeNull();
+    expect(
+      element.shadowRoot.querySelector('input[placeholder="Template name"]')
+        .value
+    ).toBe("");
+    expect(saveTemplate).not.toHaveBeenCalled();
   });
 
   it("uses a compact two-column layout for page controls", async () => {

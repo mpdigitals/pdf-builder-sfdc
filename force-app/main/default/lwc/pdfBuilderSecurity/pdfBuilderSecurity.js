@@ -170,6 +170,7 @@ const STYLE_KEYS = new Set([
   "lineColor",
   "width",
   "widthRatio",
+  "widthFitContent",
   "height",
   "heightManuallyResized",
   "x",
@@ -700,6 +701,8 @@ function sanitizeStyles(source = {}) {
     styles.colorExplicit = styles.colorExplicit === true;
   if ("heightManuallyResized" in styles)
     styles.heightManuallyResized = styles.heightManuallyResized === true;
+  if ("widthFitContent" in styles)
+    styles.widthFitContent = styles.widthFitContent === true;
   return Object.fromEntries(
     Object.entries(styles).filter(([, value]) => value !== undefined)
   );

@@ -41,6 +41,8 @@ The demo is desktop-optimized and read-only. Install PDF Builder to save templat
 
 The visual Builder is the heart of the application: compose headers, body and footer regions on a canvas; add rich text, images, tables, related lists and dividers; then preview the document with Salesforce data before generating it. A light/dark workspace toggle keeps the authoring interface comfortable without changing the document's own colors.
 
+An optional guided wizard can build the same editable template model from structured controls or natural-language design instructions through Salesforce Models API. The core package has no compile-time dependency on Agentforce. The AI feature is disabled automatically when the optional adapter is not installed or the current user lacks the required Salesforce capability; the rest of PDF Builder remains available.
+
 Templates can be scoped to **all record types** or to a specific record type, with one default template per scope. The generator automatically offers the templates that apply to the current record and selects the most specific default.
 
 ## Why PDF Builder?
@@ -100,6 +102,41 @@ sf package install \
   --no-prompt
 ```
 
+### Beta: guided wizard and optional Salesforce AI
+
+`v1.1.0-beta.1` is available for evaluation. Install the core package first:
+
+```bash
+sf package install \
+  --package 04tQy000000ZbhRIAS \
+  --target-org pdf-builder-target \
+  --wait 30 \
+  --publish-wait 10 \
+  --no-prompt
+```
+
+The core package works without Agentforce or Models API. In that case, the AI
+prompt area remains visible but disabled with a configuration message, while
+the deterministic wizard controls and the rest of PDF Builder continue to
+work.
+
+To enable natural-language generation, first enable Agentforce and Models API
+in the target org, then install the optional adapter:
+
+```bash
+sf package install \
+  --package 04tQy000000ZbkfIAC \
+  --target-org pdf-builder-target \
+  --wait 30 \
+  --publish-wait 10 \
+  --no-prompt
+```
+
+Finally, assign `PDF Builder User` to the intended users and review the AI
+fields in the `PDFBuilderSettings.Default` Custom Metadata record. Models API
+usage is subject to the target org's Salesforce entitlements and Einstein
+request consumption.
+
 ### Alternative: deploy from source
 
 **Quick start:** Deploy → assign the permission set → add the generator to a record page → import samples (optional) → generate a PDF.
@@ -114,6 +151,13 @@ cd pdf-builder-sfdc
 sf org login web --alias pdf-builder-target
 sf project deploy start --manifest manifest/pdf-builder.xml --target-org pdf-builder-target
 sf org assign permset --name PDFBuilderUser --target-org pdf-builder-target
+```
+
+For an org with Agentforce and Models API enabled, deploy the optional adapter
+after the core source:
+
+```bash
+sf project deploy start --manifest manifest/pdf-builder-ai.xml --target-org pdf-builder-target
 ```
 
 After deployment:
@@ -315,6 +359,7 @@ On a Lightning record page, users select an available template and choose whethe
 | Layer                | Components                                                                       | Responsibility                                                                                      |
 | -------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | Authoring UI         | `pdfBuilder`, `pdfBuilderBlock`, `pdfBuilderRichTextCommands`, `pdfBuilderUtils` | Template editing, history, layout, preview pagination, HTML generation, and client-side validation. |
+| Guided setup         | `pdfBuilderWizard`, `pdfBuilderWizardModel`, `PDFBuilderAIService`               | Deterministic template setup plus optional validated proposals from Salesforce Models API.          |
 | Record UI            | `pdfBuilderGenerator`                                                            | Template selection and PDF download or Salesforce Files persistence from a record page.             |
 | Facade/orchestration | `PDFBuilderController`                                                           | Stable LWC API, merge-field resolution, preview orchestration, and PDF generation.                  |
 | Configuration        | `PDFBuilderConfiguration`                                                        | Loads and validates the authoritative `PDFBuilderSettings.Default` Custom Metadata record.          |
@@ -350,6 +395,8 @@ and Apex.
 ### Configuration
 
 Runtime behavior is controlled by the public Custom Metadata type `PDFBuilderSettings__mdt`. The application requires the record whose Developer Name is `Default`; missing or invalid required values raise an explicit configuration error instead of silently applying inconsistent defaults.
+
+The guided wizard works without AI. To enable natural-language proposals, the org must provide Salesforce Models API, the user must have the relevant Salesforce entitlement and the `PDFBuilderUseAIWizard` custom permission, and `EnableAIWizard__c` must be enabled. The configured prompt receives accessible schema metadata and bounded template state, but no Salesforce record values. AI output is treated as untrusted data and must pass the Builder's allowlist, schema, geometry, field, relationship, color, URL, and rich-text validation before it is applied.
 
 All dimensions use CSS pixels unless stated otherwise.
 
