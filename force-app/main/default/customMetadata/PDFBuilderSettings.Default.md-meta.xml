@@ -92,7 +92,7 @@ Colors must be #RRGGBB or transparent.</value></values>
     >Salesforce Models API · GPT-4o mini</value></values>
     <values><field>AIExtensionPackageVersionId__c</field><value
       xsi:type="xsd:string"
-    >04tQy000000ZbkfIAC</value></values>
+    >04tQy000000ZeNZIA0</value></values>
     <values><field>AISetupDocumentationUrl__c</field><value
       xsi:type="xsd:string"
     >https://developer.salesforce.com/docs/ai/agentforce/guide/org-setup.html</value></values>
