@@ -77,6 +77,10 @@ public inherited sharing class PDFBuilderConfiguration {
     public String aiProviderLabel;
     @AuraEnabled
     public String aiUnavailableMessage;
+    @AuraEnabled
+    public String aiExtensionPackageVersionId;
+    @AuraEnabled
+    public String aiSetupDocumentationUrl;
     public String aiPromptInstructions;
     @AuraEnabled
     public Integer aiMaxPromptLength;
@@ -240,6 +244,12 @@ public inherited sharing class PDFBuilderConfiguration {
     );
     settings.aiModelApiName = optionalText(metadataRecord?.AIModelApiName__c);
     settings.aiProviderLabel = optionalText(metadataRecord?.AIProviderLabel__c);
+    settings.aiExtensionPackageVersionId = optionalText(
+      metadataRecord?.AIExtensionPackageVersionId__c
+    );
+    settings.aiSetupDocumentationUrl = optionalText(
+      metadataRecord?.AISetupDocumentationUrl__c
+    );
     settings.aiPromptInstructions = optionalText(
       metadataRecord?.AIPromptInstructions__c
     );
@@ -262,6 +272,14 @@ public inherited sharing class PDFBuilderConfiguration {
         settings.aiProviderLabel,
         'AI Provider Label'
       );
+      settings.aiExtensionPackageVersionId = requiredPackageVersionId(
+        settings.aiExtensionPackageVersionId,
+        'AI Extension Package Version ID'
+      );
+      settings.aiSetupDocumentationUrl = requiredHttpsUrl(
+        settings.aiSetupDocumentationUrl,
+        'AI Setup Documentation URL'
+      );
       settings.aiPromptInstructions = requiredText(
         settings.aiPromptInstructions,
         'AI Prompt Instructions'
@@ -278,6 +296,34 @@ public inherited sharing class PDFBuilderConfiguration {
       true
     );
     return settings;
+  }
+
+  /**
+   * @description Validates an installable Salesforce subscriber package version ID.
+   */
+  private static String requiredPackageVersionId(
+    String configuredValue,
+    String fieldLabel
+  ) {
+    String value = requiredText(configuredValue, fieldLabel);
+    if (!Pattern.matches('^04t[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$', value)) {
+      throw invalidValue(fieldLabel, 'must be a 15 or 18 character 04t ID');
+    }
+    return value;
+  }
+
+  /**
+   * @description Restricts externally rendered documentation links to HTTPS.
+   */
+  private static String requiredHttpsUrl(
+    String configuredValue,
+    String fieldLabel
+  ) {
+    String value = requiredText(configuredValue, fieldLabel);
+    if (!value.toLowerCase().startsWith('https://')) {
+      throw invalidValue(fieldLabel, 'must use HTTPS');
+    }
+    return value;
   }
 
   /**

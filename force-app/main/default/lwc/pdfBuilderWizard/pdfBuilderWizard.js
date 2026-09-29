@@ -27,6 +27,20 @@ const AI_ERROR_CODES = Object.freeze({
   UNAVAILABLE: "AI_UNAVAILABLE",
   INVALID_RESPONSE: "AI_INVALID_RESPONSE"
 });
+const AI_AVAILABILITY_REASONS = Object.freeze({
+  MODELS_API_UNAVAILABLE: "MODELS_API_UNAVAILABLE",
+  EXTENSION_MISSING: "EXTENSION_MISSING",
+  USER_UNAUTHORIZED: "USER_UNAUTHORIZED",
+  DISABLED: "DISABLED"
+});
+const AI_UNAVAILABLE_HEADINGS = Object.freeze({
+  [AI_AVAILABILITY_REASONS.MODELS_API_UNAVAILABLE]:
+    "Models API is not available",
+  [AI_AVAILABILITY_REASONS.EXTENSION_MISSING]:
+    "PDF Builder AI is ready to install",
+  [AI_AVAILABILITY_REASONS.USER_UNAUTHORIZED]: "AI permission required",
+  [AI_AVAILABILITY_REASONS.DISABLED]: "AI Wizard is disabled"
+});
 
 const RELATED_LIST_BLOCK_PROPERTY_MAP = Object.freeze({
   relatedListZebraEnabled: "relatedListZebraEnabled",
@@ -273,6 +287,9 @@ export default class PDFBuilderWizard extends LightningElement {
   @api configuration = {};
   @api aiUnavailable = false;
   @api aiUnavailableMessage = "";
+  @api aiAvailabilityReason = "";
+  @api aiInstallationUrl = "";
+  @api aiDocumentationUrl = "";
   @api darkTheme = false;
   @api initialObjectApiName = "";
 
@@ -422,6 +439,28 @@ export default class PDFBuilderWizard extends LightningElement {
       this.aiUnavailableMessage ||
       this.configuration?.aiUnavailableMessage ||
       DEFAULT_AI_UNAVAILABLE_MESSAGE
+    );
+  }
+
+  get aiUnavailableHeading() {
+    return (
+      AI_UNAVAILABLE_HEADINGS[this.aiAvailabilityReason] ||
+      "Salesforce AI unavailable"
+    );
+  }
+
+  get showAIInstallationAction() {
+    return Boolean(
+      this.aiAvailabilityReason === AI_AVAILABILITY_REASONS.EXTENSION_MISSING &&
+      this.aiInstallationUrl
+    );
+  }
+
+  get showAISetupDocumentationAction() {
+    return Boolean(
+      this.aiAvailabilityReason ===
+        AI_AVAILABILITY_REASONS.MODELS_API_UNAVAILABLE &&
+      this.aiDocumentationUrl
     );
   }
 

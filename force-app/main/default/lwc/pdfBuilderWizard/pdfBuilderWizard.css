@@ -301,6 +301,33 @@
   font-weight: 600;
 }
 
+.ai-unavailable-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  margin-top: 10px;
+  padding: 6px 11px;
+  border: 1px solid var(--wizard-accent);
+  border-radius: 8px;
+  color: #ffffff;
+  background: var(--wizard-accent);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.ai-unavailable-action:hover,
+.ai-unavailable-action:focus-visible {
+  filter: brightness(0.94);
+  text-decoration: underline;
+}
+
+.ai-unavailable-card .ai-unavailable-note {
+  margin-top: 6px;
+  font-size: 11px;
+}
+
 .wizard-loading,
 .wizard-error {
   display: flex;

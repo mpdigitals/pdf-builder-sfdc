@@ -214,6 +214,76 @@ describe("c-pdf-builder-wizard", () => {
     expect(unavailableEvents).toHaveLength(1);
   });
 
+  it("offers the AI extension only when the org supports Models API", async () => {
+    const element = createElement("c-pdf-builder-wizard", {
+      is: PDFBuilderWizard
+    });
+    element.aiUnavailable = true;
+    element.aiAvailabilityReason = "EXTENSION_MISSING";
+    element.aiUnavailableMessage = "Install PDF Builder AI.";
+    element.aiInstallationUrl =
+      "/packaging/installPackage.apexp?p0=04tQy000000ZbkfIAC";
+    element.objectOptions = [{ label: "Opportunity", apiName: "Opportunity" }];
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateName = element.shadowRoot.querySelector(
+      '[data-field="templateName"]'
+    );
+    templateName.value = "Opportunity quotation";
+    templateName.dispatchEvent(new CustomEvent("input"));
+    const objectSelect = element.shadowRoot.querySelector(
+      '[data-field="objectApiName"]'
+    );
+    objectSelect.value = "Opportunity";
+    objectSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+    element.shadowRoot.querySelector(".wizard-button.primary").click();
+    await flushPromises();
+
+    const action = element.shadowRoot.querySelector(".ai-unavailable-action");
+    expect(
+      element.shadowRoot.querySelector(".ai-unavailable-card h3").textContent
+    ).toBe("PDF Builder AI is ready to install");
+    expect(action.textContent.trim()).toBe("Install PDF Builder AI");
+    expect(action.getAttribute("href")).toContain("04tQy000000ZbkfIAC");
+  });
+
+  it("shows setup guidance instead of installation for an incompatible org", async () => {
+    const element = createElement("c-pdf-builder-wizard", {
+      is: PDFBuilderWizard
+    });
+    element.aiUnavailable = true;
+    element.aiAvailabilityReason = "MODELS_API_UNAVAILABLE";
+    element.aiUnavailableMessage = "Models API is not provisioned.";
+    element.aiDocumentationUrl =
+      "https://developer.salesforce.com/docs/ai/agentforce/guide/org-setup.html";
+    element.objectOptions = [{ label: "Opportunity", apiName: "Opportunity" }];
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateName = element.shadowRoot.querySelector(
+      '[data-field="templateName"]'
+    );
+    templateName.value = "Opportunity quotation";
+    templateName.dispatchEvent(new CustomEvent("input"));
+    const objectSelect = element.shadowRoot.querySelector(
+      '[data-field="objectApiName"]'
+    );
+    objectSelect.value = "Opportunity";
+    objectSelect.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+    element.shadowRoot.querySelector(".wizard-button.primary").click();
+    await flushPromises();
+
+    const action = element.shadowRoot.querySelector(".ai-unavailable-action");
+    expect(
+      element.shadowRoot.querySelector(".ai-unavailable-card h3").textContent
+    ).toBe("Models API is not available");
+    expect(action.textContent).toContain("enable Einstein and Models API");
+    expect(action.textContent).not.toContain("Install PDF Builder AI");
+  });
+
   it("only includes Header and Footer steps selected during Setup", async () => {
     const element = createElement("c-pdf-builder-wizard", {
       is: PDFBuilderWizard

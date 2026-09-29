@@ -68,8 +68,32 @@
         <section class="ai-unavailable-card" role="status">
           <span class="ai-unavailable-icon" aria-hidden="true">✨</span>
           <div>
-            <h3>Salesforce AI unavailable</h3>
+            <h3>{aiUnavailableHeading}</h3>
             <p>{resolvedAIUnavailableMessage}</p>
+            <template lwc:if={showAIInstallationAction}>
+              <a
+                class="ai-unavailable-action"
+                href={aiInstallationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Install PDF Builder AI
+              </a>
+              <p class="ai-unavailable-note">
+                A Salesforce administrator may be required to complete the
+                installation.
+              </p>
+            </template>
+            <template lwc:if={showAISetupDocumentationAction}>
+              <a
+                class="ai-unavailable-action"
+                href={aiDocumentationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Learn how to enable Einstein and Models API
+              </a>
+            </template>
             <p class="ai-unavailable-guidance">
               You can continue configuring this section with the manual controls
               below.

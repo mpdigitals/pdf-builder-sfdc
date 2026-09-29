@@ -34,6 +34,9 @@ private class PDFBuilderAIServiceTest {
 
     Assert.isTrue(availability.available);
     Assert.isNotNull(availability.providerLabel);
+    Assert.areEqual('AVAILABLE', availability.reasonCode);
+    Assert.isTrue(availability.modelsApiAvailable);
+    Assert.isTrue(availability.providerInstalled);
   }
 
   @IsTest
@@ -43,6 +46,12 @@ private class PDFBuilderAIServiceTest {
     PDFBuilderAIService.AIAvailability availability = PDFBuilderAIService.getAvailability();
     Assert.isFalse(availability.available);
     Assert.isNotNull(availability.message);
+    Assert.areEqual('MODELS_API_UNAVAILABLE', availability.reasonCode);
+    Assert.isNotNull(availability.documentationUrl);
+    Assert.isNull(
+      availability.installationUrl,
+      'An incompatible org must not receive an installation link.'
+    );
 
     try {
       PDFBuilderAIService.generateWizardProposal('style', 'Use blue', '{}');
@@ -52,6 +61,26 @@ private class PDFBuilderAIServiceTest {
     } catch (AuraHandledException expected) {
       Assert.isTrue(true, 'The UI receives a handled availability error.');
     }
+  }
+
+  @IsTest
+  static void offersExtensionOnlyWhenModelsApiExists() {
+    PDFBuilderAIService.testModelsAPIAvailable = true;
+    PDFBuilderAIService.testProviderInstalled = false;
+
+    Test.startTest();
+    PDFBuilderAIService.AIAvailability availability = PDFBuilderAIService.getAvailability();
+    Test.stopTest();
+
+    Assert.isFalse(availability.available);
+    Assert.areEqual('EXTENSION_MISSING', availability.reasonCode);
+    Assert.isTrue(availability.modelsApiAvailable);
+    Assert.isFalse(availability.providerInstalled);
+    Assert.areEqual(
+      '/packaging/installPackage.apexp?p0=04tQy000000ZbkfIAC',
+      availability.installationUrl,
+      'The compatible org must receive the configured same-org install path.'
+    );
   }
 
   @IsTest
@@ -201,6 +230,7 @@ private class PDFBuilderAIServiceTest {
       availability.available,
       'AI must remain disabled without the dedicated custom permission.'
     );
+    Assert.areEqual('USER_UNAUTHORIZED', availability.reasonCode);
 
     try {
       PDFBuilderAIService.generateWizardProposal('style', 'Use blue', '{}');

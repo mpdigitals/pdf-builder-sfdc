@@ -16,7 +16,18 @@ public with sharing class PDFBuilderAIService {
   private static final String INVALID_RECIPE_ERROR = 'The current template definition is invalid.';
   private static final String AI_PERMISSION_NAME = 'PDFBuilderUseAIWizard';
   private static final String AI_PROVIDER_CLASS_NAME = 'PDFBuilderModelsAPIProvider';
+  private static final String MODELS_API_CLASS_NAME = 'aiplatform.ModelsAPI';
   private static final String AI_PROVIDER_ACTION_GENERATE = 'generate';
+  private static final String AVAILABILITY_AVAILABLE = 'AVAILABLE';
+  private static final String AVAILABILITY_DISABLED = 'DISABLED';
+  private static final String AVAILABILITY_MODELS_API_UNAVAILABLE = 'MODELS_API_UNAVAILABLE';
+  private static final String AVAILABILITY_EXTENSION_MISSING = 'EXTENSION_MISSING';
+  private static final String AVAILABILITY_USER_UNAUTHORIZED = 'USER_UNAUTHORIZED';
+  private static final String AI_DISABLED_MESSAGE = 'The AI Wizard is disabled in PDF Builder Settings.';
+  private static final String MODELS_API_UNAVAILABLE_MESSAGE = 'This Salesforce org does not have Models API provisioned. Enable Einstein Generative AI before installing PDF Builder AI.';
+  private static final String AI_EXTENSION_MISSING_MESSAGE = 'This org supports Models API. Install PDF Builder AI to enable natural-language template generation.';
+  private static final String AI_USER_UNAUTHORIZED_MESSAGE = 'PDF Builder AI is installed, but this user does not have permission to use the AI Wizard. Ask an administrator to assign the PDF Builder User permission set.';
+  private static final String PACKAGE_INSTALL_PATH = '/packaging/installPackage.apexp?p0=';
   private static final String EMPTY_JSON = '{}';
   private static final String LINE_SEPARATOR = '\n';
   private static final String CURRENT_STEP_PREFIX = 'Current step: ';
@@ -43,6 +54,8 @@ public with sharing class PDFBuilderAIService {
   @TestVisible
   private static Boolean testModelsAPIAvailable;
   @TestVisible
+  private static Boolean testProviderInstalled;
+  @TestVisible
   private static Boolean testUserAuthorized;
 
   /**
@@ -57,6 +70,21 @@ public with sharing class PDFBuilderAIService {
 
     @AuraEnabled
     public String providerLabel;
+
+    @AuraEnabled
+    public String reasonCode;
+
+    @AuraEnabled
+    public Boolean modelsApiAvailable;
+
+    @AuraEnabled
+    public Boolean providerInstalled;
+
+    @AuraEnabled
+    public String installationUrl;
+
+    @AuraEnabled
+    public String documentationUrl;
   }
 
   /**
@@ -81,11 +109,33 @@ public with sharing class PDFBuilderAIService {
     PDFBuilderConfiguration.Settings settings = PDFBuilderConfiguration.getSettings();
     AIAvailability result = new AIAvailability();
     result.providerLabel = settings.aiProviderLabel;
-    result.available =
-      settings.aiWizardEnabled &&
-      isModelsAPITypeAvailable() &&
-      isUserAuthorized();
-    result.message = result.available ? null : settings.aiUnavailableMessage;
+    result.modelsApiAvailable = isModelsAPIPlatformAvailable();
+    result.providerInstalled = isProviderInstalled();
+    result.documentationUrl = settings.aiSetupDocumentationUrl;
+
+    if (!settings.aiWizardEnabled) {
+      result.available = false;
+      result.reasonCode = AVAILABILITY_DISABLED;
+      result.message = AI_DISABLED_MESSAGE;
+    } else if (!result.modelsApiAvailable) {
+      result.available = false;
+      result.reasonCode = AVAILABILITY_MODELS_API_UNAVAILABLE;
+      result.message = MODELS_API_UNAVAILABLE_MESSAGE;
+    } else if (!result.providerInstalled) {
+      result.available = false;
+      result.reasonCode = AVAILABILITY_EXTENSION_MISSING;
+      result.message = AI_EXTENSION_MISSING_MESSAGE;
+      result.installationUrl = buildInstallationUrl(
+        settings.aiExtensionPackageVersionId
+      );
+    } else if (!isUserAuthorized()) {
+      result.available = false;
+      result.reasonCode = AVAILABILITY_USER_UNAUTHORIZED;
+      result.message = AI_USER_UNAUTHORIZED_MESSAGE;
+    } else {
+      result.available = true;
+      result.reasonCode = AVAILABILITY_AVAILABLE;
+    }
     return result;
   }
 
@@ -106,7 +156,8 @@ public with sharing class PDFBuilderAIService {
     PDFBuilderConfiguration.Settings settings = PDFBuilderConfiguration.getSettings();
     if (
       !settings.aiWizardEnabled ||
-      !isModelsAPITypeAvailable() ||
+      !isModelsAPIPlatformAvailable() ||
+      !isProviderInstalled() ||
       !isUserAuthorized()
     ) {
       throw unavailableException(settings.aiUnavailableMessage);
@@ -179,16 +230,40 @@ public with sharing class PDFBuilderAIService {
    * @return True when the optional Models API provider is installed.
    */
   @TestVisible
-  private static Boolean isModelsAPITypeAvailable() {
+  private static Boolean isModelsAPIPlatformAvailable() {
     if (Test.isRunningTest()) {
       return testModelsAPIAvailable != false;
     }
     try {
-      Type providerType = Type.forName(AI_PROVIDER_CLASS_NAME);
-      return providerType != null;
+      return Type.forName(MODELS_API_CLASS_NAME) != null;
     } catch (Exception ignored) {
       return false;
     }
+  }
+
+  /**
+   * @description Checks whether the optional PDF Builder AI adapter is installed.
+   */
+  @TestVisible
+  private static Boolean isProviderInstalled() {
+    if (Test.isRunningTest()) {
+      return testProviderInstalled != false;
+    }
+    try {
+      return Type.forName(AI_PROVIDER_CLASS_NAME) != null;
+    } catch (Exception ignored) {
+      return false;
+    }
+  }
+
+  /**
+   * @description Builds a same-org Salesforce package installation path from
+   * a validated Custom Metadata package version ID.
+   */
+  @TestVisible
+  private static String buildInstallationUrl(String packageVersionId) {
+    return PACKAGE_INSTALL_PATH +
+      EncodingUtil.urlEncode(packageVersionId, 'UTF-8');
   }
 
   /**

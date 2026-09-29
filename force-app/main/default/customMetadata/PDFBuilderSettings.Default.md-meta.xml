@@ -90,6 +90,12 @@ Colors must be #RRGGBB or transparent.</value></values>
     <values><field>AIProviderLabel__c</field><value
       xsi:type="xsd:string"
     >Salesforce Models API · GPT-4o mini</value></values>
+    <values><field>AIExtensionPackageVersionId__c</field><value
+      xsi:type="xsd:string"
+    >04tQy000000ZbkfIAC</value></values>
+    <values><field>AISetupDocumentationUrl__c</field><value
+      xsi:type="xsd:string"
+    >https://developer.salesforce.com/docs/ai/agentforce/guide/org-setup.html</value></values>
     <values><field>AIUnavailableMessage__c</field><value
       xsi:type="xsd:string"
     >Salesforce AI is unavailable for this user. Enable Agentforce and Models API access, assign the Use PDF Builder AI Wizard permission, or disable the AI Wizard in PDF Builder Settings.</value></values>

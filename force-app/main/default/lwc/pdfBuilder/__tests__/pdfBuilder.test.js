@@ -301,8 +301,12 @@ describe("c-pdf-builder", () => {
   it("keeps guided setup available while disabling its AI prompt", async () => {
     getAIAvailability.mockResolvedValue({
       available: false,
-      message: "Enable Agentforce and Models API access.",
-      providerLabel: "Salesforce Models API"
+      message: "Install PDF Builder AI.",
+      providerLabel: "Salesforce Models API",
+      reasonCode: "EXTENSION_MISSING",
+      installationUrl: "/packaging/installPackage.apexp?p0=04tQy000000ZbkfIAC",
+      documentationUrl:
+        "https://developer.salesforce.com/docs/ai/agentforce/guide/org-setup.html"
     });
     const element = createElement("c-pdf-builder", {
       is: PDFBuilder
@@ -315,9 +319,7 @@ describe("c-pdf-builder", () => {
     );
     expect(wizardButton.disabled).toBe(false);
     expect(wizardButton.textContent.trim()).toBe("✨ AI Wizard");
-    expect(wizardButton.title).toContain(
-      "Enable Agentforce and Models API access."
-    );
+    expect(wizardButton.title).toContain("Install PDF Builder AI.");
     expect(element.shadowRoot.querySelector(".top-toolbar")).not.toBeNull();
 
     wizardButton.click();
@@ -325,6 +327,8 @@ describe("c-pdf-builder", () => {
     const wizard = element.shadowRoot.querySelector("c-pdf-builder-wizard");
     expect(wizard).not.toBeNull();
     expect(wizard.aiUnavailable).toBe(true);
+    expect(wizard.aiAvailabilityReason).toBe("EXTENSION_MISSING");
+    expect(wizard.aiInstallationUrl).toContain("04tQy000000ZbkfIAC");
   });
 
   it("acknowledges a wizard preview only after the builder has rendered it", async () => {

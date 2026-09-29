@@ -290,6 +290,9 @@ export default class PDFBuilder extends LightningElement {
   isAIWizardAvailable = false;
   aiUnavailableMessage = "Salesforce AI is not available in this org.";
   aiProviderLabel = "Salesforce AI";
+  aiAvailabilityReason = "UNKNOWN";
+  aiInstallationUrl = "";
+  aiDocumentationUrl = "";
   wizardOriginalState;
   isWizardPreviewRenderPending = false;
   isWizardPreviewAckScheduled = false;
@@ -2313,6 +2316,12 @@ export default class PDFBuilder extends LightningElement {
       String(availability.message || "").trim() || this.aiUnavailableMessage;
     this.aiProviderLabel =
       String(availability.providerLabel || "").trim() || this.aiProviderLabel;
+    this.aiAvailabilityReason =
+      String(availability.reasonCode || "").trim() || "UNKNOWN";
+    this.aiInstallationUrl = String(availability.installationUrl || "").trim();
+    this.aiDocumentationUrl = String(
+      availability.documentationUrl || ""
+    ).trim();
   }
 
   isEmptyUnsavedDocument() {
