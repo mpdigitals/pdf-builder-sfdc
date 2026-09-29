@@ -77,7 +77,7 @@ private class PDFBuilderAIServiceTest {
     Assert.isTrue(availability.modelsApiAvailable);
     Assert.isFalse(availability.providerInstalled);
     Assert.areEqual(
-      '/packaging/installPackage.apexp?p0=04tQy000000ZbkfIAC',
+      '/packaging/installPackage.apexp?p0=04tQy000000ZeNZIA0',
       availability.installationUrl,
       'The compatible org must receive the configured same-org install path.'
     );

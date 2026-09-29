@@ -304,7 +304,7 @@ describe("c-pdf-builder", () => {
       message: "Install PDF Builder AI.",
       providerLabel: "Salesforce Models API",
       reasonCode: "EXTENSION_MISSING",
-      installationUrl: "/packaging/installPackage.apexp?p0=04tQy000000ZbkfIAC",
+      installationUrl: "/packaging/installPackage.apexp?p0=04tQy000000ZeNZIA0",
       documentationUrl:
         "https://developer.salesforce.com/docs/ai/agentforce/guide/org-setup.html"
     });
@@ -328,7 +328,7 @@ describe("c-pdf-builder", () => {
     expect(wizard).not.toBeNull();
     expect(wizard.aiUnavailable).toBe(true);
     expect(wizard.aiAvailabilityReason).toBe("EXTENSION_MISSING");
-    expect(wizard.aiInstallationUrl).toContain("04tQy000000ZbkfIAC");
+    expect(wizard.aiInstallationUrl).toContain("04tQy000000ZeNZIA0");
   });
 
   it("acknowledges a wizard preview only after the builder has rendered it", async () => {

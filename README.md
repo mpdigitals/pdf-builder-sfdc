@@ -125,7 +125,7 @@ in the target org, then install the optional adapter:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZbkfIAC \
+  --package 04tQy000000ZeNZIA0 \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
