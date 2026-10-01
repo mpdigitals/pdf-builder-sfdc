@@ -155,10 +155,193 @@ describe("c-pdf-builder-wizard", () => {
     expect(previews.at(-1).headerContentBorderWidth).toBe(1);
     expect(previews.at(-1).headerContentBorderColor).toBe("#181818");
     expect(previews.at(-1).headerContentSizeMode).toBe("content");
-    expect(previews.at(-1).headerFields[0].apiName).toBe("Name");
+    expect(previews.at(-1).headerFields).toHaveLength(0);
     expect(
       element.shadowRoot.querySelector(".prompt-notice").textContent
     ).not.toContain("header background");
+  });
+
+  it("keeps every manually selected header field after an AI layout", async () => {
+    getFields.mockResolvedValue([
+      {
+        label: "Account > Account Description",
+        apiName: "Account.Description"
+      },
+      { label: "Account > Account Fax", apiName: "Account.Fax" },
+      { label: "Account > Account ID", apiName: "Account.Id" }
+    ]);
+    generateWizardProposal.mockResolvedValue({
+      modelName: "sfdc_ai__DefaultOpenAIGPT4OmniMini",
+      generatedJson: JSON.stringify({
+        patch: {
+          headerFields: ["Account.Description", "Account.Fax", "Account.Id"],
+          headerBlocks: [
+            {
+              type: "text",
+              content:
+                "<strong>{{organization:Name}}</strong><div><strong>Account Description:</strong>&nbsp;{{field:Account.Description}}</div>",
+              widthPercent: 49,
+              styles: {
+                background: "#032d60",
+                color: "#ffffff",
+                x: 0,
+                y: 20,
+                width: 800,
+                widthRatio: null,
+                height: 100,
+                heightManuallyResized: false
+              }
+            },
+            {
+              type: "text",
+              content: "<strong>OPPORTUNITY QUOTATION</strong>",
+              widthPercent: 49,
+              xPercent: 51,
+              styles: {
+                background: "#032d60",
+                color: "#ffffff"
+              }
+            }
+          ]
+        }
+      })
+    });
+
+    const element = createElement("c-pdf-builder-wizard", {
+      is: PDFBuilderWizard
+    });
+    element.objectOptions = [{ label: "Opportunity", apiName: "Opportunity" }];
+    element.initialObjectApiName = "Opportunity";
+    const previews = [];
+    element.addEventListener("wizardpreview", (event) => {
+      previews.push(event.detail);
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateName = element.shadowRoot.querySelector(
+      '[data-field="templateName"]'
+    );
+    templateName.value = "Test";
+    templateName.dispatchEvent(new CustomEvent("input"));
+    element.shadowRoot.querySelector(".wizard-button.primary").click();
+    await flushPromises();
+
+    const prompt = element.shadowRoot.querySelector(
+      '[data-role="prompt-input"]'
+    );
+    prompt.value =
+      "Create a dark navy header. Add the Organization Name on the left and OPPORTUNITY QUOTATION on the right.";
+    prompt.dispatchEvent(new CustomEvent("input"));
+    element.shadowRoot
+      .querySelector(".prompt-button")
+      .dispatchEvent(new MouseEvent("click"));
+    await flushPromises(30);
+    expect(generateWizardProposal).toHaveBeenCalledTimes(1);
+    expect(previews.at(-1).headerBlocks).toHaveLength(2);
+    expect(previews.at(-1).headerFields).toHaveLength(0);
+    expect(
+      previews
+        .at(-1)
+        .headerBlocks.map((block) => block.content)
+        .join("")
+    ).not.toContain("Opportunity.Account.");
+
+    const checkboxes = ["Account.Description", "Account.Fax", "Account.Id"].map(
+      (apiName) =>
+        element.shadowRoot.querySelector(
+          `.selection-option input[data-value="${apiName}"]`
+        )
+    );
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new CustomEvent("change"));
+    });
+    await flushPromises();
+
+    const recipe = previews.at(-1);
+    expect(recipe.headerFields.map((field) => field.apiName)).toEqual([
+      "Account.Description",
+      "Account.Fax",
+      "Account.Id"
+    ]);
+    expect(recipe.headerBlocks).toHaveLength(2);
+    const contentBox = recipe.headerBlocks[0];
+    expect(contentBox.content).toContain("{!Opportunity.Account.Description}");
+    expect(contentBox.content).toContain("{!Opportunity.Account.Fax}");
+    expect(contentBox.content).toContain("{!Opportunity.Account.Id}");
+    expect(contentBox.content).toContain("Account Description:");
+    expect(contentBox.content).toContain("Account Fax:");
+    expect(contentBox.content).toContain("Account ID:");
+    expect(contentBox.content).not.toContain("Account &gt;");
+    expect(contentBox.styles).toMatchObject({
+      background: "#032d60",
+      color: "#ffffff"
+    });
+    expect(contentBox.styles).not.toHaveProperty("height");
+    expect(contentBox.styles).not.toHaveProperty("y");
+    expect(contentBox.styles).not.toHaveProperty("width");
+    expect(contentBox.styles).not.toHaveProperty("heightManuallyResized");
+    expect(
+      recipe.headerBlocks.filter((block) => block.wizardRole === "headerField")
+    ).toHaveLength(0);
+  });
+
+  it("prevents selecting more than five header record fields", async () => {
+    getFields.mockResolvedValue(
+      Array.from({ length: 6 }, (_value, index) => ({
+        label: `Field ${index + 1}`,
+        apiName: `Field${index + 1}__c`
+      }))
+    );
+
+    const element = createElement("c-pdf-builder-wizard", {
+      is: PDFBuilderWizard
+    });
+    element.objectOptions = [{ label: "Account", apiName: "Account" }];
+    element.initialObjectApiName = "Account";
+    const previews = [];
+    element.addEventListener("wizardpreview", (event) => {
+      previews.push(event.detail);
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const templateName = element.shadowRoot.querySelector(
+      '[data-field="templateName"]'
+    );
+    templateName.value = "Limited header";
+    templateName.dispatchEvent(new CustomEvent("input"));
+    element.shadowRoot.querySelector(".wizard-button.primary").click();
+    await flushPromises();
+
+    let checkboxes = Array.from(
+      element.shadowRoot.querySelectorAll(
+        '.selection-option input[data-value^="Field"]'
+      )
+    );
+    checkboxes.slice(0, 5).forEach((checkbox) => {
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new CustomEvent("change"));
+    });
+    await flushPromises();
+
+    checkboxes = Array.from(
+      element.shadowRoot.querySelectorAll(
+        '.selection-option input[data-value^="Field"]'
+      )
+    );
+    expect(checkboxes[5].disabled).toBe(true);
+    expect(previews.at(-1).headerFields).toHaveLength(5);
+
+    checkboxes[5].checked = true;
+    checkboxes[5].dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+
+    expect(previews.at(-1).headerFields).toHaveLength(5);
+    expect(
+      element.shadowRoot.querySelector(".wizard-error").textContent
+    ).toContain("up to 5 record fields");
   });
 
   it("replaces only the AI prompt with guidance after Models API denies access", async () => {
@@ -686,6 +869,18 @@ describe("c-pdf-builder-wizard", () => {
     );
     expect(previews.at(-1).includeFooterOrganizationName).toBe(true);
     expect(previews.at(-1).footerShowDivider).toBe(true);
+    const generatedFooterTextBlocks = previews
+      .at(-1)
+      .footerBlocks.filter((block) => block.type === "text");
+    expect(generatedFooterTextBlocks).toHaveLength(1);
+    expect(generatedFooterTextBlocks[0].widthPercent).toBe(100);
+    expect(generatedFooterTextBlocks[0].xPercent).toBe(0);
+    expect(generatedFooterTextBlocks[0].content).toContain(
+      "Thank you for your trust"
+    );
+    expect(generatedFooterTextBlocks[0].content).toContain(
+      "Questions about this quotation? Contact our team."
+    );
 
     const updateInput = (field, value, eventName = "input") => {
       const input = element.shadowRoot.querySelector(`[data-field="${field}"]`);
@@ -714,9 +909,12 @@ describe("c-pdf-builder-wizard", () => {
     const textBlocks = finalRecipe.footerBlocks.filter(
       (block) => block.type === "text"
     );
-    expect(textBlocks[0].content).toBe("Updated footer");
+    expect(textBlocks).toHaveLength(1);
+    expect(textBlocks[0].content).toContain("Updated footer");
     expect(textBlocks[0].content).not.toContain("$Organization");
-    expect(textBlocks[1].content).toBe("Updated support text");
+    expect(textBlocks[0].content).toContain("Updated support text");
+    expect(textBlocks[0].widthPercent).toBe(100);
+    expect(textBlocks[0].xPercent).toBe(0);
     expect(textBlocks.every((block) => block.styles.color === "#112233")).toBe(
       true
     );

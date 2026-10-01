@@ -1714,18 +1714,29 @@
   width: min(var(--region-width, 100%), 100%);
   min-height: 40px;
   height: var(--region-height, 80px);
+  /*
+   * Header, body and footer share the same vertical page flow. Fixed regions
+   * must never be flex-shrunk when their configured height grows; the body is
+   * the region that yields the corresponding amount of available space.
+   */
+  flex: 0 0 var(--region-height, 80px);
 }
 
 .pdf-body {
   display: flex;
   gap: 16px;
-  flex: 1 1 auto;
+  flex: 0 0 var(--body-min-height, 420px);
+  height: var(--body-min-height, 420px);
   min-height: var(--body-min-height, 420px);
+  max-height: var(--body-min-height, 420px);
+  min-width: 0;
 }
 
 .pdf-body-section {
   flex: 1 1 0;
-  min-height: var(--body-min-height, 420px);
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
 }
 
 .selected-region {
@@ -3288,13 +3299,14 @@
 .page-add-button {
   border-radius: 999px;
   box-shadow: 0 5px 14px rgba(46, 132, 74, 0.22);
+  transform-origin: center;
   transition:
     transform 140ms ease,
     box-shadow 140ms ease;
 }
 
 .page-add-button:hover {
-  transform: translateY(-2px) scale(1.03);
+  transform: translateX(-50%) translateY(-2px) scale(1.03);
   box-shadow: 0 8px 18px rgba(46, 132, 74, 0.28);
 }
 

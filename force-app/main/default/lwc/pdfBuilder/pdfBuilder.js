@@ -299,6 +299,8 @@ export default class PDFBuilder extends LightningElement {
   wizardExpectedRenderBlockIds = new Set();
   wizardRenderedBlockIds = new Set();
   wizardPreviewSettleTimer;
+  wizardPreviewFallbackModel;
+  wizardRegionValidationRequestId = 0;
   isFullscreen = false;
   isDarkTheme = false;
   objectOptions = [];
@@ -888,6 +890,8 @@ export default class PDFBuilder extends LightningElement {
   }
 
   disconnectedCallback() {
+    this.resetWizardRegionFitValidation();
+
     if (this.wizardPreviewSettleTimer) {
       window.clearTimeout(this.wizardPreviewSettleTimer);
       this.wizardPreviewSettleTimer = null;
@@ -2924,6 +2928,7 @@ export default class PDFBuilder extends LightningElement {
   }
 
   openWizard() {
+    this.resetWizardRegionFitValidation();
     this.stopTextEditing();
     this.closeLinkPopover();
     this.clearPreviewState();
@@ -3003,7 +3008,61 @@ export default class PDFBuilder extends LightningElement {
   }
 
   applyWizardRecipe(recipe) {
-    this.documentModel = this.buildWizardDocument(recipe);
+    const currentModel = this.documentModel;
+    const nextModel = this.buildWizardDocument(recipe);
+
+    // Wizard controls rebuild the document model on every change. Keep any
+    // existing manual height, but never discard a larger height calculated by
+    // the generated content. The rendered measurement below refines it later.
+    ["header", "footer"].forEach((regionId) => {
+      const currentRegion = currentModel?.[regionId];
+      const nextRegion = nextModel?.[regionId];
+      if (!currentRegion || !nextRegion) {
+        return;
+      }
+      nextRegion.styles = {
+        ...(nextRegion.styles || {}),
+        height: Math.max(
+          this.toNumber(
+            currentRegion.styles?.height ??
+              this.getDefaultFixedRegionHeight(regionId)
+          ),
+          this.toNumber(
+            nextRegion.styles?.height ??
+              this.getDefaultFixedRegionHeight(regionId)
+          )
+        )
+      };
+
+      const visibilityKey = regionId === "header" ? "showHeader" : "showFooter";
+      if (nextModel?.[visibilityKey] === false) {
+        return;
+      }
+      const otherRegionId = regionId === "header" ? "footer" : "header";
+      const otherVisibilityKey =
+        otherRegionId === "header" ? "showHeader" : "showFooter";
+      const otherHeight =
+        nextModel?.[otherVisibilityKey] === false
+          ? 0
+          : this.toNumber(
+              nextModel?.[otherRegionId]?.styles?.height ??
+                this.getDefaultFixedRegionHeight(otherRegionId)
+            );
+      const maximumHeight = Math.max(
+        40,
+        this.getMaximumCombinedFixedRegionHeight(nextModel) - otherHeight
+      );
+      const estimatedHeight = this.getEstimatedFixedRegionMinimumContentHeight(
+        regionId,
+        nextModel
+      );
+      nextRegion.styles.height = Math.min(
+        maximumHeight,
+        Math.max(nextRegion.styles.height, estimatedHeight)
+      );
+    });
+
+    this.documentModel = this.decorateDocument(nextModel);
     this.templateName = String(recipe.templateName || "");
     this.selectedObjectApiName = String(recipe.objectApiName || "");
     this.templateRecordTypeScope = String(recipe.recordTypeScope || "ALL");
@@ -3017,13 +3076,19 @@ export default class PDFBuilder extends LightningElement {
     if (!this.isWizardOpen || !event.detail) {
       return;
     }
+    this.wizardPreviewFallbackModel = JSON.stringify(
+      this.stripRuntimeState(this.documentModel)
+    );
     this.applyWizardRecipe(event.detail);
     if (this.isWizardPreviewRenderPending) {
       this.wizardExpectedRenderBlockIds = this.getWizardRenderBlockIds();
+    } else {
+      this.scheduleWizardRegionFitValidation();
     }
   }
 
   handleWizardPreviewStart() {
+    this.wizardRegionValidationRequestId += 1;
     this.isWizardPreviewRenderPending = true;
     this.wizardExpectedRenderBlockIds = new Set();
     this.wizardRenderedBlockIds = new Set();
@@ -3068,8 +3133,117 @@ export default class PDFBuilder extends LightningElement {
     if (!allBlocksRendered) {
       return;
     }
+    const overflowRegionId = this.growWizardFixedRegionsToFitContent();
+    if (overflowRegionId) {
+      this.rejectWizardPreviewOverflow(overflowRegionId);
+      this.isWizardPreviewRenderPending = false;
+      return;
+    }
     this.isWizardPreviewRenderPending = false;
     this.scheduleWizardPreviewAcknowledgement();
+  }
+
+  scheduleWizardRegionFitValidation() {
+    const requestId = ++this.wizardRegionValidationRequestId;
+    const scheduleFrame =
+      typeof window.requestAnimationFrame === "function"
+        ? window.requestAnimationFrame.bind(window)
+        : (callback) => window.setTimeout(callback, 16);
+    scheduleFrame(() =>
+      scheduleFrame(() => {
+        if (requestId !== this.wizardRegionValidationRequestId) {
+          return;
+        }
+        const overflowRegionId = this.growWizardFixedRegionsToFitContent();
+        if (overflowRegionId) {
+          this.rejectWizardPreviewOverflow(overflowRegionId);
+        }
+      })
+    );
+  }
+
+  rejectWizardPreviewOverflow(regionId) {
+    this.wizardRegionValidationRequestId += 1;
+    if (this.wizardPreviewFallbackModel) {
+      this.documentModel = this.decorateDocument(
+        JSON.parse(this.wizardPreviewFallbackModel)
+      );
+    }
+    this.template
+      .querySelector("c-pdf-builder-wizard")
+      ?.rejectPreviewChange(
+        `The ${regionId} has reached its maximum height. Remove content before adding another field.`
+      );
+  }
+
+  resetWizardRegionFitValidation() {
+    this.wizardRegionValidationRequestId += 1;
+    this.wizardPreviewFallbackModel = null;
+  }
+
+  growWizardFixedRegionsToFitContent() {
+    let nextModel = this.documentModel;
+    let changed = false;
+    let overflowRegionId = "";
+
+    ["header", "footer"].forEach((regionId) => {
+      if (overflowRegionId) {
+        return;
+      }
+      const visibilityKey = regionId === "header" ? "showHeader" : "showFooter";
+      if (nextModel?.[visibilityKey] === false) {
+        return;
+      }
+      const region = nextModel?.[regionId];
+      if (!region) {
+        return;
+      }
+      const currentHeight = this.toNumber(
+        region.styles?.height ?? this.getDefaultFixedRegionHeight(regionId)
+      );
+      const contentHeight = this.getFixedRegionMinimumContentHeight(
+        regionId,
+        nextModel
+      );
+      const otherRegionId = regionId === "header" ? "footer" : "header";
+      const otherVisibilityKey =
+        otherRegionId === "header" ? "showHeader" : "showFooter";
+      const otherHeight =
+        nextModel?.[otherVisibilityKey] === false
+          ? 0
+          : this.toNumber(
+              nextModel?.[otherRegionId]?.styles?.height ??
+                this.getDefaultFixedRegionHeight(otherRegionId)
+            );
+      const maximumHeight = Math.max(
+        40,
+        this.getMaximumCombinedFixedRegionHeight(nextModel) - otherHeight
+      );
+      if (contentHeight > maximumHeight) {
+        overflowRegionId = regionId;
+        return;
+      }
+      if (contentHeight <= currentHeight) {
+        return;
+      }
+      const nextHeight = this.clampFixedRegionHeight(
+        regionId,
+        contentHeight,
+        nextModel
+      );
+      if (nextHeight <= currentHeight) {
+        return;
+      }
+      nextModel = this.updateRegion(nextModel, regionId, (item) =>
+        this.updateElementStyle(item, "height", nextHeight)
+      );
+      changed = true;
+    });
+
+    if (changed) {
+      this.documentModel = this.decorateDocument(nextModel);
+    }
+    return overflowRegionId;
   }
 
   scheduleWizardPreviewAcknowledgement() {
@@ -3115,6 +3289,7 @@ export default class PDFBuilder extends LightningElement {
 
   handleWizardCancel() {
     const state = this.wizardOriginalState;
+    this.resetWizardRegionFitValidation();
     this.isWizardOpen = false;
     this.wizardOriginalState = null;
     if (!state) {
@@ -3153,6 +3328,7 @@ export default class PDFBuilder extends LightningElement {
     }
 
     const draftBaseState = this.wizardOriginalState;
+    this.resetWizardRegionFitValidation();
     this.applyWizardRecipe(event.detail);
     this.selectedTemplateId = null;
     this.loadedTemplateName = "";
@@ -8809,13 +8985,17 @@ export default class PDFBuilder extends LightningElement {
     const otherRegionHeight =
       regionId === "header" ? footerHeight : headerHeight;
     const maximumRegionHeight = Math.max(
-      minimumRegionHeight,
+      40,
       this.getMaximumCombinedFixedRegionHeight(model) - otherRegionHeight
+    );
+    const effectiveMinimumHeight = Math.min(
+      minimumRegionHeight,
+      maximumRegionHeight
     );
 
     return Math.min(
       maximumRegionHeight,
-      Math.max(minimumRegionHeight, this.toNumber(requestedHeight))
+      Math.max(effectiveMinimumHeight, this.toNumber(requestedHeight))
     );
   }
 
@@ -8838,6 +9018,24 @@ export default class PDFBuilder extends LightningElement {
       return Math.max(absoluteMinimumHeight, renderedMinimumHeight);
     }
 
+    return this.getEstimatedFixedRegionMinimumContentHeight(regionId, model);
+  }
+
+  getEstimatedFixedRegionMinimumContentHeight(
+    regionId,
+    model = this.documentModel
+  ) {
+    const absoluteMinimumHeight = 40;
+    const region = this.getRegionByIdFromModel(regionId, model);
+
+    if (
+      (regionId !== "header" && regionId !== "footer") ||
+      !region ||
+      !(region.blocks || []).length
+    ) {
+      return absoluteMinimumHeight;
+    }
+
     const padding = Math.max(0, this.toNumber(region.styles?.padding));
     const borderWidth =
       (region.styles?.borderStyle || "none") === "none"
@@ -8850,7 +9048,7 @@ export default class PDFBuilder extends LightningElement {
       const blockHeight = Math.max(
         0,
         this.toOptionalNumber(block.styles?.height) ??
-          this.getEstimatedBlockHeight(block)
+          this.getEstimatedPaginationBlockHeight(block)
       );
       const blockY = this.toOptionalCoordinate(block.styles?.y);
       const blockX = this.toOptionalCoordinate(block.styles?.x);
@@ -8893,7 +9091,17 @@ export default class PDFBuilder extends LightningElement {
 
     for (const blockElement of blockElements) {
       const blockRect = blockElement.getBoundingClientRect();
-      const blockHeight = blockRect.bottom - blockRect.top;
+      const blockId = blockElement.dataset.blockId;
+      const blockComponent = this.getBlockComponentById(blockId);
+      const renderedBlockHeight =
+        (blockRect.bottom - blockRect.top) / canvasScale;
+      const intrinsicBlockHeight = this.toOptionalNumber(
+        blockComponent?.measureAutoHeight?.()
+      );
+      const blockHeight = Math.max(
+        renderedBlockHeight,
+        intrinsicBlockHeight || 0
+      );
 
       if (!Number.isFinite(blockHeight) || blockHeight <= 0) {
         return null;
@@ -8901,7 +9109,7 @@ export default class PDFBuilder extends LightningElement {
 
       contentBottom = Math.max(
         contentBottom,
-        (blockRect.bottom - regionRect.top) / canvasScale
+        (blockRect.top - regionRect.top) / canvasScale + blockHeight
       );
     }
 
@@ -10522,7 +10730,9 @@ export default class PDFBuilder extends LightningElement {
     }
 
     const container = document.createElement("div");
-    container.innerHTML = value;
+    container.innerHTML = String(value)
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(div|p|li|h[1-6])>/gi, "</$1>\n");
     return (container.innerText || container.textContent || "")
       .replace(/\u00a0/g, " ")
       .replace(/\r\n/g, "\n");

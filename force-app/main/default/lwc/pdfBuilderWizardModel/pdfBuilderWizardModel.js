@@ -5,6 +5,8 @@ import {
   sanitizeRichTextHtml
 } from "c/pdfBuilderSecurity";
 
+export const MAX_HEADER_RECORD_FIELDS = 5;
+
 const COLOR_WORDS = Object.freeze({
   azul: "#0176d3",
   blue: "#0176d3",
@@ -2573,7 +2575,10 @@ export const applyAIWizardProposal = ({
     if (key === "headerFields" || key === "bodyFields") {
       const resolved = resolveAIFields(value, fields);
       if (resolved.fields) {
-        patch[key] = resolved.fields;
+        patch[key] =
+          key === "headerFields"
+            ? resolved.fields.slice(0, MAX_HEADER_RECORD_FIELDS)
+            : resolved.fields;
         unmatchedFields.push(...resolved.unmatched);
       }
       return;
@@ -2846,7 +2851,7 @@ export const applyGuidedWizardPrompt = ({
     }
     const matchedFields = findPromptMatches(fields, prompt);
     if (matchedFields.length) {
-      next.headerFields = matchedFields;
+      next.headerFields = matchedFields.slice(0, MAX_HEADER_RECORD_FIELDS);
       changes.push("Header fields");
     }
   }

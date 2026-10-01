@@ -10,6 +10,7 @@ import {
   createDefaultWizardRecipe,
   findExactPromptFieldMatches,
   findPromptMatches,
+  MAX_HEADER_RECORD_FIELDS,
   rankRelatedLists
 } from "c/pdfBuilderWizardModel";
 
@@ -41,6 +42,24 @@ const AI_UNAVAILABLE_HEADINGS = Object.freeze({
   [AI_AVAILABILITY_REASONS.USER_UNAUTHORIZED]: "AI permission required",
   [AI_AVAILABILITY_REASONS.DISABLED]: "AI Wizard is disabled"
 });
+
+const BLOCK_GEOMETRY_STYLE_KEYS = Object.freeze([
+  "x",
+  "xRatio",
+  "y",
+  "width",
+  "widthRatio",
+  "height",
+  "heightManuallyResized"
+]);
+
+const getFlowingBlockStyles = (styles = {}) => {
+  const flowingStyles = { ...styles };
+  BLOCK_GEOMETRY_STYLE_KEYS.forEach((key) => {
+    delete flowingStyles[key];
+  });
+  return flowingStyles;
+};
 
 const RELATED_LIST_BLOCK_PROPERTY_MAP = Object.freeze({
   relatedListZebraEnabled: "relatedListZebraEnabled",
@@ -149,6 +168,42 @@ const escapeMarkup = (value) =>
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+
+const escapeRegularExpression = (value) =>
+  String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const removeDisallowedRecordFields = (
+  content,
+  objectApiName,
+  allowedApiNames
+) => {
+  const objectPattern = escapeRegularExpression(objectApiName);
+  const fieldPattern = new RegExp(
+    `(?:<strong\\b[^>]*>[^<]*<\\/strong>\\s*(?:&nbsp;|&#160;|\\s)*)?\\{!${objectPattern}\\.([^}]+)\\}`,
+    "gi"
+  );
+  let sanitized = String(content || "").replace(
+    fieldPattern,
+    (match, apiName) => {
+      return allowedApiNames.has(String(apiName || "").toLowerCase())
+        ? match
+        : "";
+    }
+  );
+  // Removing a generated label/value pair may leave an empty row behind.
+  sanitized = sanitized.replace(
+    /<(div|p|li)\b[^>]*>(?:\s|&nbsp;|&#160;)*<\/\1>/gi,
+    ""
+  );
+  return sanitized;
+};
+
+// Relationship paths are useful in the field picker, but they add noise to
+// the generated document. Keep only the actual field label in rendered text.
+const getDocumentFieldLabel = (field) => {
+  const label = String(field?.label || field?.apiName || "").trim();
+  return label.split(">").at(-1).trim() || label;
+};
 
 const getPlainMarkupText = (value) =>
   String(value || "")
@@ -309,6 +364,7 @@ export default class PDFBuilderWizard extends LightningElement {
   fieldSearchTerm = "";
   previewRenderResolve;
   previewRenderTimeoutId;
+  previewRollbackRecipe;
   objectContextPromise = Promise.resolve();
   loadingOperationCount = 0;
   objectContextRequestId = 0;
@@ -349,6 +405,17 @@ export default class PDFBuilderWizard extends LightningElement {
 
   @api
   notifyPreviewRendered() {
+    this.resolvePreviewRendered();
+  }
+
+  @api
+  rejectPreviewChange(message) {
+    if (this.previewRollbackRecipe) {
+      this.recipe = clone(this.previewRollbackRecipe);
+    }
+    this.errorMessage =
+      message || "This content does not fit within the section limit.";
+    this.promptNotice = "";
     this.resolvePreviewRendered();
   }
 
@@ -604,6 +671,9 @@ export default class PDFBuilderWizard extends LightningElement {
       .map((field) => ({
         ...field,
         headerSelected: headerSelected.has(field.apiName),
+        headerDisabled:
+          !headerSelected.has(field.apiName) &&
+          headerSelected.size >= MAX_HEADER_RECORD_FIELDS,
         bodySelected: bodySelected.has(field.apiName)
       }));
   }
@@ -883,11 +953,21 @@ export default class PDFBuilderWizard extends LightningElement {
   }
 
   handleHeaderFieldToggle(event) {
-    this.updateFieldSelection(
-      "headerFields",
-      event.target.dataset.value,
-      event.target.checked
+    const apiName = event.target.dataset.value;
+    const alreadySelected = (this.recipe.headerFields || []).some(
+      (field) => field.apiName === apiName
     );
+    if (
+      event.target.checked &&
+      !alreadySelected &&
+      this.selectedHeaderFieldCount >= MAX_HEADER_RECORD_FIELDS
+    ) {
+      event.target.checked = false;
+      this.errorMessage = `The header supports up to ${MAX_HEADER_RECORD_FIELDS} record fields. Remove one before adding another.`;
+      this.promptNotice = "";
+      return;
+    }
+    this.updateFieldSelection("headerFields", apiName, event.target.checked);
   }
 
   handleBodyFieldToggle(event) {
@@ -1061,11 +1141,23 @@ export default class PDFBuilderWizard extends LightningElement {
           };
         }
       }
+      this.previewRollbackRecipe = recipeBeforeAI;
       this.recipe = result.recipe;
 
       if (this.isHeaderStep) {
+        const allowedHeaderFields = this.enforceRequestedHeaderFields(
+          prompt,
+          recipeBeforeAI
+        );
         this.hydrateHeaderControlsFromBlocks(result);
         this.ensureRequestedHeaderContent(prompt, result);
+        this.recipe = {
+          ...this.recipe,
+          headerFields: allowedHeaderFields
+        };
+        this.syncAIBlockHeaderControls({
+          headerFields: allowedHeaderFields
+        });
         this.hydrateHeaderControlsFromBlocks(result);
       }
       if (this.isFooterStep) {
@@ -1468,6 +1560,55 @@ export default class PDFBuilderWizard extends LightningElement {
     return `${visible.join(", ")}${remaining > 0 ? ` and ${remaining} more` : ""}`;
   }
 
+  enforceRequestedHeaderFields(prompt, recipeBeforeAI) {
+    const fieldsByApiName = new Map(
+      this.fields.map((field) => [field.apiName, field])
+    );
+    const allowedFields = [];
+    const allowedApiNames = new Set();
+    [
+      ...(recipeBeforeAI.headerFields || []),
+      ...findExactPromptFieldMatches(this.fields, prompt)
+    ].forEach((field) => {
+      const resolved = fieldsByApiName.get(field.apiName) || field;
+      const normalizedApiName = String(resolved.apiName || "").toLowerCase();
+      if (
+        normalizedApiName &&
+        !allowedApiNames.has(normalizedApiName) &&
+        allowedFields.length < MAX_HEADER_RECORD_FIELDS
+      ) {
+        allowedApiNames.add(normalizedApiName);
+        allowedFields.push(resolved);
+      }
+    });
+
+    const headerBlocks = (this.recipe.headerBlocks || [])
+      .map((block) => ({
+        ...block,
+        content: removeDisallowedRecordFields(
+          block.content,
+          this.recipe.objectApiName,
+          allowedApiNames
+        )
+      }))
+      .filter((block) => {
+        if (!["text", "field"].includes(block.type)) {
+          return true;
+        }
+        return Boolean(
+          /\{!\$Organization\.Name\}/i.test(String(block.content || "")) ||
+          getPlainMarkupText(block.content) ||
+          getBlockFieldApiNames(block.content, this.recipe.objectApiName).length
+        );
+      });
+    this.recipe = {
+      ...this.recipe,
+      headerFields: allowedFields,
+      headerBlocks
+    };
+    return allowedFields;
+  }
+
   ensureRequestedHeaderContent(prompt, result) {
     if (!this.recipe.headerBlocks?.length) {
       return;
@@ -1507,7 +1648,7 @@ export default class PDFBuilderWizard extends LightningElement {
         ...textEntries.map(({ block }) => Number(block.gapAfter) || 0)
       ),
       styles: {
-        ...(first.styles || {}),
+        ...getFlowingBlockStyles(first.styles),
         background:
           first.styles?.background ||
           last.styles?.background ||
@@ -1977,7 +2118,7 @@ export default class PDFBuilderWizard extends LightningElement {
       content: group
         .map(
           (field) =>
-            `<div><strong>${escapeMarkup(field.label || field.apiName)}:</strong>&nbsp;{!${this.recipe.objectApiName}.${field.apiName}}</div>`
+            `<div><strong>${escapeMarkup(getDocumentFieldLabel(field))}:</strong>&nbsp;{!${this.recipe.objectApiName}.${field.apiName}}</div>`
         )
         .join(""),
       widthPercent: cardWidth,
@@ -2187,6 +2328,7 @@ export default class PDFBuilderWizard extends LightningElement {
   }
 
   updateRecipe(changes) {
+    this.previewRollbackRecipe = clone(this.recipe);
     this.recipe = { ...this.recipe, ...changes };
     this.syncAIBlockHeaderControls(changes);
     this.syncAIBlockRelatedListSettings(changes);
@@ -2239,9 +2381,9 @@ export default class PDFBuilderWizard extends LightningElement {
         return token;
       }
       if (this.recipe.fieldDisplayMode === "labelOnly") {
-        return `<strong>${escapeMarkup(field.label || field.apiName)}</strong>`;
+        return `<strong>${escapeMarkup(getDocumentFieldLabel(field))}</strong>`;
       }
-      return `<div><strong>${escapeMarkup(field.label || field.apiName)}:</strong>&nbsp;${token}</div>`;
+      return `<div><strong>${escapeMarkup(getDocumentFieldLabel(field))}:</strong>&nbsp;${token}</div>`;
     };
     const generatedBlocks = [];
     if (this.recipe.groupBodyFields && selectedFields.length) {
@@ -2363,29 +2505,70 @@ export default class PDFBuilderWizard extends LightningElement {
       headerBlocks = headerBlocks.filter(
         (block) => block.wizardRole !== "headerField"
       );
-      const existingApiNames = new Set(
-        headerBlocks.flatMap((block) =>
-          getBlockFieldApiNames(block.content, this.recipe.objectApiName)
-        )
+      const preferredContentBoxIndex = headerBlocks.findIndex(
+        (block) =>
+          ["text", "field"].includes(block.type) &&
+          (block.wizardRole === "headerContentBox" ||
+            Number(block.widthPercent) === 100)
       );
-      const referenceStyles =
-        headerBlocks.find((block) => ["text", "field"].includes(block.type))
-          ?.styles || {};
-      selectedFields
-        .filter((field) => !existingApiNames.has(field.apiName))
-        .forEach((field) => {
-          headerBlocks.push({
-            type: "field",
-            wizardRole: "headerField",
-            fieldApiName: field.apiName,
-            fieldLabel: field.label,
-            content: `<strong>${escapeMarkup(field.label || field.apiName)}:</strong>&nbsp;{!${this.recipe.objectApiName}.${field.apiName}}`,
-            widthPercent: 100,
-            xPercent: 0,
-            gapAfter: 4,
-            styles: { ...referenceStyles }
+      const contentBoxIndex =
+        preferredContentBoxIndex >= 0
+          ? preferredContentBoxIndex
+          : headerBlocks.findIndex((block) =>
+              ["text", "field"].includes(block.type)
+            );
+      if (contentBoxIndex >= 0) {
+        const contentBox = headerBlocks[contentBoxIndex];
+        const baseContent =
+          contentBox.wizardBaseContent ?? String(contentBox.content || "");
+        const baseApiNames = new Set(
+          getBlockFieldApiNames(baseContent, this.recipe.objectApiName)
+        );
+        const selectedFieldContent = selectedFields
+          .filter((field) => !baseApiNames.has(field.apiName))
+          .map(
+            (field) =>
+              `<div><strong>${escapeMarkup(getDocumentFieldLabel(field))}:</strong>&nbsp;{!${this.recipe.objectApiName}.${field.apiName}}</div>`
+          )
+          .join("");
+        headerBlocks[contentBoxIndex] = {
+          ...contentBox,
+          wizardBaseContent: baseContent,
+          content: selectedFieldContent
+            ? `${baseContent}<div>${selectedFieldContent}</div>`
+            : baseContent,
+          styles: getFlowingBlockStyles(contentBox.styles)
+        };
+      } else {
+        const existingApiNames = new Set(
+          headerBlocks.flatMap((block) =>
+            getBlockFieldApiNames(block.content, this.recipe.objectApiName)
+          )
+        );
+        const referenceStyles = getFlowingBlockStyles(
+          headerBlocks.find((block) => ["text", "field"].includes(block.type))
+            ?.styles
+        );
+        // AI preview blocks contain calculated canvas geometry. Reusing those
+        // coordinates for every subsequently selected field stacks all fields
+        // in the same position, making only one appear visible. Keep visual
+        // styling but let the preview model flow each generated field normally.
+        selectedFields
+          .filter((field) => !existingApiNames.has(field.apiName))
+          .forEach((field) => {
+            headerBlocks.push({
+              type: "field",
+              wizardRole: "headerField",
+              fieldApiName: field.apiName,
+              fieldLabel: field.label,
+              content: `<strong>${escapeMarkup(getDocumentFieldLabel(field))}:</strong>&nbsp;{!${this.recipe.objectApiName}.${field.apiName}}`,
+              widthPercent: 100,
+              xPercent: 0,
+              gapAfter: 4,
+              styles: { ...referenceStyles }
+            });
           });
-        });
+      }
     }
     this.recipe = { ...this.recipe, headerBlocks };
   }
@@ -2578,68 +2761,52 @@ export default class PDFBuilderWizard extends LightningElement {
       ...block,
       styles: { ...(block.styles || {}) }
     }));
-    const textIndexes = () =>
-      footerBlocks
-        .map((block, index) => ({ block, index }))
-        .filter(({ block }) => ["text", "field"].includes(block.type))
-        .map(({ index }) => index);
-    const ensureTextBlock = (position) => {
-      const existing = textIndexes()[position];
-      if (existing !== undefined) {
-        return existing;
-      }
-      footerBlocks.push({
+
+    // Footer copy is one logical unit. Keep the primary and secondary text in
+    // the same full-width block so they always share the same starting edge,
+    // alignment and appearance, regardless of how the AI proposed the layout.
+    const firstTextIndex = footerBlocks.findIndex((block) =>
+      ["text", "field"].includes(block.type)
+    );
+    const existingTextBlock =
+      firstTextIndex >= 0 ? footerBlocks[firstTextIndex] : null;
+    const primaryParts = [];
+    if (String(this.recipe.footerText || "").trim()) {
+      primaryParts.push(escapeMarkup(this.recipe.footerText.trim()));
+    }
+    if (this.recipe.includeFooterOrganizationName) {
+      primaryParts.push("{!$Organization.Name}");
+    }
+    const secondaryText = String(this.recipe.footerSecondaryText || "").trim();
+    const content = [
+      primaryParts.length
+        ? `<div><strong>${primaryParts.join(" | ")}</strong></div>`
+        : "",
+      secondaryText ? `<div>${escapeMarkup(secondaryText)}</div>` : ""
+    ]
+      .filter(Boolean)
+      .join("");
+    const insertionIndex = Math.max(0, firstTextIndex);
+    footerBlocks = footerBlocks.filter(
+      (block) => !["text", "field"].includes(block.type)
+    );
+    if (content) {
+      footerBlocks.splice(insertionIndex, 0, {
+        ...(existingTextBlock || {}),
         type: "text",
-        wizardRole: position === 0 ? "footerPrimary" : "footerSecondary",
-        content: "",
+        wizardRole: "footerContentBox",
+        content,
         widthPercent: 100,
         xPercent: 0,
         horizontalAlign: this.recipe.footerAlignment,
         gapAfter: 0,
         styles: {
+          ...getFlowingBlockStyles(existingTextBlock?.styles),
           color: this.recipe.footerTextColor,
           textAlign: this.recipe.footerAlignment,
-          fontSize: 12
+          fontSize: existingTextBlock?.styles?.fontSize || 12
         }
       });
-      return footerBlocks.length - 1;
-    };
-    const buildPrimaryContent = () => {
-      const parts = [];
-      if (String(this.recipe.footerText || "").trim()) {
-        parts.push(escapeMarkup(this.recipe.footerText.trim()));
-      }
-      if (this.recipe.includeFooterOrganizationName) {
-        parts.push("{!$Organization.Name}");
-      }
-      return parts.join(" | ");
-    };
-    if (
-      changedKeys.has("footerText") ||
-      changedKeys.has("includeFooterOrganizationName")
-    ) {
-      const primaryIndex = ensureTextBlock(0);
-      footerBlocks[primaryIndex] = {
-        ...footerBlocks[primaryIndex],
-        wizardRole: "footerPrimary",
-        content: buildPrimaryContent()
-      };
-    }
-    if (changedKeys.has("footerSecondaryText")) {
-      const secondaryText = String(
-        this.recipe.footerSecondaryText || ""
-      ).trim();
-      const currentSecondaryIndex = textIndexes()[1];
-      if (!secondaryText && currentSecondaryIndex !== undefined) {
-        footerBlocks.splice(currentSecondaryIndex, 1);
-      } else if (secondaryText) {
-        const secondaryIndex = ensureTextBlock(1);
-        footerBlocks[secondaryIndex] = {
-          ...footerBlocks[secondaryIndex],
-          wizardRole: "footerSecondary",
-          content: escapeMarkup(secondaryText)
-        };
-      }
     }
     if (changedKeys.has("footerShowDivider")) {
       footerBlocks = footerBlocks.filter((block) => block.type !== "divider");

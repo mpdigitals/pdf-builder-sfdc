@@ -298,6 +298,63 @@ describe("c-pdf-builder", () => {
     ).toBe("");
   });
 
+  it("does not apply a deferred wizard size check after cancellation", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const originalHeaderHeight = element.shadowRoot
+      .querySelector('[data-region-id="header"]')
+      .style.getPropertyValue("--region-height");
+    const animationFrames = [];
+    const animationFrameSpy = jest
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((callback) => {
+        animationFrames.push(callback);
+        return animationFrames.length;
+      });
+
+    element.shadowRoot.querySelector(".wizard-launch-button").click();
+    await flushPromises();
+    const wizard = element.shadowRoot.querySelector("c-pdf-builder-wizard");
+    wizard.dispatchEvent(
+      new CustomEvent("wizardpreview", {
+        detail: {
+          ...createDefaultWizardRecipe(),
+          templateName: "Cancelled draft",
+          objectApiName: "Account",
+          includeOrganizationName: true,
+          headerFields: [
+            { label: "Name", apiName: "Name" },
+            { label: "Phone", apiName: "Phone" }
+          ]
+        }
+      })
+    );
+    await flushPromises();
+
+    wizard.dispatchEvent(new CustomEvent("wizardcancel"));
+    await flushPromises();
+    expect(
+      element.shadowRoot
+        .querySelector('[data-region-id="header"]')
+        .style.getPropertyValue("--region-height")
+    ).toBe(originalHeaderHeight);
+
+    animationFrames.shift()();
+    animationFrames.shift()();
+    await flushPromises();
+
+    expect(
+      element.shadowRoot
+        .querySelector('[data-region-id="header"]')
+        .style.getPropertyValue("--region-height")
+    ).toBe(originalHeaderHeight);
+    animationFrameSpy.mockRestore();
+  });
+
   it("keeps guided setup available while disabling its AI prompt", async () => {
     getAIAvailability.mockResolvedValue({
       available: false,
@@ -376,6 +433,110 @@ describe("c-pdf-builder", () => {
     expect(notifyPreviewRendered).toHaveBeenCalledTimes(1);
     animationFrameSpy.mockRestore();
     jest.useRealTimers();
+  });
+
+  it("rejects a wizard change when header content exceeds its hard limit", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    element.shadowRoot.querySelector(".wizard-launch-button").click();
+    await flushPromises();
+
+    const wizard = element.shadowRoot.querySelector("c-pdf-builder-wizard");
+    const rejectPreviewChange = jest.spyOn(wizard, "rejectPreviewChange");
+    const animationFrames = [];
+    const animationFrameSpy = jest
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((callback) => {
+        animationFrames.push(callback);
+        return animationFrames.length;
+      });
+
+    wizard.dispatchEvent(
+      new CustomEvent("wizardpreview", {
+        detail: {
+          ...createDefaultWizardRecipe(),
+          templateName: "Limited header",
+          objectApiName: "Account"
+        }
+      })
+    );
+    await flushPromises();
+
+    const headerBlock = element.shadowRoot.querySelector(
+      '[data-region-id="header"] c-pdf-builder-block'
+    );
+    jest.spyOn(headerBlock, "measureAutoHeight").mockReturnValue(900);
+
+    animationFrames.shift()();
+    animationFrames.shift()();
+
+    expect(rejectPreviewChange).toHaveBeenCalledWith(
+      expect.stringContaining("header has reached its maximum height")
+    );
+    animationFrameSpy.mockRestore();
+  });
+
+  it("grows the header and reduces the body when wizard fields are added", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    element.shadowRoot.querySelector(".wizard-launch-button").click();
+    await flushPromises();
+    const wizard = element.shadowRoot.querySelector("c-pdf-builder-wizard");
+    const initialHeaderHeight = Number.parseFloat(
+      element.shadowRoot
+        .querySelector('[data-region-id="header"]')
+        .style.getPropertyValue("--region-height")
+    );
+    const initialBodyHeight = Number.parseFloat(
+      element.shadowRoot
+        .querySelector(".pdf-page")
+        .style.getPropertyValue("--body-min-height")
+    );
+
+    wizard.dispatchEvent(
+      new CustomEvent("wizardpreview", {
+        detail: {
+          ...createDefaultWizardRecipe({
+            defaultPagePadding: 32,
+            defaultElementPadding: 8
+          }),
+          objectApiName: "Opportunity",
+          includeOrganizationName: true,
+          headerContentPadding: 16,
+          headerFields: [
+            { label: "Name", apiName: "Name" },
+            { label: "Stage", apiName: "StageName" },
+            { label: "Close Date", apiName: "CloseDate" },
+            { label: "Amount", apiName: "Amount" },
+            { label: "Owner", apiName: "OwnerId" }
+          ]
+        }
+      })
+    );
+    await flushPromises();
+
+    const nextHeaderHeight = Number.parseFloat(
+      element.shadowRoot
+        .querySelector('[data-region-id="header"]')
+        .style.getPropertyValue("--region-height")
+    );
+    const nextBodyHeight = Number.parseFloat(
+      element.shadowRoot
+        .querySelector(".pdf-page")
+        .style.getPropertyValue("--body-min-height")
+    );
+    expect(nextHeaderHeight).toBeGreaterThan(initialHeaderHeight);
+    expect(nextBodyHeight).toBe(
+      initialBodyHeight - (nextHeaderHeight - initialHeaderHeight)
+    );
   });
 
   it("creates an editable draft with fields and one Related List from the wizard", async () => {
@@ -2992,6 +3153,11 @@ describe("c-pdf-builder", () => {
     templateSelect.dispatchEvent(new CustomEvent("change"));
     await flushPromises();
 
+    const initialPageBodyHeight = Number.parseFloat(
+      element.shadowRoot
+        .querySelector(".pdf-page")
+        .style.getPropertyValue("--body-min-height")
+    );
     let header = element.shadowRoot.querySelector('[data-region-id="header"]');
     header.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     await flushPromises();
@@ -3029,6 +3195,13 @@ describe("c-pdf-builder", () => {
         .querySelector('[data-region-id="header"]')
         .getAttribute("style")
     ).toContain("--region-height:212px");
+    expect(
+      Number.parseFloat(
+        element.shadowRoot
+          .querySelector(".pdf-page")
+          .style.getPropertyValue("--body-min-height")
+      )
+    ).toBe(initialPageBodyHeight + 38);
 
     let footer = element.shadowRoot.querySelector('[data-region-id="footer"]');
     footer.dispatchEvent(new MouseEvent("click", { bubbles: true }));
