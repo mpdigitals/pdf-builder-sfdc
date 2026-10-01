@@ -25,12 +25,35 @@ Use this format for every GitHub release.
 
 ## Install
 
+### Core package — required
+
+- **Package:** PDF Builder
 - **Package version:** `X.Y.Z.BUILD`
 - **Package ID:** `04t...`
 - [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04t...)
 - [Install in Developer Edition or Production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04t...)
 
 ### Salesforce CLI
+
+```bash
+sf package install \
+  --package 04t... \
+  --target-org your-target-org \
+  --wait 30 \
+  --publish-wait 10 \
+  --no-prompt
+```
+
+For releases that include the guided AI integration, add:
+
+### AI adapter — optional
+
+- **Package:** PDF Builder AI
+- **Package version:** `X.Y.Z.BUILD`
+- **Package ID:** `04t...`
+- **Requirement:** Agentforce and Models API must be available in the target org.
+- [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04t...)
+- [Install in Developer Edition or Production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04t...)
 
 ```bash
 sf package install \
