@@ -298,6 +298,36 @@ describe("c-pdf-builder", () => {
     ).toBe("");
   });
 
+  it("keeps guided templates on one page by hiding and blocking manual page creation", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    const addPageButton = element.shadowRoot.querySelector(".page-add-button");
+    expect(addPageButton).not.toBeNull();
+
+    element.shadowRoot.querySelector(".wizard-launch-button").click();
+    await flushPromises();
+
+    expect(element.shadowRoot.querySelector(".page-add-button")).toBeNull();
+
+    // A stale event reference must not bypass the Wizard guard.
+    addPageButton.click();
+    await flushPromises();
+
+    element.shadowRoot
+      .querySelector("c-pdf-builder-wizard")
+      .dispatchEvent(new CustomEvent("wizardcancel"));
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelectorAll(".continuation-page")
+    ).toHaveLength(0);
+    expect(element.shadowRoot.querySelector(".page-add-button")).not.toBeNull();
+  });
+
   it("does not apply a deferred wizard size check after cancellation", async () => {
     const element = createElement("c-pdf-builder", {
       is: PDFBuilder
@@ -433,6 +463,70 @@ describe("c-pdf-builder", () => {
     expect(notifyPreviewRendered).toHaveBeenCalledTimes(1);
     animationFrameSpy.mockRestore();
     jest.useRealTimers();
+  });
+
+  it("renders distinct wizard fonts without PDF font substitution", async () => {
+    const element = createElement("c-pdf-builder", {
+      is: PDFBuilder
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+
+    element.shadowRoot.querySelector(".wizard-launch-button").click();
+    await flushPromises();
+    const wizard = element.shadowRoot.querySelector("c-pdf-builder-wizard");
+    const createRecipe = (fontFamily) => ({
+      ...createDefaultWizardRecipe(),
+      templateName: "Font preview",
+      objectApiName: "Opportunity",
+      fontFamily,
+      bodyBlocks: [
+        {
+          type: "text",
+          content: "Opportunity overview",
+          widthPercent: 100,
+          styles: { fontFamily }
+        }
+      ]
+    });
+
+    wizard.dispatchEvent(
+      new CustomEvent("wizardpreview", {
+        detail: createRecipe("Georgia")
+      })
+    );
+    await flushPromises();
+    let bodyBlock = element.shadowRoot.querySelector(
+      '[data-region-id="body-1"] c-pdf-builder-block'
+    );
+    expect(bodyBlock.block.textStyle).toContain("font-family:Georgia, serif");
+    expect(bodyBlock.block.inlineStyle).toContain("font-family:Georgia, serif");
+
+    wizard.dispatchEvent(
+      new CustomEvent("wizardpreview", {
+        detail: createRecipe("Times New Roman")
+      })
+    );
+    await flushPromises();
+    bodyBlock = element.shadowRoot.querySelector(
+      '[data-region-id="body-1"] c-pdf-builder-block'
+    );
+    expect(bodyBlock.block.textStyle).toContain(
+      'font-family:"Times New Roman", serif'
+    );
+
+    wizard.dispatchEvent(
+      new CustomEvent("wizardpreview", {
+        detail: createRecipe("Helvetica")
+      })
+    );
+    await flushPromises();
+    bodyBlock = element.shadowRoot.querySelector(
+      '[data-region-id="body-1"] c-pdf-builder-block'
+    );
+    expect(bodyBlock.block.textStyle).toContain(
+      "font-family:Helvetica, Arial, sans-serif"
+    );
   });
 
   it("rejects a wizard change when header content exceeds its hard limit", async () => {

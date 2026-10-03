@@ -957,9 +957,9 @@ const addFooterBlocks = (model, recipe, metrics, createBlock) => {
 
 const removeConflictingInlineTypography = (
   content,
-  { color, fontSize } = {}
+  { color, fontSize, fontFamily } = {}
 ) => {
-  if (!color && !fontSize) {
+  if (!color && !fontSize && !fontFamily) {
     return content;
   }
   return String(content || "").replace(
@@ -973,7 +973,8 @@ const removeConflictingInlineTypography = (
           const property = declaration.split(":", 1)[0].trim().toLowerCase();
           return !(
             (color && property === "color") ||
-            (fontSize && property === "font-size")
+            (fontSize && property === "font-size") ||
+            (fontFamily && property === "font-family")
           );
         });
       return declarations.length
@@ -1104,6 +1105,7 @@ const buildAIBlock = ({
   const height = estimateAIBlockHeight(spec, width);
   const styles = {
     ...spec.styles,
+    fontFamily: recipe.fontFamily,
     width,
     widthRatio: null,
     height,
@@ -1140,7 +1142,8 @@ const buildAIBlock = ({
   if (spec.type === "text") {
     overrides.content = removeConflictingInlineTypography(spec.content, {
       color: styles.color,
-      fontSize: styles.fontSize
+      fontSize: styles.fontSize,
+      fontFamily: styles.fontFamily
     });
   } else if (spec.type === "field") {
     overrides.content = getFieldContent(

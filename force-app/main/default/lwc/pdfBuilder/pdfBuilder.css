@@ -1789,25 +1789,58 @@
 
 .page-add-button {
   position: absolute;
-  top: calc(100% - 15px);
+  top: calc(100% - 16px);
   left: 50%;
   transform: translateX(-50%);
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 1px solid #2e844a;
   border-radius: 50%;
   background: #2e844a;
   color: #ffffff;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
+  font-size: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   z-index: 8;
+}
+
+.page-add-button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentcolor;
+  transform: translate(-50%, -50%);
+}
+
+.page-add-button::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: 2px;
+  height: 14px;
+  border-radius: 1px;
+  background: currentcolor;
+  transform: translate(-50%, -50%);
 }
 
 .page-add-button:hover {
   background: #1f5f35;
   border-color: #1f5f35;
+}
+
+.page-add-button:focus-visible {
+  outline: 3px solid rgba(46, 132, 74, 0.3);
+  outline-offset: 3px;
 }
 
 .drop-placeholder {
@@ -3298,16 +3331,20 @@
 
 .page-add-button {
   border-radius: 999px;
-  box-shadow: 0 5px 14px rgba(46, 132, 74, 0.22);
-  transform-origin: center;
+  box-shadow:
+    0 3px 8px rgba(46, 132, 74, 0.2),
+    0 1px 2px rgba(15, 42, 73, 0.1);
   transition:
-    transform 140ms ease,
-    box-shadow 140ms ease;
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .page-add-button:hover {
-  transform: translateX(-50%) translateY(-2px) scale(1.03);
-  box-shadow: 0 8px 18px rgba(46, 132, 74, 0.28);
+  transform: translateX(-50%);
+  box-shadow:
+    0 4px 10px rgba(46, 132, 74, 0.24),
+    0 1px 3px rgba(15, 42, 73, 0.12);
 }
 
 .builder:has(.theme-toggle-input:checked) {

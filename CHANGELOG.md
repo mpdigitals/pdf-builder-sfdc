@@ -4,6 +4,20 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.1.0-beta.6] - 2026-10-03
+
+### Changed
+
+- Refined the guided Wizard width, light-mode section framing, dark-mode contrast, responsive spacing, and page-add control styling.
+- Applied the selected global font consistently to AI-generated and manually configured template blocks.
+
+### Fixed
+
+- Kept Wizard-created templates on one page by hiding and blocking manual page creation while the Wizard is open.
+- Kept body geometry synchronized when guided header or footer content changes and limited header record fields to five.
+- Preserved existing header and footer content boxes when fields are selected, using concise field labels without redundant relationship prefixes.
+- Kept secondary footer text in the same content box and alignment as the primary footer text.
+
 ## [1.1.0-beta.1] - 2026-09-28
 
 ### Added
@@ -238,7 +252,8 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.1.0-beta.1...HEAD
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.1.0-beta.6...HEAD
+[1.1.0-beta.6]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.1.0-beta.5...v1.1.0-beta.6
 [1.1.0-beta.1]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18...v1.1.0-beta.1
 [1.0.18]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.17...v1.0.18
 [1.0.18-beta.3]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18-beta.2...v1.0.18-beta.3

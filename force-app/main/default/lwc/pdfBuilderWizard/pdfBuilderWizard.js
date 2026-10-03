@@ -2639,6 +2639,30 @@ export default class PDFBuilderWizard extends LightningElement {
 
   syncAIBlockAppearanceSettings(changes = {}) {
     const changedKeys = new Set(Object.keys(changes));
+    if (changedKeys.has("fontFamily")) {
+      const applyFontFamily = (blocks = []) =>
+        blocks.map((block) => ({
+          ...block,
+          styles: {
+            ...(block.styles || {}),
+            fontFamily: this.recipe.fontFamily
+          },
+          ...(typeof block.content === "string"
+            ? {
+                content: block.content.replace(
+                  /font-family\s*:\s*[^;"']+;?/gi,
+                  ""
+                )
+              }
+            : {})
+        }));
+      this.recipe = {
+        ...this.recipe,
+        headerBlocks: applyFontFamily(this.recipe.headerBlocks),
+        bodyBlocks: applyFontFamily(this.recipe.bodyBlocks),
+        footerBlocks: applyFontFamily(this.recipe.footerBlocks)
+      };
+    }
     const updateTextBlocks = (blocks, styleMap, extra = {}) =>
       (blocks || []).map((block) => {
         if (

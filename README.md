@@ -104,11 +104,11 @@ sf package install \
 
 ### Beta: guided wizard and optional Salesforce AI
 
-`v1.1.0-beta.5` is available for evaluation. Install the core package first:
+`v1.1.0-beta.6` is available for evaluation. Install the core package first:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZhzlIAC \
+  --package 04tQy000000ZldZIAS \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \

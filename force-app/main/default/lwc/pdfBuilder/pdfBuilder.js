@@ -63,6 +63,28 @@ const DEFAULT_RELATED_LIST_BUILDER_ROWS = 1;
 const MAX_RELATED_LIST_BUILDER_ROWS = 10;
 const RELATED_LIST_BUILDER_ROW_HEIGHT = 25;
 const BUILDER_THEME_STORAGE_KEY = "pdfbuilder.builder-theme";
+const BUILDER_FONT_FAMILIES = new Map([
+  ["arial", "Arial, sans-serif"],
+  ["helvetica", "Helvetica, Arial, sans-serif"],
+  ["verdana", "Verdana, sans-serif"],
+  ["tahoma", "Tahoma, sans-serif"],
+  ["trebuchet ms", '"Trebuchet MS", sans-serif'],
+  ["times new roman", '"Times New Roman", serif'],
+  ["georgia", "Georgia, serif"],
+  ["garamond", "Garamond, serif"],
+  ["courier new", '"Courier New", monospace'],
+  ["lucida console", '"Lucida Console", monospace'],
+  ["impact", "Impact, sans-serif"],
+  ["palatino linotype", '"Palatino Linotype", serif'],
+  ["segoe ui", '"Segoe UI", sans-serif'],
+  ["calibri", "Calibri, sans-serif"],
+  ["cambria", "Cambria, serif"],
+  ["open sans", '"Open Sans", sans-serif'],
+  ["roboto", "Roboto, sans-serif"],
+  ["montserrat", "Montserrat, sans-serif"],
+  ["lato", "Lato, sans-serif"],
+  ["poppins", "Poppins, sans-serif"]
+]);
 const USER_MESSAGES = Object.freeze({
   PDF_BUILDER_LOAD_ERROR_TITLE: "PDF Builder could not be loaded",
   OBJECT_METADATA_LOAD_ERROR_TITLE: "Object metadata could not be loaded",
@@ -1363,7 +1385,7 @@ export default class PDFBuilder extends LightningElement {
     const totalContinuationPages = overflowPageCount + manualPageCount;
     const pages = [];
     const totalPages = 1 + totalContinuationPages;
-    const canAddAnotherPage = totalPages < this.maxPages;
+    const canAddAnotherPage = !this.isWizardOpen && totalPages < this.maxPages;
 
     for (let index = 0; index < totalContinuationPages; index += 1) {
       const pageNumber = index + 2;
@@ -1423,7 +1445,7 @@ export default class PDFBuilder extends LightningElement {
   }
 
   get canAddPage() {
-    return this.getTotalPageCount() < this.maxPages;
+    return !this.isWizardOpen && this.getTotalPageCount() < this.maxPages;
   }
 
   get showAddButtonOnFirstPage() {
@@ -9697,7 +9719,8 @@ export default class PDFBuilder extends LightningElement {
       `--block-text-align:${styles.textAlign || "left"}`,
       `--block-vertical-align:${verticalAlign}`,
       `--block-width:${widthValue}`,
-      `--block-height:${Number.isFinite(configuredHeight) ? `${configuredHeight}px` : "auto"}`
+      `--block-height:${Number.isFinite(configuredHeight) ? `${configuredHeight}px` : "auto"}`,
+      `font-family:${this.normalizeBuilderFontFamily(styles.fontFamily)}`
     ].join(";");
   }
 
@@ -9736,13 +9759,23 @@ export default class PDFBuilder extends LightningElement {
     const textColor = styles.color || styles.textColor || "#181818";
     return [
       `font-size:${this.toNumber(styles.fontSize)}px`,
-      `font-family:${this.normalizePdfFontFamily(styles.fontFamily)}`,
+      `font-family:${this.normalizeBuilderFontFamily(styles.fontFamily)}`,
       `font-weight:${styles.fontWeight || "normal"}`,
       `font-style:${styles.fontStyle || "normal"}`,
       `color:${textColor}`,
       `text-align:${styles.textAlign || "left"}`,
       "line-height:1.25"
     ].join(";");
+  }
+
+  normalizeBuilderFontFamily(value) {
+    const requested = String(value || "Arial")
+      .split(",")[0]
+      .replace(/["']/g, "")
+      .trim();
+    return (
+      BUILDER_FONT_FAMILIES.get(requested.toLowerCase()) || "Arial, sans-serif"
+    );
   }
 
   normalizePdfFontFamily(value) {

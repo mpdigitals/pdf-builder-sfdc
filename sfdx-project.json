@@ -4,7 +4,7 @@
       "path": "force-app",
       "default": true,
       "package": "PDF Builder",
-      "versionName": "Version 1.1.0 Beta 5",
+      "versionName": "Version 1.1.0 Beta 6",
       "versionNumber": "1.1.0.NEXT",
       "versionDescription": "Beta release with an optional Salesforce Models API guided template wizard and a modernized responsive Builder workspace",
       "apexTestAccess": {
@@ -62,6 +62,7 @@
     "PDF Builder@1.1.0-3": "04tQy000000ZeLxIAK",
     "PDF Builder AI@1.0.0-3": "04tQy000000ZeNZIA0",
     "PDF Builder@1.1.0-4": "04tQy000000ZePBIA0",
-    "PDF Builder@1.1.0-5": "04tQy000000ZhzlIAC"
+    "PDF Builder@1.1.0-5": "04tQy000000ZhzlIAC",
+    "PDF Builder@1.1.0-6": "04tQy000000ZldZIAS"
   }
 }

@@ -42,6 +42,42 @@ const createDocument = () => ({
 });
 
 describe("c-pdf-builder-wizard-model", () => {
+  it("applies the selected global font to AI-generated blocks", () => {
+    const recipe = {
+      ...createDefaultWizardRecipe({}),
+      objectApiName: "Opportunity",
+      fontFamily: "Times New Roman",
+      bodyBlocks: [
+        {
+          type: "text",
+          content:
+            '<div style="font-family:Arial;color:#032d60">Opportunity overview</div>',
+          widthPercent: 100,
+          styles: { fontFamily: "Arial", fontSize: 16 }
+        },
+        {
+          type: "relatedList",
+          relatedListRelationshipName: "OpportunityLineItems",
+          relatedListColumns: ["Quantity"],
+          widthPercent: 100,
+          styles: { fontFamily: "Arial" }
+        }
+      ]
+    };
+
+    const result = buildWizardDocumentModel({
+      recipe,
+      configuration: { pageWidth: 794 },
+      createDefaultDocument: createDocument,
+      createBlock: (type) => ({ type, content: "", styles: {} })
+    });
+    const [text, relatedList] = result.body.sections[0].blocks;
+
+    expect(text.styles.fontFamily).toBe("Times New Roman");
+    expect(text.content).not.toContain("font-family");
+    expect(relatedList.styles.fontFamily).toBe("Times New Roman");
+  });
+
   it("builds through the builder factories and adds one configured Related List", () => {
     let blockSequence = 0;
     const recipe = {
