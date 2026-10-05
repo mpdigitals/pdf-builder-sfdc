@@ -190,7 +190,7 @@ private class PDFBuilderControllerTest {
       'The maximum AI context length must come from Custom Metadata.'
     );
     Assert.areEqual(
-      '04tQy000000ZeNZIA0',
+      '04tQy000000ZoRlIAK',
       settings.aiExtensionPackageVersionId,
       'The optional AI extension package version must come from Custom Metadata.'
     );

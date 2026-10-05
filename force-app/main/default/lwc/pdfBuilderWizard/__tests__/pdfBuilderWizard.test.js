@@ -405,7 +405,7 @@ describe("c-pdf-builder-wizard", () => {
     element.aiAvailabilityReason = "EXTENSION_MISSING";
     element.aiUnavailableMessage = "Install PDF Builder AI.";
     element.aiInstallationUrl =
-      "/packaging/installPackage.apexp?p0=04tQy000000ZeNZIA0";
+      "/packaging/installPackage.apexp?p0=04tQy000000ZoRlIAK";
     element.objectOptions = [{ label: "Opportunity", apiName: "Opportunity" }];
     document.body.appendChild(element);
     await flushPromises();
@@ -429,7 +429,7 @@ describe("c-pdf-builder-wizard", () => {
       element.shadowRoot.querySelector(".ai-unavailable-card h3").textContent
     ).toBe("PDF Builder AI is ready to install");
     expect(action.textContent.trim()).toBe("Install PDF Builder AI");
-    expect(action.getAttribute("href")).toContain("04tQy000000ZeNZIA0");
+    expect(action.getAttribute("href")).toContain("04tQy000000ZoRlIAK");
   });
 
   it("shows setup guidance instead of installation for an incompatible org", async () => {

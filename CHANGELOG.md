@@ -4,6 +4,33 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-05
+
+### Added
+
+- Added a four-step guided template wizard with deterministic controls and optional natural-language proposals through Salesforce Models API.
+- Added the separately installable `PDF Builder AI` adapter so the core package remains compatible with orgs where Agentforce or Models API is unavailable.
+- Added deployable AI model, provider, prompt contract, availability, adapter-version, and prompt/context-limit settings in Custom Metadata.
+
+### Changed
+
+- Modernized the responsive Builder workspace, toolbar, panels, element palette, contextual controls, fullscreen actions, and light/dark themes.
+- Kept Wizard output in the canonical editable document model and synchronized guided Header, Body, and Footer controls with canvas content.
+- Applied global font selection consistently to manually configured and AI-generated blocks.
+
+### Fixed
+
+- Preserved one content box when selecting multiple Header fields and used concise labels without redundant relationship prefixes.
+- Kept Body geometry synchronized with Header and Footer changes and limited guided Header selections to five fields.
+- Kept secondary Footer text in the primary Footer content box with matching alignment.
+- Improved invalid AI-response recovery and feedback while preventing the Wizard from creating unsupported additional pages.
+
+### Security
+
+- AI requests contain bounded accessible schema metadata and template state but no Salesforce record values.
+- AI access requires the feature setting, package custom permission, installed adapter, Models API availability, and the running user's entitlement.
+- All AI proposals are treated as untrusted structured data and validated against operation, metadata, relationship, geometry, color, URL, and rich-text allowlists before application.
+
 ## [1.1.0-beta.6] - 2026-10-03
 
 ### Changed
@@ -252,7 +279,8 @@ Notable changes to PDF Builder are documented here. The project follows [Semanti
 - Browser preview, PDF download, and Salesforce Files output.
 - Installable unlocked package and portable sample templates.
 
-[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.1.0-beta.6...HEAD
+[Unreleased]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.1.0-beta.6...v1.1.0
 [1.1.0-beta.6]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.1.0-beta.5...v1.1.0-beta.6
 [1.1.0-beta.1]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.18...v1.1.0-beta.1
 [1.0.18]: https://github.com/mpdigitals/pdf-builder-sfdc/compare/v1.0.17...v1.0.18

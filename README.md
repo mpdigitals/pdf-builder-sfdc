@@ -1,23 +1,17 @@
 # PDF Builder for Salesforce
 
 <p align="center">
-  <img src="docs/images/pdf-builder-header-compact.png" alt="PDF Builder for Salesforce" width="850">
+  <img src="docs/images/pdf-builder-main.png" alt="PDF Builder visual template editor for Salesforce" width="100%">
 </p>
 
 <p align="center">
   <a href="https://app.codacy.com/gh/mpdigitals/pdf-builder-sfdc/dashboard"><img src="https://app.codacy.com/project/badge/Grade/30cd2cc87bc44f6cbc299ffb0e519094" alt="Codacy quality grade"></a>
-  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases"><img src="https://img.shields.io/badge/release-v1.0.18-2da44e" alt="Current release"></a>
+  <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases/tag/v1.1.0"><img src="https://img.shields.io/badge/release-v1.1.0-2da44e" alt="Current release"></a>
 </p>
 
 <p align="center">
   <strong>Native WYSIWYG PDF generation for any standard or custom Salesforce object—no external rendering service.</strong>
 </p>
-
-<div align="center">
-
-https://github.com/user-attachments/assets/8c9e1a04-16c3-4bc1-8df7-8a6451370159
-
-</div>
 
 PDF Builder is a Salesforce-native application for visually designing reusable PDF templates, merging live record data, previewing the result, and generating production documents without leaving the platform.
 
@@ -33,17 +27,34 @@ Explore the Builder in a public Salesforce Experience Cloud environment before i
 
 The demo is desktop-optimized and read-only. Install PDF Builder to save template changes, manage template defaults and record-type assignments, and use the complete functionality.
 
-<table align="center" border="2" cellpadding="4" cellspacing="0">
-  <tr>
-    <td align="center" bgcolor="#57606a"><img src="docs/images/quote-template-editor.png" alt="PDF Builder visual template editor for a Salesforce Quote" width="100%"></td>
-  </tr>
-</table>
-
 The visual Builder is the heart of the application: compose headers, body and footer regions on a canvas; add rich text, images, tables, related lists and dividers; then preview the document with Salesforce data before generating it. A light/dark workspace toggle keeps the authoring interface comfortable without changing the document's own colors.
 
 An optional guided wizard can build the same editable template model from structured controls or natural-language design instructions through Salesforce Models API. The core package has no compile-time dependency on Agentforce. The AI feature is disabled automatically when the optional adapter is not installed or the current user lacks the required Salesforce capability; the rest of PDF Builder remains available.
 
 Templates can be scoped to **all record types** or to a specific record type, with one default template per scope. The generator automatically offers the templates that apply to the current record and selects the most specific default.
+
+## Guided template wizard
+
+The four-step wizard creates a complete, editable template through **Setup**,
+**Header**, **Body**, and **Footer**. Authors can use its deterministic controls,
+describe each section in natural language when Salesforce AI is available, or
+combine both approaches. Wizard output uses the same canonical document model
+as the visual Builder, so every generated block remains editable afterward.
+
+<p align="center">
+  <img src="docs/images/pdf-builder-ai-wizard.png" alt="PDF Builder guided wizard using Salesforce Models API" width="100%">
+</p>
+
+The wizard deliberately creates a single-page starting layout. The standard
+Builder remains available for manual page creation, detailed positioning, and
+all subsequent refinements. AI is optional: the core package includes the
+complete wizard and discovers the separately installed adapter at runtime.
+
+Natural-language generation is constrained to template design. PDF Builder
+sends accessible schema descriptions and bounded template state—not Salesforce
+record values—to Models API. Returned proposals are treated as untrusted input
+and must pass allowlist, schema, relationship, geometry, color, URL, and rich-text
+validation before they can modify the template.
 
 ## Why PDF Builder?
 
@@ -76,16 +87,18 @@ enabled, PDF Builder deploys and works normally with the other supported
 objects. No PDF Builder-specific package or configuration is required for Quote
 support.
 
-### Recommended: unlocked package
+### Recommended: stable unlocked packages
 
-Install the current unlocked package (`v1.0.18`). It is a released Salesforce
-package version. Validate it in a sandbox or Developer Edition before wider
-use, then install the same package in production when ready.
+Install the released core package first. It contains the complete visual Builder,
+deterministic guided wizard, preview, PDF generation, and Salesforce Files
+integration. Agentforce and Models API are not required for the core package.
+
+**PDF Builder 1.1.0.7** — package ID `04tQy000000ZoTNIA0`
 
 | Target                          | Installation link                                                                                                               |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Sandbox                         | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZU4rIAG)                        |
-| Developer Edition or Production | [Install in Developer Edition or Production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZU4rIAG) |
+| Sandbox                         | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZoTNIA0)                        |
+| Developer Edition or Production | [Install in Developer Edition or Production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZoTNIA0) |
 
 Log in to the target org, select **Install for Admins Only** or the access level
 required by your security model, and complete the installation. Then assign the
@@ -95,47 +108,41 @@ The same version can also be installed with Salesforce CLI:
 
 ```bash
 sf package install \
-  --package 04tQy000000ZU4rIAG \
+  --package 04tQy000000ZoTNIA0 \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
   --no-prompt
 ```
 
-### Beta: guided wizard and optional Salesforce AI
+### Optional: Salesforce AI adapter
 
-`v1.1.0-beta.6` is available for evaluation. Install the core package first:
+Natural-language template proposals require Agentforce and Models API in the
+target org. After installing the core package and enabling those Salesforce
+capabilities, install the released adapter:
+
+**PDF Builder AI 1.0.0.4** — package ID `04tQy000000ZoRlIAK`
+
+| Target                          | Installation link                                                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Sandbox                         | [Install in a sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZoRlIAK)                        |
+| Developer Edition or Production | [Install in Developer Edition or Production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tQy000000ZoRlIAK) |
 
 ```bash
 sf package install \
-  --package 04tQy000000ZldZIAS \
+  --package 04tQy000000ZoRlIAK \
   --target-org pdf-builder-target \
   --wait 30 \
   --publish-wait 10 \
   --no-prompt
 ```
 
-The core package works without Agentforce or Models API. In that case, the AI
-prompt area remains visible but disabled with a configuration message, while
-the deterministic wizard controls and the rest of PDF Builder continue to
-work.
-
-To enable natural-language generation, first enable Agentforce and Models API
-in the target org, then install the optional adapter:
-
-```bash
-sf package install \
-  --package 04tQy000000ZeNZIA0 \
-  --target-org pdf-builder-target \
-  --wait 30 \
-  --publish-wait 10 \
-  --no-prompt
-```
-
-Finally, assign `PDF Builder User` to the intended users and review the AI
-fields in the `PDFBuilderSettings.Default` Custom Metadata record. Models API
-usage is subject to the target org's Salesforce entitlements and Einstein
-request consumption.
+The core package works normally without this adapter. When AI is unavailable,
+the prompt area explains the missing capability and remains disabled; every
+manual wizard control and the rest of PDF Builder remain usable. Assign
+`PDF Builder User` to intended users and review the AI fields in
+`PDFBuilderSettings.Default`. Models API use remains subject to the target
+org's Salesforce entitlements and Einstein request consumption.
 
 ### Alternative: deploy from source
 
@@ -228,14 +235,14 @@ When an author changes the template object, the Builder detects merge fields or 
 
 ### Elements
 
-| Element      | Purpose                                                                                                         |
-| ------------ | --------------------------------------------------------------------------------------------------------------- |
-| Text         | Rich text, static copy, and merge fields with font, color, alignment, spacing, border, and background controls. |
-| Image        | Images uploaded to or selected from Salesforce Files, plus packaged static-resource images.                     |
-| Line         | Horizontal or vertical divider with endpoint resizing, color, style, and thickness controls.                    |
-| Vertical     | Configurable vertical divider.                                                                                  |
-| Table        | Static rows and columns with cell padding, borders, and vertical alignment.                                     |
-| Related List | Dynamic child records with selectable and reorderable columns, zebra colors, font sizing, and border modes.     |
+| Element         | Purpose                                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------------------------- |
+| Text            | Rich text, static copy, and merge fields with font, color, alignment, spacing, border, and background controls. |
+| Image           | Images uploaded to or selected from Salesforce Files, plus packaged static-resource images.                     |
+| Horizontal Line | Horizontal divider with endpoint resizing, color, style, and thickness controls.                                |
+| Vertical Line   | Configurable vertical divider with endpoint resizing, color, style, and thickness controls.                     |
+| Table           | Static rows and columns with cell padding, borders, and vertical alignment.                                     |
+| Related List    | Dynamic child records with selectable and reorderable columns, zebra colors, font sizing, and border modes.     |
 
 <p align="center">
   <img src="docs/images/element-palette.png" alt="Text, image, line, vertical line, table, and Related List elements" width="38%">
@@ -356,17 +363,18 @@ On a Lightning record page, users select an available template and choose whethe
 <details>
 <summary><strong>View implementation components</strong></summary>
 
-| Layer                | Components                                                                       | Responsibility                                                                                      |
-| -------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Authoring UI         | `pdfBuilder`, `pdfBuilderBlock`, `pdfBuilderRichTextCommands`, `pdfBuilderUtils` | Template editing, history, layout, preview pagination, HTML generation, and client-side validation. |
-| Guided setup         | `pdfBuilderWizard`, `pdfBuilderWizardModel`, `PDFBuilderAIService`               | Deterministic template setup plus optional validated proposals from Salesforce Models API.          |
-| Record UI            | `pdfBuilderGenerator`                                                            | Template selection and PDF download or Salesforce Files persistence from a record page.             |
-| Facade/orchestration | `PDFBuilderController`                                                           | Stable LWC API, merge-field resolution, preview orchestration, and PDF generation.                  |
-| Configuration        | `PDFBuilderConfiguration`                                                        | Loads and validates the authoritative `PDFBuilderSettings.Default` Custom Metadata record.          |
-| Schema access        | `PDFBuilderDescribeService`                                                      | Discovers accessible objects, fields, parent fields, and child relationships.                       |
-| Persistence          | `PDFBuilderTemplateRepository`                                                   | Reads and writes templates in user mode.                                                            |
-| File handling        | `PDFBuilderFileService`                                                          | Finds and uploads images, stores and sequences generated PDFs, and resolves renderable image URLs.  |
-| PDF delivery         | `PDFBuilderPdfPageController`, `PDFBuilderPdf.page`                              | Passes already prepared HTML and page geometry to Salesforce's native PDF conversion.               |
+| Layer                | Components                                                                       | Responsibility                                                                                        |
+| -------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Authoring UI         | `pdfBuilder`, `pdfBuilderBlock`, `pdfBuilderRichTextCommands`, `pdfBuilderUtils` | Template editing, history, layout, preview pagination, HTML generation, and client-side validation.   |
+| Guided setup         | `pdfBuilderWizard`, `pdfBuilderWizardModel`, `PDFBuilderAIService`               | Deterministic template setup and validation of optional AI proposals.                                 |
+| Optional AI adapter  | `PDFBuilderModelsAPIProvider` in `ai-extension`                                  | Implements the standard Apex `Callable` contract and isolates the Models API compile-time dependency. |
+| Record UI            | `pdfBuilderGenerator`                                                            | Template selection and PDF download or Salesforce Files persistence from a record page.               |
+| Facade/orchestration | `PDFBuilderController`                                                           | Stable LWC API, merge-field resolution, preview orchestration, and PDF generation.                    |
+| Configuration        | `PDFBuilderConfiguration`                                                        | Loads and validates the authoritative `PDFBuilderSettings.Default` Custom Metadata record.            |
+| Schema access        | `PDFBuilderDescribeService`                                                      | Discovers accessible objects, fields, parent fields, and child relationships.                         |
+| Persistence          | `PDFBuilderTemplateRepository`                                                   | Reads and writes templates in user mode.                                                              |
+| File handling        | `PDFBuilderFileService`                                                          | Finds and uploads images, stores and sequences generated PDFs, and resolves renderable image URLs.    |
+| PDF delivery         | `PDFBuilderPdfPageController`, `PDFBuilderPdf.page`                              | Passes already prepared HTML and page geometry to Salesforce's native PDF conversion.                 |
 
 </details>
 
@@ -403,31 +411,41 @@ All dimensions use CSS pixels unless stated otherwise.
 <details>
 <summary><strong>View full configuration reference</strong></summary>
 
-| Field API name               |                 Default | Description                                                                                                                                                                                           |
-| ---------------------------- | ----------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PreferredObjectApiNames__c` |               See below | Object API names displayed first in the object selector. Accepts one name per line or comma-separated values. Invalid or unavailable objects are ignored.                                             |
-| `IncludeCustomObjects__c`    |                  `true` | When enabled, appends accessible custom objects to the selector. Preferred objects are still shown when accessible, including explicitly listed custom objects. Custom Metadata objects are excluded. |
-| `SupportedImageTypes__c`     | `PNG,JPG,JPEG,GIF,WEBP` | Comma-separated Salesforce `FileType` values accepted by the image picker.                                                                                                                            |
-| `LongTextLimit__c`           |                `131072` | Maximum accepted length for each template JSON and generated HTML value. Keep this at or below the corresponding Salesforce field length.                                                             |
-| `PageWidthPx__c`             |                   `794` | Canonical page width shared by the builder, preview, and PDF renderer. The default approximates A4 at 96 DPI.                                                                                         |
-| `PageHeightPx__c`            |                  `1123` | Canonical page height shared by the builder, preview, and PDF renderer. The default approximates A4 at 96 DPI.                                                                                        |
-| `DefaultPagePaddingPx__c`    |                    `32` | Initial inner padding for newly created template pages.                                                                                                                                               |
-| `DefaultElementPaddingPx__c` |                     `8` | Initial inner padding assigned to newly created elements.                                                                                                                                             |
-| `DefaultHeaderHeightPx__c`   |                   `110` | Initial header-region height for new templates.                                                                                                                                                       |
-| `DefaultFooterHeightPx__c`   |                    `80` | Initial footer-region height for new templates.                                                                                                                                                       |
-| `MaxPages__c`                |                     `5` | Maximum number of manual pages available in the builder. Automatically paginated preview/output can still span pages according to content.                                                            |
-| `TemplateQueryLimit__c`      |                   `200` | Maximum number of templates returned to a selector. Valid range: 1–2,000.                                                                                                                             |
-| `ImageQueryLimit__c`         |                    `60` | Maximum number of matching Salesforce Files returned by the image picker. Valid range: 1–200.                                                                                                         |
-| `MaxClientImageBase64__c`    |               `1800000` | Maximum Base64 string length accepted when a user uploads an image from the builder.                                                                                                                  |
-| `PdfContentWidthPx__c`       |                   `540` | Compatibility content width used when translating legacy positioned layouts.                                                                                                                          |
-| `PdfCanvasWidthPx__c`        |                   `620` | Compatibility canvas width used when translating legacy positioned layouts.                                                                                                                           |
-| `PdfFontScale__c`            |                  `0.96` | Font-metric compensation applied to server-side PDF output.                                                                                                                                           |
-| `PdfImageYOffsetPx__c`       |                     `9` | Vertical image-alignment compensation for server-side PDF output.                                                                                                                                     |
-| `PdfGridColumns__c`          |                    `12` | Column count used by the compatibility PDF grid layout.                                                                                                                                               |
-| `PdfGridGapPx__c`            |                     `8` | Gap between compatibility PDF grid columns.                                                                                                                                                           |
-| `PdfGridRowHeightPx__c`      |                    `24` | Row height used by the compatibility PDF grid.                                                                                                                                                        |
-| `DragGridSizePx__c`          |                    `10` | Positioning increment used while dragging elements.                                                                                                                                                   |
-| `InputDebounceMs__c`         |                   `250` | Delay in milliseconds for inputs that defer expensive document updates.                                                                                                                               |
+| Field API name                   |                               Default | Description                                                                                                                                                                                           |
+| -------------------------------- | ------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PreferredObjectApiNames__c`     |                             See below | Object API names displayed first in the object selector. Accepts one name per line or comma-separated values. Invalid or unavailable objects are ignored.                                             |
+| `IncludeCustomObjects__c`        |                                `true` | When enabled, appends accessible custom objects to the selector. Preferred objects are still shown when accessible, including explicitly listed custom objects. Custom Metadata objects are excluded. |
+| `SupportedImageTypes__c`         |               `PNG,JPG,JPEG,GIF,WEBP` | Comma-separated Salesforce `FileType` values accepted by the image picker.                                                                                                                            |
+| `LongTextLimit__c`               |                              `131072` | Maximum accepted length for each template JSON and generated HTML value. Keep this at or below the corresponding Salesforce field length.                                                             |
+| `PageWidthPx__c`                 |                                 `794` | Canonical page width shared by the builder, preview, and PDF renderer. The default approximates A4 at 96 DPI.                                                                                         |
+| `PageHeightPx__c`                |                                `1123` | Canonical page height shared by the builder, preview, and PDF renderer. The default approximates A4 at 96 DPI.                                                                                        |
+| `DefaultPagePaddingPx__c`        |                                  `32` | Initial inner padding for newly created template pages.                                                                                                                                               |
+| `DefaultElementPaddingPx__c`     |                                   `0` | Initial inner padding assigned to newly created elements.                                                                                                                                             |
+| `DefaultHeaderHeightPx__c`       |                                 `110` | Initial header-region height for new templates.                                                                                                                                                       |
+| `DefaultFooterHeightPx__c`       |                                  `80` | Initial footer-region height for new templates.                                                                                                                                                       |
+| `MaxPages__c`                    |                                   `5` | Maximum number of manual pages available in the builder. Automatically paginated preview/output can still span pages according to content.                                                            |
+| `TemplateQueryLimit__c`          |                                 `200` | Maximum number of templates returned to a selector. Valid range: 1–2,000.                                                                                                                             |
+| `RelatedListQueryLimit__c`       |                                 `200` | Maximum number of child rows retrieved for a Related List.                                                                                                                                            |
+| `ImageQueryLimit__c`             |                                  `60` | Maximum number of matching Salesforce Files returned by the image picker. Valid range: 1–200.                                                                                                         |
+| `MaxClientImageBase64__c`        |                             `1800000` | Maximum Base64 string length accepted when a user uploads an image from the builder.                                                                                                                  |
+| `PdfContentWidthPx__c`           |                                 `540` | Compatibility content width used when translating legacy positioned layouts.                                                                                                                          |
+| `PdfCanvasWidthPx__c`            |                                 `620` | Compatibility canvas width used when translating legacy positioned layouts.                                                                                                                           |
+| `PdfFontScale__c`                |                                `0.96` | Font-metric compensation applied to server-side PDF output.                                                                                                                                           |
+| `PdfImageYOffsetPx__c`           |                                   `9` | Vertical image-alignment compensation for server-side PDF output.                                                                                                                                     |
+| `PdfGridColumns__c`              |                                  `12` | Column count used by the compatibility PDF grid layout.                                                                                                                                               |
+| `PdfGridGapPx__c`                |                                   `8` | Gap between compatibility PDF grid columns.                                                                                                                                                           |
+| `PdfGridRowHeightPx__c`          |                                  `24` | Row height used by the compatibility PDF grid.                                                                                                                                                        |
+| `DragGridSizePx__c`              |                                  `10` | Positioning increment used while dragging elements.                                                                                                                                                   |
+| `InputDebounceMs__c`             |                                 `250` | Delay in milliseconds for inputs that defer expensive document updates.                                                                                                                               |
+| `EnableAIWizard__c`              |                                `true` | Enables the optional natural-language controls; deterministic wizard controls remain available independently.                                                                                         |
+| `AIModelApiName__c`              |  `sfdc_ai__DefaultOpenAIGPT4OmniMini` | Models API model identifier. Availability depends on the target org and its Salesforce entitlements.                                                                                                  |
+| `AIProviderLabel__c`             | `Salesforce Models API · GPT-4o mini` | Provider text displayed in the wizard.                                                                                                                                                                |
+| `AIMaxPromptLength__c`           |                                `4000` | Maximum accepted user-instruction length.                                                                                                                                                             |
+| `AIMaxContextLength__c`          |                               `24000` | Maximum bounded metadata and template context sent with a request.                                                                                                                                    |
+| `AIPromptInstructions__c`        |                     Packaged contract | Trusted instruction contract defining the permitted proposal schema and behavior.                                                                                                                     |
+| `AIExtensionPackageVersionId__c` |                  `04tQy000000ZoRlIAK` | Released optional AI adapter version offered by the wizard when the org can use it. Salesforce installation links require a concrete immutable `04t` version ID.                                      |
+| `AISetupDocumentationUrl__c`     |                Salesforce setup guide | Documentation link shown when the org requires Agentforce or Models API setup.                                                                                                                        |
+| `AIUnavailableMessage__c`        |                         Packaged text | Message displayed when the AI capability, adapter, permission, or feature setting is unavailable.                                                                                                     |
 
 </details>
 
@@ -446,6 +464,9 @@ Only objects that exist in the target org and are available to the running user 
 - Template and file queries use user-mode access, and object/field discovery filters unavailable schema entries.
 - The supplied permission set grants access to the PDF Builder classes, PDF delivery container, tabs, configuration, and template object. Access to source objects and fields still comes from the user's own profiles and permission sets.
 - PDF generation never grants access to record data the running user cannot read.
+- AI use requires `EnableAIWizard__c`, the `PDFBuilderUseAIWizard` custom permission, an installed adapter, Models API availability, and the running user's Salesforce entitlement.
+- AI requests contain no record values. User instructions and current template state are isolated as untrusted prompt sections, and the response cannot execute SOQL, Apex, tools, or arbitrary actions.
+- Every AI proposal is parsed as structured data and validated against supported operations and accessible Salesforce metadata before it reaches the editable template model.
 - Saving a PDF requires permission to create Salesforce Files. Deleting or editing templates requires the corresponding object permissions.
 - Template HTML is sanitized at persistence, preview, and final PDF-render boundaries before it is treated as trusted rendering input.
 - The Visualforce PDF page intentionally renders sanitized template HTML without escaping so rich text, layout, and merge-field output can be preserved.
@@ -495,8 +516,10 @@ force-app/main/default/
 ├── staticresources/     Application and sample brand assets
 └── tabs/                Builder and template tabs
 
+ai-extension/            Optional Models API adapter package
 sample-data/             Optional portable template examples
 manifest/                Metadata manifests used during development
+config/                  Scratch-org definitions, including Agentforce-enabled validation
 ```
 
 ## Roadmap
@@ -504,7 +527,6 @@ manifest/                Metadata manifests used during development
 - Conditional visibility.
 - Reusable blocks.
 - Related List filtering and totals.
-- Publish subsequent unlocked-package versions with upgrade notes.
 - Add automated Apex deployment validation and metadata integrity checks to CI.
 - Expand administrator documentation.
 - Continue incremental rendering refactors to improve maintainability, automated coverage, and browser/PDF parity.

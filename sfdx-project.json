@@ -4,9 +4,9 @@
       "path": "force-app",
       "default": true,
       "package": "PDF Builder",
-      "versionName": "Version 1.1.0 Beta 6",
+      "versionName": "Version 1.1.0",
       "versionNumber": "1.1.0.NEXT",
-      "versionDescription": "Beta release with an optional Salesforce Models API guided template wizard and a modernized responsive Builder workspace",
+      "versionDescription": "Stable release with a guided template wizard, an optional Salesforce Models API adapter, and a modern responsive Builder workspace",
       "apexTestAccess": {
         "permissionSets": ["PDFBuilderUser"]
       }
@@ -14,7 +14,7 @@
     {
       "path": "ai-extension",
       "package": "PDF Builder AI",
-      "versionName": "Version 1.0.0 Beta 3",
+      "versionName": "Version 1.0.0",
       "versionNumber": "1.0.0.NEXT",
       "default": false,
       "versionDescription": "Optional Salesforce Models API adapter for PDF Builder"
@@ -63,6 +63,8 @@
     "PDF Builder AI@1.0.0-3": "04tQy000000ZeNZIA0",
     "PDF Builder@1.1.0-4": "04tQy000000ZePBIA0",
     "PDF Builder@1.1.0-5": "04tQy000000ZhzlIAC",
-    "PDF Builder@1.1.0-6": "04tQy000000ZldZIAS"
+    "PDF Builder@1.1.0-6": "04tQy000000ZldZIAS",
+    "PDF Builder AI@1.0.0-4": "04tQy000000ZoRlIAK",
+    "PDF Builder@1.1.0-7": "04tQy000000ZoTNIA0"
   }
 }
