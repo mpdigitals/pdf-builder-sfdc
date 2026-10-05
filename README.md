@@ -1,7 +1,7 @@
 # PDF Builder for Salesforce
 
 <p align="center">
-  <img src="docs/images/pdf-builder-main.png" alt="PDF Builder visual template editor for Salesforce" width="100%">
+  <img src="docs/images/pdf-builder-header-compact.png" alt="PDF Builder for Salesforce" width="850">
 </p>
 
 <p align="center">
@@ -12,6 +12,10 @@
 
 <p align="center">
   <strong>Native WYSIWYG PDF generation and AI-assisted template creation for any standard or custom Salesforce object.</strong>
+</p>
+
+<p align="center">
+  <img src="docs/images/pdf-builder-main.png" alt="PDF Builder visual template editor for Salesforce" width="100%">
 </p>
 
 PDF Builder is a Salesforce-native application for visually designing reusable PDF templates, merging live record data, previewing the result, and generating production documents without leaving the platform.
