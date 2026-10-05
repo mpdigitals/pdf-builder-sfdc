@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://app.codacy.com/gh/mpdigitals/pdf-builder-sfdc/dashboard"><img src="https://app.codacy.com/project/badge/Grade/30cd2cc87bc44f6cbc299ffb0e519094" alt="Codacy quality grade"></a>
   <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases/tag/v1.1.0"><img src="https://img.shields.io/badge/release-v1.1.0-2da44e" alt="Current release"></a>
-  <img src="https://img.shields.io/badge/AI%20Wizard-Salesforce%20Models%20API-0B5CAB?logo=salesforce&logoColor=white" alt="AI Wizard powered by Salesforce Models API">
+  <a href="#ai-guided-template-wizard"><img src="https://img.shields.io/badge/AI%20Wizard-Salesforce%20Models%20API-0B5CAB?logo=salesforce&logoColor=white" alt="AI Wizard powered by Salesforce Models API"></a>
 </p>
 
 <p align="center">
@@ -33,6 +33,8 @@ The visual Builder is the heart of the application: compose headers, body and fo
 An optional guided wizard can build the same editable template model from structured controls or natural-language design instructions through Salesforce Models API. The core package has no compile-time dependency on Agentforce. The AI feature is disabled automatically when the optional adapter is not installed or the current user lacks the required Salesforce capability; the rest of PDF Builder remains available.
 
 Templates can be scoped to **all record types** or to a specific record type, with one default template per scope. The generator automatically offers the templates that apply to the current record and selects the most specific default.
+
+<a id="ai-guided-template-wizard"></a>
 
 ## ✨ AI Guided Template Wizard
 
