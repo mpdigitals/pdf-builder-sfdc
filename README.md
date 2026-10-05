@@ -7,10 +7,11 @@
 <p align="center">
   <a href="https://app.codacy.com/gh/mpdigitals/pdf-builder-sfdc/dashboard"><img src="https://app.codacy.com/project/badge/Grade/30cd2cc87bc44f6cbc299ffb0e519094" alt="Codacy quality grade"></a>
   <a href="https://github.com/mpdigitals/pdf-builder-sfdc/releases/tag/v1.1.0"><img src="https://img.shields.io/badge/release-v1.1.0-2da44e" alt="Current release"></a>
+  <img src="https://img.shields.io/badge/AI%20Wizard-Salesforce%20Models%20API-0B5CAB?logo=salesforce&logoColor=white" alt="AI Wizard powered by Salesforce Models API">
 </p>
 
 <p align="center">
-  <strong>Native WYSIWYG PDF generation for any standard or custom Salesforce object—no external rendering service.</strong>
+  <strong>Native WYSIWYG PDF generation and AI-assisted template creation for any standard or custom Salesforce object.</strong>
 </p>
 
 PDF Builder is a Salesforce-native application for visually designing reusable PDF templates, merging live record data, previewing the result, and generating production documents without leaving the platform.
@@ -33,22 +34,35 @@ An optional guided wizard can build the same editable template model from struct
 
 Templates can be scoped to **all record types** or to a specific record type, with one default template per scope. The generator automatically offers the templates that apply to the current record and selects the most specific default.
 
-## Guided template wizard
+## ✨ AI Guided Template Wizard
 
-The four-step wizard creates a complete, editable template through **Setup**,
-**Header**, **Body**, and **Footer**. Authors can use its deterministic controls,
-describe each section in natural language when Salesforce AI is available, or
-combine both approaches. Wizard output uses the same canonical document model
-as the visual Builder, so every generated block remains editable afterward.
+Describe the document you need and let **Salesforce Models API** configure its
+layout, Salesforce fields, Related List, colors, typography, Header, Body, and
+Footer. The AI works section by section, so authors can refine each proposal
+before creating the final template.
 
 <p align="center">
   <img src="docs/images/pdf-builder-ai-wizard.png" alt="PDF Builder guided wizard using Salesforce Models API" width="100%">
 </p>
 
-The wizard deliberately creates a single-page starting layout. The standard
+The four-step workflow covers **Setup**, **Header**, **Body**, and **Footer**.
+Authors can use natural-language instructions, deterministic controls, or both.
+AI output uses the same canonical document model as the visual Builder, so it
+is never a locked result: every generated field, block, color, and layout
+remains editable on the canvas.
+
+| AI capability           | What it provides                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| Natural-language design | Converts section-specific instructions into structured template changes.                        |
+| Salesforce-aware fields | Proposes only fields and relationships available in the supplied accessible schema.             |
+| Editable output         | Produces standard Builder elements that can be moved, resized, restyled, or removed.            |
+| Optional architecture   | Keeps the entire deterministic Wizard available when Agentforce or Models API is not installed. |
+
+The Wizard deliberately creates a single-page starting layout. The standard
 Builder remains available for manual page creation, detailed positioning, and
-all subsequent refinements. AI is optional: the core package includes the
-complete wizard and discovers the separately installed adapter at runtime.
+all subsequent refinements. The core package discovers the optional Salesforce
+Models API adapter at runtime, avoiding an Agentforce dependency for orgs that
+do not use AI.
 
 Natural-language generation is constrained to template design. PDF Builder
 sends accessible schema descriptions and bounded template state—not Salesforce
