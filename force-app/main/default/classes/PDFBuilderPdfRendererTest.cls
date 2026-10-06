@@ -13,6 +13,7 @@ private class PDFBuilderPdfRendererTest {
    */
   @TestSetup
   static void createRecordData() {
+    PDFBuilderTestAccess.createPermissionedUser();
     Account account = new Account(
       Name = 'Renderer Account',
       Phone = '+34 900 123 123',
@@ -38,11 +39,14 @@ private class PDFBuilderPdfRendererTest {
         AccountId = account.Id
       )
     };
-    insert new PDFBuilderTemplate__c(
-      Name = 'Renderer Account Template',
-      ObjectApiName__c = 'Account',
-      ContentJson__c = JSON.serialize(createDynamicDocumentModel()),
-      GeneratedHtml__c = createPreviewShell()
+    Database.insert(
+      new PDFBuilderTemplate__c(
+        Name = 'Renderer Account Template',
+        ObjectApiName__c = 'Account',
+        ContentJson__c = JSON.serialize(createDynamicDocumentModel()),
+        GeneratedHtml__c = createPreviewShell()
+      ),
+      AccessLevel.SYSTEM_MODE
     );
   }
 
@@ -545,46 +549,48 @@ private class PDFBuilderPdfRendererTest {
    */
   @IsTest
   static void rendersSavedTemplateForRecord() {
-    Account account = [
-      SELECT Id
-      FROM Account
-      WHERE Name = 'Renderer Account'
-      LIMIT 1
-    ];
-    PDFBuilderTemplate__c template = [
-      SELECT Id
-      FROM PDFBuilderTemplate__c
-      WHERE Name = 'Renderer Account Template'
-      LIMIT 1
-    ];
+    System.runAs(PDFBuilderTestAccess.getPermissionedUser()) {
+      Account account = [
+        SELECT Id
+        FROM Account
+        WHERE Name = 'Renderer Account'
+        LIMIT 1
+      ];
+      PDFBuilderTemplate__c template = [
+        SELECT Id
+        FROM PDFBuilderTemplate__c
+        WHERE Name = 'Renderer Account Template'
+        LIMIT 1
+      ];
 
-    Test.startTest();
-    String rendered = PDFBuilderController.renderTemplateBodyForRecord(
-      template.Id,
-      account.Id
-    );
-    String prepared = PDFBuilderController.renderTemplateBodyHtmlForPdf(
-      template.Id,
-      account.Id
-    );
-    Test.stopTest();
+      Test.startTest();
+      String rendered = PDFBuilderController.renderTemplateBodyForRecord(
+        template.Id,
+        account.Id
+      );
+      String prepared = PDFBuilderController.renderTemplateBodyHtmlForPdf(
+        template.Id,
+        account.Id
+      );
+      Test.stopTest();
 
-    Assert.isTrue(
-      rendered.contains('Renderer Account'),
-      'Saved template fields must be merged.'
-    );
-    Assert.isTrue(
-      rendered.contains('Ada Lovelace'),
-      'Saved template related rows must be merged.'
-    );
-    Assert.isTrue(
-      prepared.contains('Renderer Account'),
-      'Prepared PDF HTML must retain merged fields.'
-    );
-    Assert.isFalse(
-      prepared.contains('<script'),
-      'Prepared PDF HTML must not contain scripts.'
-    );
+      Assert.isTrue(
+        rendered.contains('Renderer Account'),
+        'Saved template fields must be merged.'
+      );
+      Assert.isTrue(
+        rendered.contains('Ada Lovelace'),
+        'Saved template related rows must be merged.'
+      );
+      Assert.isTrue(
+        prepared.contains('Renderer Account'),
+        'Prepared PDF HTML must retain merged fields.'
+      );
+      Assert.isFalse(
+        prepared.contains('<script'),
+        'Prepared PDF HTML must not contain scripts.'
+      );
+    }
   }
 
   /**

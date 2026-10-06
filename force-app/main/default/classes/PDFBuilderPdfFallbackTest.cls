@@ -14,6 +14,7 @@ private class PDFBuilderPdfFallbackTest {
    */
   @TestSetup
   static void createFixtures() {
+    PDFBuilderTestAccess.createPermissionedUser();
     Account account = new Account(Name = 'PDF Fallback Account');
     insert account;
 
@@ -26,11 +27,14 @@ private class PDFBuilderPdfFallbackTest {
 
     String imageUrl =
       '/sfc/servlet.shepherd/version/download/' + imageVersion.Id;
-    insert new PDFBuilderTemplate__c(
-      Name = 'PDF Fallback Template',
-      ObjectApiName__c = 'Account',
-      ContentJson__c = JSON.serialize(createPdfDocumentModel()),
-      GeneratedHtml__c = buildImageHtml(imageUrl)
+    Database.insert(
+      new PDFBuilderTemplate__c(
+        Name = 'PDF Fallback Template',
+        ObjectApiName__c = 'Account',
+        ContentJson__c = JSON.serialize(createPdfDocumentModel()),
+        GeneratedHtml__c = buildImageHtml(imageUrl)
+      ),
+      AccessLevel.SYSTEM_MODE
     );
   }
 
@@ -40,43 +44,45 @@ private class PDFBuilderPdfFallbackTest {
    */
   @IsTest
   static void retriesPdfCompatibilityRepresentations() {
-    Account account = [
-      SELECT Id
-      FROM Account
-      WHERE Name = 'PDF Fallback Account'
-      LIMIT 1
-    ];
-    PDFBuilderTemplate__c template = [
-      SELECT Id, ContentJson__c, GeneratedHtml__c
-      FROM PDFBuilderTemplate__c
-      WHERE Name = 'PDF Fallback Template'
-      LIMIT 1
-    ];
+    System.runAs(PDFBuilderTestAccess.getPermissionedUser()) {
+      Account account = [
+        SELECT Id
+        FROM Account
+        WHERE Name = 'PDF Fallback Account'
+        LIMIT 1
+      ];
+      PDFBuilderTemplate__c template = [
+        SELECT Id, ContentJson__c, GeneratedHtml__c
+        FROM PDFBuilderTemplate__c
+        WHERE Name = 'PDF Fallback Template'
+        LIMIT 1
+      ];
 
-    Test.startTest();
-    Integer expectedFailures = 0;
-    expectedFailures += invokeExpectedPdfFailure(
-      'preview',
-      template,
-      account.Id
-    );
-    expectedFailures += invokeExpectedPdfFailure(
-      'record preview',
-      template,
-      account.Id
-    );
-    expectedFailures += invokeExpectedPdfFailure(
-      'saved template',
-      template,
-      account.Id
-    );
-    Test.stopTest();
+      Test.startTest();
+      Integer expectedFailures = 0;
+      expectedFailures += invokeExpectedPdfFailure(
+        'preview',
+        template,
+        account.Id
+      );
+      expectedFailures += invokeExpectedPdfFailure(
+        'record preview',
+        template,
+        account.Id
+      );
+      expectedFailures += invokeExpectedPdfFailure(
+        'saved template',
+        template,
+        account.Id
+      );
+      Test.stopTest();
 
-    Assert.areEqual(
-      3,
-      expectedFailures,
-      'Every PDF entry point must reach its documented test-context fallback.'
-    );
+      Assert.areEqual(
+        3,
+        expectedFailures,
+        'Every PDF entry point must reach its documented test-context fallback.'
+      );
+    }
   }
 
   /**

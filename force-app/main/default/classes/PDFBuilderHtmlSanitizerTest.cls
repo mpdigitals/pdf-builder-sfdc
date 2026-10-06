@@ -8,6 +8,11 @@
  */
 @IsTest
 private class PDFBuilderHtmlSanitizerTest {
+  @TestSetup
+  static void grantBuilderAccess() {
+    PDFBuilderTestAccess.createPermissionedUser();
+  }
+
   @IsTest
   static void preservesSupportedRichDocumentMarkup() {
     String trustedMarkup =
@@ -154,29 +159,31 @@ private class PDFBuilderHtmlSanitizerTest {
 
   @IsTest
   static void sanitizesGeneratedHtmlBeforePersistence() {
-    Test.startTest();
-    Id templateId = PDFBuilderController.saveTemplate(
-      null,
-      'Sanitized Proposal',
-      'Account',
-      '{}',
-      '<main><p onmouseover="alert(1)">Proposal</p><script>alert(2)</script></main>',
-      'ALL',
-      false
-    );
-    Test.stopTest();
+    System.runAs(PDFBuilderTestAccess.getPermissionedUser()) {
+      Test.startTest();
+      Id templateId = PDFBuilderController.saveTemplate(
+        null,
+        'Sanitized Proposal',
+        'Account',
+        '{}',
+        '<main><p onmouseover="alert(1)">Proposal</p><script>alert(2)</script></main>',
+        'ALL',
+        false
+      );
+      Test.stopTest();
 
-    PDFBuilderTemplate__c storedTemplate = [
-      SELECT GeneratedHtml__c
-      FROM PDFBuilderTemplate__c
-      WHERE Id = :templateId
-      WITH USER_MODE
-    ];
-    Assert.areEqual(
-      '<main><p>Proposal</p></main>',
-      storedTemplate.GeneratedHtml__c,
-      'Executable markup must never be stored in GeneratedHtml__c.'
-    );
+      PDFBuilderTemplate__c storedTemplate = [
+        SELECT GeneratedHtml__c
+        FROM PDFBuilderTemplate__c
+        WHERE Id = :templateId
+        WITH USER_MODE
+      ];
+      Assert.areEqual(
+        '<main><p>Proposal</p></main>',
+        storedTemplate.GeneratedHtml__c,
+        'Executable markup must never be stored in GeneratedHtml__c.'
+      );
+    }
   }
 
   @IsTest

@@ -17,6 +17,7 @@
         <members>PDFBuilderPdfPageControllerTest</members>
         <members>PDFBuilderPdfRendererTest</members>
         <members>PDFBuilderTemplateRepository</members>
+        <members>PDFBuilderTestAccess</members>
         <name>ApexClass</name>
     </types>
     <types>

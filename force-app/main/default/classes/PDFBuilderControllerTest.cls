@@ -13,20 +13,24 @@ private class PDFBuilderControllerTest {
    */
   @TestSetup
   static void createTemplates() {
-    insert new List<PDFBuilderTemplate__c>{
-      new PDFBuilderTemplate__c(
-        Name = 'Account Proposal',
-        ObjectApiName__c = 'Account',
-        ContentJson__c = '{"pagePadding":32}',
-        GeneratedHtml__c = '<main>Account proposal</main>'
-      ),
-      new PDFBuilderTemplate__c(
-        Name = 'Quote Proposal',
-        ObjectApiName__c = 'Quote',
-        ContentJson__c = '{"pagePadding":32}',
-        GeneratedHtml__c = '<main>Quote proposal</main>'
-      )
-    };
+    PDFBuilderTestAccess.createPermissionedUser();
+    Database.insert(
+      new List<PDFBuilderTemplate__c>{
+        new PDFBuilderTemplate__c(
+          Name = 'Account Proposal',
+          ObjectApiName__c = 'Account',
+          ContentJson__c = '{"pagePadding":32}',
+          GeneratedHtml__c = '<main>Account proposal</main>'
+        ),
+        new PDFBuilderTemplate__c(
+          Name = 'Quote Proposal',
+          ObjectApiName__c = 'Quote',
+          ContentJson__c = '{"pagePadding":32}',
+          GeneratedHtml__c = '<main>Quote proposal</main>'
+        )
+      },
+      AccessLevel.SYSTEM_MODE
+    );
   }
 
   /**
@@ -255,16 +259,19 @@ private class PDFBuilderControllerTest {
    */
   @IsTest
   static void returnsTemplateSummariesAndDetails() {
-    Test.startTest();
-    List<PDFBuilderController.TemplateSummary> allTemplates = PDFBuilderController.getTemplates();
-    List<PDFBuilderController.TemplateSummary> accountTemplates = PDFBuilderController.getTemplatesForObject(
-      'Account',
-      null
-    );
-    PDFBuilderController.TemplateDetail detail = PDFBuilderController.getTemplate(
-      accountTemplates[0].id
-    );
-    Test.stopTest();
+    List<PDFBuilderController.TemplateSummary> allTemplates;
+    List<PDFBuilderController.TemplateSummary> accountTemplates;
+    PDFBuilderController.TemplateDetail detail;
+    System.runAs(PDFBuilderTestAccess.getPermissionedUser()) {
+      Test.startTest();
+      allTemplates = PDFBuilderController.getTemplates();
+      accountTemplates = PDFBuilderController.getTemplatesForObject(
+        'Account',
+        null
+      );
+      detail = PDFBuilderController.getTemplate(accountTemplates[0].id);
+      Test.stopTest();
+    }
 
     Assert.areEqual(
       2,
@@ -308,32 +315,34 @@ private class PDFBuilderControllerTest {
    */
   @IsTest
   static void createsUpdatesAndDeletesTemplate() {
-    Test.startTest();
-    Id templateId = PDFBuilderController.saveTemplate(
-      null,
-      'Service Proposal',
-      'Account',
-      '{"pagePadding":40}',
-      '<main>Service proposal</main>',
-      'ALL',
-      false
-    );
+    Id templateId;
+    PDFBuilderController.TemplateDetail detail;
+    System.runAs(PDFBuilderTestAccess.getPermissionedUser()) {
+      Test.startTest();
+      templateId = PDFBuilderController.saveTemplate(
+        null,
+        'Service Proposal',
+        'Account',
+        '{"pagePadding":40}',
+        '<main>Service proposal</main>',
+        'ALL',
+        false
+      );
 
-    PDFBuilderController.saveTemplate(
-      templateId,
-      'Updated Service Proposal',
-      'Account',
-      '{"pagePadding":48}',
-      '<main>Updated service proposal</main>',
-      'ALL',
-      false
-    );
+      PDFBuilderController.saveTemplate(
+        templateId,
+        'Updated Service Proposal',
+        'Account',
+        '{"pagePadding":48}',
+        '<main>Updated service proposal</main>',
+        'ALL',
+        false
+      );
 
-    PDFBuilderController.TemplateDetail detail = PDFBuilderController.getTemplate(
-      templateId
-    );
-    PDFBuilderController.deleteTemplate(templateId);
-    Test.stopTest();
+      detail = PDFBuilderController.getTemplate(templateId);
+      PDFBuilderController.deleteTemplate(templateId);
+      Test.stopTest();
+    }
 
     Assert.areEqual(
       'Updated Service Proposal',
@@ -358,73 +367,75 @@ private class PDFBuilderControllerTest {
    */
   @IsTest
   static void persistsDefaultTemplateScopeIntegrity() {
-    Id templateId = PDFBuilderController.saveTemplate(
-      null,
-      'Account default template',
-      'Account',
-      '{}',
-      '<main>Account default</main>',
-      'ALL',
-      true
-    );
-
-    PDFBuilderTemplate__c defaultTemplate = [
-      SELECT IsDefault__c, RecordTypeScope__c, DefaultScopeKey__c
-      FROM PDFBuilderTemplate__c
-      WHERE Id = :templateId
-    ];
-    Assert.isTrue(
-      defaultTemplate.IsDefault__c,
-      'The saved template must retain its default flag.'
-    );
-    Assert.areEqual(
-      'ALL',
-      defaultTemplate.RecordTypeScope__c,
-      'The saved template must retain the all-record-types scope.'
-    );
-    Assert.areEqual(
-      'Account|ALL',
-      defaultTemplate.DefaultScopeKey__c,
-      'A default must persist a unique object-and-scope key.'
-    );
-
-    try {
-      PDFBuilderController.saveTemplate(
+    System.runAs(PDFBuilderTestAccess.getPermissionedUser()) {
+      Id templateId = PDFBuilderController.saveTemplate(
         null,
-        'Second Account default template',
+        'Account default template',
         'Account',
         '{}',
-        '<main>Duplicate default</main>',
+        '<main>Account default</main>',
         'ALL',
         true
       );
-      Assert.fail('A second default in the same scope must be rejected.');
-    } catch (AuraHandledException expected) {
-      Assert.isNotNull(
-        expected,
-        'The duplicate-default failure must be returned as a handled error.'
-      );
-    }
 
-    PDFBuilderController.saveTemplate(
-      templateId,
-      'Account non-default template',
-      'Account',
-      '{}',
-      '<main>Account non-default</main>',
-      'ALL',
-      false
-    );
-
-    Assert.isNull(
-      [
-        SELECT DefaultScopeKey__c
+      PDFBuilderTemplate__c defaultTemplate = [
+        SELECT IsDefault__c, RecordTypeScope__c, DefaultScopeKey__c
         FROM PDFBuilderTemplate__c
         WHERE Id = :templateId
-      ]
-      .DefaultScopeKey__c,
-      'Removing the default flag must release the unique scope key.'
-    );
+      ];
+      Assert.isTrue(
+        defaultTemplate.IsDefault__c,
+        'The saved template must retain its default flag.'
+      );
+      Assert.areEqual(
+        'ALL',
+        defaultTemplate.RecordTypeScope__c,
+        'The saved template must retain the all-record-types scope.'
+      );
+      Assert.areEqual(
+        'Account|ALL',
+        defaultTemplate.DefaultScopeKey__c,
+        'A default must persist a unique object-and-scope key.'
+      );
+
+      try {
+        PDFBuilderController.saveTemplate(
+          null,
+          'Second Account default template',
+          'Account',
+          '{}',
+          '<main>Duplicate default</main>',
+          'ALL',
+          true
+        );
+        Assert.fail('A second default in the same scope must be rejected.');
+      } catch (AuraHandledException expected) {
+        Assert.isNotNull(
+          expected,
+          'The duplicate-default failure must be returned as a handled error.'
+        );
+      }
+
+      PDFBuilderController.saveTemplate(
+        templateId,
+        'Account non-default template',
+        'Account',
+        '{}',
+        '<main>Account non-default</main>',
+        'ALL',
+        false
+      );
+
+      Assert.isNull(
+        [
+          SELECT DefaultScopeKey__c
+          FROM PDFBuilderTemplate__c
+          WHERE Id = :templateId
+        ]
+        .DefaultScopeKey__c,
+        'Removing the default flag must release the unique scope key.'
+      );
+    }
   }
 
   /**
@@ -433,62 +444,64 @@ private class PDFBuilderControllerTest {
    */
   @IsTest
   static void resolvesDefaultTemplateByRecordTypeScope() {
-    PDFBuilderTemplate__c allScopeDefault = new PDFBuilderTemplate__c(
-      Name = 'Quote default all scopes',
-      ObjectApiName__c = 'Quote',
-      ContentJson__c = '{}',
-      GeneratedHtml__c = '<main>Quote default</main>',
-      RecordTypeScope__c = 'ALL',
-      IsDefault__c = true,
-      DefaultScopeKey__c = 'Quote|ALL'
-    );
-    PDFBuilderTemplate__c recordTypeDefault = new PDFBuilderTemplate__c(
-      Name = 'Quote default B2B',
-      ObjectApiName__c = 'Quote',
-      ContentJson__c = '{}',
-      GeneratedHtml__c = '<main>Quote B2B default</main>',
-      RecordTypeScope__c = 'B2B',
-      IsDefault__c = true,
-      DefaultScopeKey__c = 'Quote|B2B'
-    );
-    PDFBuilderTemplate__c legacyAllScopeDefault = new PDFBuilderTemplate__c(
-      Name = 'Contact legacy default',
-      ObjectApiName__c = 'Contact',
-      ContentJson__c = '{}',
-      GeneratedHtml__c = '<main>Contact default</main>',
-      IsDefault__c = true
-    );
-    insert new List<PDFBuilderTemplate__c>{
-      allScopeDefault,
-      recordTypeDefault,
-      legacyAllScopeDefault
-    };
-    legacyAllScopeDefault.RecordTypeScope__c = null;
+    System.runAs(PDFBuilderTestAccess.getPermissionedUser()) {
+      PDFBuilderTemplate__c allScopeDefault = new PDFBuilderTemplate__c(
+        Name = 'Quote default all scopes',
+        ObjectApiName__c = 'Quote',
+        ContentJson__c = '{}',
+        GeneratedHtml__c = '<main>Quote default</main>',
+        RecordTypeScope__c = 'ALL',
+        IsDefault__c = true,
+        DefaultScopeKey__c = 'Quote|ALL'
+      );
+      PDFBuilderTemplate__c recordTypeDefault = new PDFBuilderTemplate__c(
+        Name = 'Quote default B2B',
+        ObjectApiName__c = 'Quote',
+        ContentJson__c = '{}',
+        GeneratedHtml__c = '<main>Quote B2B default</main>',
+        RecordTypeScope__c = 'B2B',
+        IsDefault__c = true,
+        DefaultScopeKey__c = 'Quote|B2B'
+      );
+      PDFBuilderTemplate__c legacyAllScopeDefault = new PDFBuilderTemplate__c(
+        Name = 'Contact legacy default',
+        ObjectApiName__c = 'Contact',
+        ContentJson__c = '{}',
+        GeneratedHtml__c = '<main>Contact default</main>',
+        IsDefault__c = true
+      );
+      insert new List<PDFBuilderTemplate__c>{
+        allScopeDefault,
+        recordTypeDefault,
+        legacyAllScopeDefault
+      };
+      legacyAllScopeDefault.RecordTypeScope__c = null;
 
-    Assert.areEqual(
-      recordTypeDefault.Id,
-      PDFBuilderController.getDefaultTemplateId(
-        new List<PDFBuilderTemplate__c>{ allScopeDefault, recordTypeDefault },
-        'B2B'
-      ),
-      'The record-type default must take precedence over the all-scopes default.'
-    );
-    Assert.areEqual(
-      allScopeDefault.Id,
-      PDFBuilderController.getDefaultTemplateId(
-        new List<PDFBuilderTemplate__c>{ allScopeDefault, recordTypeDefault },
-        'B2C'
-      ),
-      'The all-scopes default must remain the fallback for other record types.'
-    );
-    Assert.areEqual(
-      legacyAllScopeDefault.Id,
-      PDFBuilderController.getDefaultTemplateId(
-        new List<PDFBuilderTemplate__c>{ legacyAllScopeDefault },
-        'ALL'
-      ),
-      'Templates saved before scope support must behave as all-record-types defaults.'
-    );
+      Assert.areEqual(
+        recordTypeDefault.Id,
+        PDFBuilderController.getDefaultTemplateId(
+          new List<PDFBuilderTemplate__c>{ allScopeDefault, recordTypeDefault },
+          'B2B'
+        ),
+        'The record-type default must take precedence over the all-scopes default.'
+      );
+      Assert.areEqual(
+        allScopeDefault.Id,
+        PDFBuilderController.getDefaultTemplateId(
+          new List<PDFBuilderTemplate__c>{ allScopeDefault, recordTypeDefault },
+          'B2C'
+        ),
+        'The all-scopes default must remain the fallback for other record types.'
+      );
+      Assert.areEqual(
+        legacyAllScopeDefault.Id,
+        PDFBuilderController.getDefaultTemplateId(
+          new List<PDFBuilderTemplate__c>{ legacyAllScopeDefault },
+          'ALL'
+        ),
+        'Templates saved before scope support must behave as all-record-types defaults.'
+      );
+    }
   }
 
   /**
@@ -496,55 +509,57 @@ private class PDFBuilderControllerTest {
    */
   @IsTest
   static void findsExistingDefaultsByScope() {
-    PDFBuilderTemplate__c allScopeDefault = new PDFBuilderTemplate__c(
-      Name = 'Account all-scopes default',
-      ObjectApiName__c = 'Account',
-      ContentJson__c = '{}',
-      GeneratedHtml__c = '<main>Account all-scopes default</main>',
-      IsDefault__c = true
-    );
-    PDFBuilderTemplate__c recordTypeDefault = new PDFBuilderTemplate__c(
-      Name = 'Account B2B default',
-      ObjectApiName__c = 'Account',
-      ContentJson__c = '{}',
-      GeneratedHtml__c = '<main>Account B2B default</main>',
-      RecordTypeScope__c = 'B2B',
-      IsDefault__c = true,
-      DefaultScopeKey__c = 'Account|B2B'
-    );
-    insert new List<PDFBuilderTemplate__c>{
-      allScopeDefault,
-      recordTypeDefault
-    };
+    System.runAs(PDFBuilderTestAccess.getPermissionedUser()) {
+      PDFBuilderTemplate__c allScopeDefault = new PDFBuilderTemplate__c(
+        Name = 'Account all-scopes default',
+        ObjectApiName__c = 'Account',
+        ContentJson__c = '{}',
+        GeneratedHtml__c = '<main>Account all-scopes default</main>',
+        IsDefault__c = true
+      );
+      PDFBuilderTemplate__c recordTypeDefault = new PDFBuilderTemplate__c(
+        Name = 'Account B2B default',
+        ObjectApiName__c = 'Account',
+        ContentJson__c = '{}',
+        GeneratedHtml__c = '<main>Account B2B default</main>',
+        RecordTypeScope__c = 'B2B',
+        IsDefault__c = true,
+        DefaultScopeKey__c = 'Account|B2B'
+      );
+      insert new List<PDFBuilderTemplate__c>{
+        allScopeDefault,
+        recordTypeDefault
+      };
 
-    Assert.areEqual(
-      allScopeDefault.Id,
-      PDFBuilderTemplateRepository.findDefaultForScope('Account', 'ALL', null)
-        .Id,
-      'The all-record-types default must be found in its own scope.'
-    );
-    Assert.areEqual(
-      recordTypeDefault.Id,
-      PDFBuilderTemplateRepository.findDefaultForScope('Account', 'B2B', null)
-        .Id,
-      'A record-type default must be found in its own scope.'
-    );
-    Assert.isNull(
-      PDFBuilderTemplateRepository.findDefaultForScope(
-        'Account',
-        'ALL',
-        allScopeDefault.Id
-      ),
-      'The template being edited must be excluded from all-record-types lookup.'
-    );
-    Assert.isNull(
-      PDFBuilderTemplateRepository.findDefaultForScope(
-        'Account',
-        'B2B',
-        recordTypeDefault.Id
-      ),
-      'The template being edited must be excluded from record-type lookup.'
-    );
+      Assert.areEqual(
+        allScopeDefault.Id,
+        PDFBuilderTemplateRepository.findDefaultForScope('Account', 'ALL', null)
+          .Id,
+        'The all-record-types default must be found in its own scope.'
+      );
+      Assert.areEqual(
+        recordTypeDefault.Id,
+        PDFBuilderTemplateRepository.findDefaultForScope('Account', 'B2B', null)
+          .Id,
+        'A record-type default must be found in its own scope.'
+      );
+      Assert.isNull(
+        PDFBuilderTemplateRepository.findDefaultForScope(
+          'Account',
+          'ALL',
+          allScopeDefault.Id
+        ),
+        'The template being edited must be excluded from all-record-types lookup.'
+      );
+      Assert.isNull(
+        PDFBuilderTemplateRepository.findDefaultForScope(
+          'Account',
+          'B2B',
+          recordTypeDefault.Id
+        ),
+        'The template being edited must be excluded from record-type lookup.'
+      );
+    }
   }
 
   /**
