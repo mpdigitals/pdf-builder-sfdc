@@ -76,6 +76,65 @@ record values—to Models API. Returned proposals are treated as untrusted input
 and must pass allowlist, schema, relationship, geometry, color, URL, and rich-text
 validation before they can modify the template.
 
+### Writing effective Wizard instructions
+
+The Wizard produces more consistent results when each request describes the
+desired final state of the current section. A useful instruction normally
+specifies, in this order: purpose, visible content, layout, Salesforce fields,
+Related List configuration, appearance, and constraints.
+
+- Work on **Header**, **Body**, and **Footer** separately. The Wizard already
+  supplies the active section, accessible schema, and current template state.
+- Name fields and child relationships using the labels displayed by the Wizard.
+  Explicit hexadecimal colors such as `#032D60` are less ambiguous than terms
+  such as “corporate blue”.
+- Describe every visible item when requesting a custom composition. A custom
+  block proposal replaces that region, so omitted items are intentionally not
+  assumed.
+- State what must be preserved, for example: “Do not modify the Header or
+  Footer.” Add practical constraints such as “Keep the result on one page” or
+  “Do not overlap or clip content.”
+- Ask for template structure and reusable copy, not Salesforce record values.
+  The model receives schema names but does not receive record data and cannot
+  run SOQL, Apex, URLs, or external actions.
+- Apply and review one section before moving to the next. If a result needs
+  refinement, use a narrow follow-up instruction that names the exact property
+  to change.
+
+Instead of a broad request such as `Make an Opportunity quote look
+professional`, use a bounded and testable instruction:
+
+```text
+Create a compact one-column Opportunity quotation body.
+
+Add the centered title “Opportunity Overview” in dark navy (#032D60).
+
+Below the title, add two equal-width information boxes on the same row. Use a
+very light blue background (#EEF4FF) for both boxes. In the left box show Name,
+Stage, and Close Date. In the right box show Account Name, Amount, and
+Description. Display each field as label and value.
+
+Below the boxes, add the Opportunity Products Related List with Date, Line Item
+Description, Quantity, Sales Price, and Total Price. Use #032D60 for the table
+header with white text, alternating white and #F7F9FC rows, and horizontal grid
+lines only.
+
+Below the Related List, add a full-width #032D60 total banner containing “TOTAL
+AMOUNT:” and the Opportunity Amount in bold white text.
+
+Finish with one full-width editable “Executive Summary” box followed by two
+equal-width editable boxes titled “Project Scope” and “Why Choose Us?”. Give all
+three editorial boxes the same #EEF4FF background as the information boxes.
+
+Keep the layout aligned, compact, and within one page. Do not overlap, duplicate,
+or clip content. Do not modify the Header or Footer.
+```
+
+`AIPromptInstructions__c` in `PDFBuilderSettings.Default` is the trusted system
+contract used by the adapter—not an end-user template prompt. Keep the packaged
+value unless the supported proposal schema and its server/client validation are
+being changed together and covered by tests.
+
 ## Why PDF Builder?
 
 <table>
@@ -521,6 +580,16 @@ Packaged static resources do not require a public file distribution and are pref
 | Record compatibility | The preview record ID must belong to the object configured on the selected template.                                                                                                                 |
 
 ## Development
+
+### AI-assisted development
+
+This repository has been developed with assistance from generative-AI tools for
+research, implementation drafts, refactoring, tests, and documentation. AI
+output is treated as a proposal rather than an authority: human maintainers
+review and edit changes and remain responsible for architecture, correctness,
+security, licensing, and releases. The same quality and validation requirements
+apply regardless of whether a change was written manually or with AI
+assistance. See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution policy.
 
 ### Repository structure
 

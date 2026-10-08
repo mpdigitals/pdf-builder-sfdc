@@ -33,6 +33,28 @@ A maintainer reviews each pull request. Automated checks must pass, review conve
 
 The project uses squash merging so that each pull request produces one clear commit on `main`.
 
+## AI-assisted contributions
+
+AI-assisted contributions are welcome when they meet the same standards as any
+other contribution. The contributor—not the tool—is responsible for the
+submitted work.
+
+- Understand and review every submitted change; do not submit unreviewed model
+  output.
+- Verify correctness, security, maintainability, tests, and compatibility with
+  Salesforce platform constraints.
+- Check generated suggestions for licensing or provenance concerns, and do not
+  provide credentials, customer data, proprietary source, or organization
+  metadata to an AI service without authorization.
+- Briefly disclose material AI assistance in the pull-request description and
+  identify the affected scope, such as code, tests, or documentation. Routine
+  editor completion does not need to be itemized.
+- Do not use AI output, summaries, or claimed test results as evidence that a
+  change works. Include reproducible checks and actual test results.
+
+Maintainers may reject contributions that the author cannot explain or that add
+unnecessary generated complexity, regardless of whether automated checks pass.
+
 ## Salesforce considerations
 
 - Respect sharing, CRUD, and field-level security.
