@@ -583,13 +583,13 @@ Packaged static resources do not require a public file distribution and are pref
 
 ### AI-assisted development
 
-This repository has been developed with assistance from generative-AI tools for
-research, implementation drafts, refactoring, tests, and documentation. AI
-output is treated as a proposal rather than an authority: human maintainers
-review and edit changes and remain responsible for architecture, correctness,
-security, licensing, and releases. The same quality and validation requirements
-apply regardless of whether a change was written manually or with AI
-assistance. See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution policy.
+This project was developed using generative-AI coding tools under human
+direction. The maintainer defined the requirements, made the product and
+architectural decisions, tested the application, reviewed the results, and
+approved each release. AI-generated output is treated as untrusted until it has
+passed automated checks and functional validation. The maintainer remains
+responsible for the project's security, licensing, quality, and releases. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the contribution policy.
 
 ### Repository structure
 
