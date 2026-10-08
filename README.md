@@ -587,9 +587,9 @@ This project was developed using generative-AI coding tools under human
 direction. The maintainer defined the requirements, made the product and
 architectural decisions, tested the application, reviewed the results, and
 approved each release. AI-generated output is treated as untrusted until it has
-passed automated checks and functional validation. The maintainer remains
-responsible for the project's security, licensing, quality, and releases. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for the contribution policy.
+passed automated checks and functional validation. AI-assisted changes follow
+the same review and quality standards as any other contribution. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ### Repository structure
 
